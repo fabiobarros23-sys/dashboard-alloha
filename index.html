@@ -1632,17 +1632,11 @@ async function loadFromSharePoint(){
     const resp=await fetch(SP_URL,{mode:'cors',credentials:'include'});
     if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
     pf.style.width='50%';pl.textContent='Baixando dados…';st.textContent='Arquivo encontrado, processando…';
-    const buf=await resp.arrayBuffer();
-    pf.style.width='75%';pl.textContent='Lendo planilha…';
-    // Try reading as XLSX directly (Power Automate saves raw binary)
-    let wb;
-    try{
-      wb=XLSX.read(new Uint8Array(buf),{type:'array',cellDates:true});
-    }catch(e){
-      // Fallback: try reading as base64 text
-      const text=new TextDecoder().decode(buf).trim();
-      wb=XLSX.read(text,{type:'base64',cellDates:true});
-    }
+    const text=await resp.text();
+    pf.style.width='75%';pl.textContent='Decodificando Base64…';
+    // File contains Base64-encoded XLSX — decode it
+    const b64=text.trim();
+    const wb=XLSX.read(b64,{type:'base64',cellDates:true});
     pf.style.width='92%';pl.textContent='Calculando KPIs…';
     const parsed=parse(wb,'SharePoint');
     saveHist(parsed);D=parsed;
