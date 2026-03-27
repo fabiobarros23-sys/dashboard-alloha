@@ -1617,7 +1617,7 @@ function filterBase(){
 // ═══════════════════════════════════════════════════════
 // SHAREPOINT AUTO-LOAD
 // ═══════════════════════════════════════════════════════
-const SP_URL='https://default7ebaa4673ace4a9cad914e84933a66.07.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/da3e55bbcab74e8f898c13f128b671e0/triggers/manual/paths/invoke?api-version=1';
+const SP_URL='https://allohafibra.sharepoint.com/:t:/s/contratosecontencioso/IQD66ZEcwzfURa9BMoVE_4I3AQwmf7ADhziMAn_AAksW3f4?e=dxgYgo&download=1';
 
 async function loadFromSharePoint(){
   const btn=document.getElementById('btn-sp');
@@ -1630,12 +1630,20 @@ async function loadFromSharePoint(){
   pf.style.width='15%';pl.textContent='Conectando…';
   try{
     const resp=await fetch(SP_URL,{mode:'cors',credentials:'include'});
-    if(!resp.ok) throw new Error(`HTTP ${resp.status} — verifique se o link está ativo e acessível.`);
-    pf.style.width='45%';pl.textContent='Baixando arquivo…';st.textContent='Arquivo encontrado, processando…';
+    if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    pf.style.width='50%';pl.textContent='Baixando dados…';st.textContent='Arquivo encontrado, processando…';
     const buf=await resp.arrayBuffer();
-    pf.style.width='70%';pl.textContent='Lendo planilha…';
-    const wb=XLSX.read(new Uint8Array(buf),{type:'array',cellDates:true});
-    pf.style.width='90%';pl.textContent='Calculando KPIs…';
+    pf.style.width='75%';pl.textContent='Lendo planilha…';
+    // Try reading as XLSX directly (Power Automate saves raw binary)
+    let wb;
+    try{
+      wb=XLSX.read(new Uint8Array(buf),{type:'array',cellDates:true});
+    }catch(e){
+      // Fallback: try reading as base64 text
+      const text=new TextDecoder().decode(buf).trim();
+      wb=XLSX.read(text,{type:'base64',cellDates:true});
+    }
+    pf.style.width='92%';pl.textContent='Calculando KPIs…';
     const parsed=parse(wb,'SharePoint');
     saveHist(parsed);D=parsed;
     pf.style.width='100%';pl.textContent='Pronto!';
@@ -1647,7 +1655,7 @@ async function loadFromSharePoint(){
     st.className='sp-status err';
     const isCors=err.message.includes('fetch')||err.message.includes('Failed')||err.message.includes('NetworkError');
     st.textContent=isCors
-      ? '⚠ Sem acesso ao fluxo. Verifique se está logado na conta @alloha e tente novamente.'
+      ? '⚠ Sem acesso. Verifique se está logado na conta @alloha e tente novamente.'
       : '✕ '+err.message;
     document.getElementById('up-prog').style.display='none';
     pf.style.width='0';
