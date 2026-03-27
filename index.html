@@ -1025,7 +1025,17 @@ function parse(wb,fname){
     });
   }
 
-  const period=detectPeriod(fname)||'2026-02';
+  // Detectar período: primeiro pelo nome do arquivo, depois pela data mais recente dos dados
+  let period=detectPeriod(fname);
+  if(!period){
+    // Usar a data mais recente encontrada nos dados (Base_mes ou Base_geral)
+    const allDates=[
+      ...mes.filter(r=>r.dataAlt).map(r=>r.dataAlt),
+      ...base.filter(r=>r.dataAtual).map(r=>r.dataAtual)
+    ].filter(Boolean).sort((a,b)=>b-a);
+    if(allDates.length>0) period=fmtYM(allDates[0]);
+    else period=fmtYM(new Date()); // último fallback: mês atual
+  }
   const ativos=base.filter(r=>r.st==='ATIVO');
   const now=new Date();
   return{fname,base,ativos,mes,ent,pag,period,total:base.length,totalAtivos:ativos.length,
