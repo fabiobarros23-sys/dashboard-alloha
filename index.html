@@ -1629,7 +1629,7 @@ async function loadFromSharePoint(){
   document.getElementById('up-prog').style.display='block';
   pf.style.width='15%';pl.textContent='Conectando…';
   try{
-    const resp=await fetch(SP_URL,{mode:'cors',credentials:'include'});
+    const resp=await fetch(SP_URL,{mode:'cors'});
     if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
     pf.style.width='50%';pl.textContent='Baixando dados…';st.textContent='Arquivo encontrado, processando…';
     const text=await resp.text();
