@@ -1617,7 +1617,7 @@ function filterBase(){
 // ═══════════════════════════════════════════════════════
 // SHAREPOINT AUTO-LOAD
 // ═══════════════════════════════════════════════════════
-const SP_URL='https://allohafibra.sharepoint.com/:x:/s/contratosecontencioso/IQDwzlcSKwglSp2KyeW2eCwtAe9GQExKJPzrfLq1DDu3JZ8?e=uJdnow&download=1';
+const SP_URL='https://default7ebaa4673ace4a9cad914e84933a66.07.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/da3e55bbcab74e8f898c13f128b671e0/triggers/manual/paths/invoke?api-version=1';
 
 async function loadFromSharePoint(){
   const btn=document.getElementById('btn-sp');
@@ -1645,9 +1645,9 @@ async function loadFromSharePoint(){
     btn.disabled=false;
     btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12l2 2 4-4"/></svg> Carregar base do SharePoint`;
     st.className='sp-status err';
-    const isCors=err.message.includes('fetch')||err.message.includes('Failed');
+    const isCors=err.message.includes('fetch')||err.message.includes('Failed')||err.message.includes('NetworkError');
     st.textContent=isCors
-      ? '⚠ Acesso bloqueado (CORS). Use o upload manual ou abra o dashboard no Teams.'
+      ? '⚠ Sem acesso ao fluxo. Verifique se está logado na conta @alloha e tente novamente.'
       : '✕ '+err.message;
     document.getElementById('up-prog').style.display='none';
     pf.style.width='0';
