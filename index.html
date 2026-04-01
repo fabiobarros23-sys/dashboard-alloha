@@ -1682,8 +1682,12 @@ async function loadFromSharePoint(){
     const text=await resp.text();
     pf.style.width='75%';pl.textContent='Decodificando Base64…';
     // File contains Base64-encoded XLSX — decode it
-    const b64=text.trim();
-    const wb=XLSX.read(b64,{type:'base64',cellDates:true});
+    // Remove prefixo data:...;base64, se existir (SharePoint inclui isso)
+let b64=text.trim();
+if(b64.includes(';base64,')){
+  b64=b64.split(';base64,')[1];
+}
+const wb=XLSX.read(b64,{type:'base64',cellDates:true});
     pf.style.width='92%';pl.textContent='Calculando KPIs…';
     const parsed=parse(wb,'SharePoint');
     saveHist(parsed);D=parsed;
