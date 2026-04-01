@@ -1057,16 +1057,21 @@ function parse(wb,fname){
     });
   }
 
-  // Detectar período: primeiro pelo nome do arquivo, depois pela data mais recente dos dados
-  let period=detectPeriod(fname);
-  if(!period){
-    // Usar a data mais recente encontrada nos dados (Base_mes ou Base_geral)
+  // CORREÇÃO: detectar período SEMPRE pela data mais recente dos dados.
+  // "Dashboard_atual.xlsx" é nome genérico — detectPeriod() retorna null
+  // e o fallback anterior usava new Date() → exibia mês errado (abril/2026).
+  let period;
+  {
     const allDates=[
       ...mes.filter(r=>r.dataAlt).map(r=>r.dataAlt),
       ...base.filter(r=>r.dataAtual).map(r=>r.dataAtual)
     ].filter(Boolean).sort((a,b)=>b-a);
-    if(allDates.length>0) period=fmtYM(allDates[0]);
-    else period=fmtYM(new Date()); // último fallback: mês atual
+    if(allDates.length>0){
+      period=fmtYM(allDates[0]);
+    } else {
+      period=detectPeriod(fname); // tenta pelo nome do arquivo
+    }
+    if(!period) period=fmtYM(new Date()); // fallback final
   }
   const ativos=base.filter(r=>r.st==='ATIVO');
   const now=new Date();
