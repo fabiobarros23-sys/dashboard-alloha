@@ -1067,8 +1067,12 @@ function parse(wb,fname){
       ...base.filter(r=>r.dataAtual).map(r=>r.dataAtual)
     ].filter(Boolean).sort((a,b)=>b-a);
     if(allDates.length>0){
-      period=fmtYM(allDates[0]);
-    } else {
+  // Usar moda (mês mais frequente) em vez do máximo
+  // evita que datas incorretas/futuras contaminem o período
+  const freq={};
+  allDates.forEach(d=>{const k=fmtYM(d);freq[k]=(freq[k]||0)+1;});
+  period=Object.entries(freq).sort((a,b)=>b[1]-a[1])[0][0];
+} else {
       period=detectPeriod(fname); // tenta pelo nome do arquivo
     }
     if(!period) period=fmtYM(new Date()); // fallback final
