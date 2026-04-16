@@ -992,8 +992,8 @@ function parse(wb,fname){
       const anoDist=dataDist?dataDist.getFullYear():null;
       base.push({st,nat,risco,tipo,estado,empresa,escritorio,autor,numero,reclamada,fase,tema,contigPos,contigPre,pago,causa,deposito,dataAtual,dataDist,anoMes,anoMesAtual,anoDist});
     });
-    const seen=new Set();
-    base=base.filter(r=>{const k=r.numero||(r.autor+'|'+r.nat+r.empresa);if(seen.has(k))return false;seen.add(k);return true;});
+// Deduplicação removida — planilha é fonte da verdade,
+// processos com mesmo número em réus diferentes são registros intencionais.
   }
 
   let mes=[];
