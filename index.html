@@ -1484,7 +1484,7 @@ function bProprios(){
 // PAGE: EVOLUÇÃO TEMPORAL
 // ═══════════════════════════════════════════════════════
 function bEvolucao(){
-  const{base}=getFD();
+  const{base,ent}=getFD();
   const arq=base.filter(r=>r.st==='ARQUIVADO');
   // Usar D.period (período da base) em vez de new Date() para mês corrente
   let now;
@@ -1493,8 +1493,8 @@ function bEvolucao(){
   const cm=fmtYM(now),pm=fmtYM(new Date(now.getFullYear(),now.getMonth()-1,1));
 
   // Comparison cards
-  const newCm=D.ent.filter(r=>r.anoMes===cm).length;
-  const newPm=D.ent.filter(r=>r.anoMes===pm).length;
+  const newCm=ent.filter(r=>r.anoMes===cm).length;
+  const newPm=ent.filter(r=>r.anoMes===pm).length;
   const archCm=arq.filter(r=>r.anoMesAtual===cm).length;
   const archPm=arq.filter(r=>r.anoMesAtual===pm).length;
   const compCard=(l,curr,prev,inv=false,isMoney=false)=>{
@@ -1514,7 +1514,7 @@ function bEvolucao(){
 
   // Novos (from Entrantes) vs Arquivados - last 5 months
   const meses5=Array.from({length:5},(_,i)=>fmtYM(new Date(now.getFullYear(),now.getMonth()-4+i,1)));
-  const entByM={};D.ent.forEach(r=>{if(r.anoMes)entByM[r.anoMes]=(entByM[r.anoMes]||0)+1;});
+  const entByM={};ent.forEach(r=>{if(r.anoMes)entByM[r.anoMes]=(entByM[r.anoMes]||0)+1;});
   lineC('c-evo-bal',meses5.map(fMon),[
     {label:'Entrantes',data:meses5.map(m=>entByM[m]||0),borderColor:'#4f9cf9',backgroundColor:'rgba(79,156,249,.1)',fill:true,tension:.4,pointBackgroundColor:'#4f9cf9',pointRadius:4},
     {label:'Arquivados',data:meses5.map(m=>archByM[m]||0),borderColor:'#e9b44c',backgroundColor:'rgba(233,180,76,.05)',fill:true,tension:.4,pointBackgroundColor:'#e9b44c',pointRadius:4},
