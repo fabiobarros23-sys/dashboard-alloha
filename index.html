@@ -1730,7 +1730,217 @@ const wb=XLSX.read(b64,{type:'base64',cellDates:true});
 // Init
 document.addEventListener('DOMContentLoaded',()=>{renderHist();});
 async function exportPNG(){const btn=document.getElementById('btn-png');btn.innerHTML='<span style="color:#fb923c">Aguarde...</span>';btn.disabled=true;try{const el=document.getElementById('mn');const canvas=await html2canvas(el,{scale:1.5,useCORS:true,backgroundColor:'#080d20',logging:false});const a=document.createElement('a');a.download=`Relatorio-Juridico-${D?.period||'Alloha'}.png`;a.href=canvas.toDataURL('image/png');a.click();}catch(e){console.error(e);}btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2" width="12" height="12"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span style="color:#fb923c">PNG</span>';btn.disabled=false;}
-async function exportPDF(){const btn=document.getElementById('btn-pdf');btn.innerHTML='<span style="color:#f87171">Gerando...</span>';btn.disabled=true;const{jsPDF}=window.jspdf;const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});const W=297,H=210;const pages=[{id:'pg-resultado',label:'Resultado Geral'},{id:'pg-adicoes',label:'Adições & Reversões'},{id:'pg-pagamentos',label:'Indenizações'},{id:'pg-estoque',label:'Estoque Ativo'},{id:'pg-risco',label:'Risco & Exposição'},{id:'pg-proprios',label:'Próprios vs. Terceiros'},{id:'pg-evolucao',label:'Evolução Temporal'},{id:'pg-entrantes',label:'Entrantes'},{id:'pg-temas',label:'Temas, UF & Escritórios'}];const per=D?.period?fMon(D.period):'—';const dt=new Date().toLocaleDateString('pt-BR');pdf.setFillColor(5,15,86);pdf.rect(0,0,W,H,'F');pdf.setFillColor(2,170,95);pdf.rect(0,0,W,6,'F');pdf.setFillColor(5,101,100);pdf.rect(0,6,W,2,'F');pdf.setTextColor(255,255,255);pdf.setFontSize(32);pdf.setFont('helvetica','bold');pdf.text('alloha',W/2,70,{align:'center'});pdf.setFontSize(14);pdf.setFont('helvetica','normal');pdf.setTextColor(180,210,255);pdf.text('Gestão Jurídica Contenciosa',W/2,82,{align:'center'});pdf.setFontSize(22);pdf.setFont('helvetica','bold');pdf.setTextColor(255,255,255);pdf.text(`Relatório Executivo — ${per}`,W/2,102,{align:'center'});pdf.setFontSize(10);pdf.setFont('helvetica','normal');pdf.setTextColor(148,163,184);pdf.text(`Gerado em ${dt} · ${D?.total?.toLocaleString('pt-BR')||'—'} processos na base`,W/2,115,{align:'center'});pdf.setFontSize(9);pdf.setTextColor(100,116,139);pdf.text('Dashboard Jurídico · Alloha Fibra · Confidencial',W/2,H-8,{align:'center'});const currPage=document.querySelector('.pg.ac');const currNav=document.querySelector('.nb.ac');for(let i=0;i<pages.length;i++){const p=pages[i];const el=document.getElementById(p.id);if(!el)continue;document.querySelectorAll('.pg').forEach(x=>x.classList.remove('ac'));el.classList.add('ac');await new Promise(r=>setTimeout(r,600));btn.innerHTML=`<span style="color:#f87171">${i+1}/${pages.length}</span>`;try{const canvas=await html2canvas(el,{scale:1.8,useCORS:true,backgroundColor:'#080d20',logging:false,windowWidth:1400});const img=canvas.toDataURL('image/jpeg',0.85);pdf.addPage();pdf.setFillColor(8,13,32);pdf.rect(0,0,W,H,'F');pdf.setFillColor(2,170,95);pdf.rect(0,0,W,1.5,'F');const iW=W-16,iH=H-22;const cW=canvas.width,cH=canvas.height;const ratio=Math.min(iW/cW*96,iH/cH*96);const fW=cW*ratio/96,fH=cH*ratio/96;pdf.addImage(img,'JPEG',8,14,Math.min(fW,iW),Math.min(fH,iH));pdf.setFontSize(7);pdf.setFont('helvetica','normal');pdf.setTextColor(100,116,139);pdf.text(`${p.label} · ${per} · Alloha Gestão Jurídica`,8,H-3);pdf.text(`${i+2}`,W-8,H-3,{align:'right'});}catch(e){console.error('Erro na página',p.label,e);}}document.querySelectorAll('.pg').forEach(x=>x.classList.remove('ac'));document.querySelectorAll('.nb').forEach(x=>x.classList.remove('ac'));if(currPage)currPage.classList.add('ac');if(currNav)currNav.classList.add('ac');pdf.save(`Relatorio-Juridico-${D?.period||'Alloha'}.pdf`);btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" width="12" height="12"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span style="color:#f87171">PDF</span>';btn.disabled=false;}  
+async function exportPDF(){
+  const btn=document.getElementById('btn-pdf');
+  btn.innerHTML='<span style="color:#f87171">Analisando...</span>';
+  btn.disabled=true;
+  const{jsPDF}=window.jspdf;
+  const W=297,H=210;
+  const per=D?.period?fMon(D.period):'—';
+  const dt=new Date().toLocaleDateString('pt-BR');
+
+  // Coletar dados para interpretação
+  const fd=getFD();
+  const adic=fd.mes.filter(r=>r.sit==='Adição');
+  const rev=fd.mes.filter(r=>r.sit==='Reversão');
+  const vA=adic.reduce((a,r)=>a+r.valor,0);
+  const vR=Math.abs(rev.reduce((a,r)=>a+r.valor,0));
+  const ativos=fd.ativos;
+  const tc=ativos.reduce((a,r)=>a+r.contigPos,0);
+  const prob=ativos.filter(r=>r.risco==='PROVÁVEL');
+  const poss=ativos.filter(r=>r.risco==='POSSÍVEL');
+  const t3=ativos.filter(r=>r.tipo==='TERCEIRO');
+  const pag=fd.pag;
+  const tPag=pag.reduce((a,r)=>a+r.pagamento,0);
+  const tCont=pag.reduce((a,r)=>a+r.contingencia,0);
+  const ent=fd.ent;
+
+  const dadosResumo={
+    periodo:per,
+    totalProcessos:D?.total||0,
+    processosAtivos:ativos.length,
+    resultado:{
+      adicoes:adic.length, valorAdicoes:fSh(vA),
+      reversoes:rev.length, valorReversoes:fSh(vR),
+      saldoLiquido:fSh(Math.abs(vA-vR)), tipo:vA>vR?'adição':'reversão',
+      trabalhista:{qtd:adic.filter(r=>r.nat==='TRABALHISTA').length, valor:fSh(adic.filter(r=>r.nat==='TRABALHISTA').reduce((a,r)=>a+r.valor,0))},
+      civel:{qtd:adic.filter(r=>r.nat==='CÍVEL').length, valor:fSh(adic.filter(r=>r.nat==='CÍVEL').reduce((a,r)=>a+r.valor,0))},
+      poss2prov:adic.filter(r=>r.op&&r.op.includes('Provável')).length
+    },
+    estoque:{
+      total:ativos.length,
+      contingenciaTotal:fSh(tc),
+      ticketMedio:fSh(ativos.length?tc/ativos.length:0)
+    },
+    risco:{
+      provavel:{qtd:prob.length, valor:fSh(prob.reduce((a,r)=>a+r.contigPos,0)), pct:pct(prob.reduce((a,r)=>a+r.contigPos,0),tc)+'%'},
+      possivel:{qtd:poss.length, valor:fSh(poss.reduce((a,r)=>a+r.contigPos,0)), pct:pct(poss.reduce((a,r)=>a+r.contigPos,0),tc)+'%'},
+      topTema:Object.entries(ativos.filter(r=>r.risco==='PROVÁVEL').reduce((a,r)=>{a[r.tema]=(a[r.tema]||0)+r.contigPos;return a},{})).sort((a,b)=>b[1]-a[1])[0]?.[0]||'N/A'
+    },
+    proprios:{
+      proprios:{qtd:ativos.filter(r=>r.tipo==='PROPRIO').length, valor:fSh(ativos.filter(r=>r.tipo==='PROPRIO').reduce((a,r)=>a+r.contigPos,0))},
+      terceiros:{qtd:t3.length, valor:fSh(t3.reduce((a,r)=>a+r.contigPos,0))},
+      topTerceirizada:Object.entries(t3.reduce((a,r)=>{a[r.reclamada]=(a[r.reclamada]||0)+r.contigPos;return a},{})).sort((a,b)=>b[1]-a[1])[0]?.[0]||'N/A'
+    },
+    indenizacoes:{
+      totalPago:fSh(tPag), processos:pag.length,
+      contingenciaAssociada:fSh(tCont),
+      economia:fSh(tCont-tPag),
+      acordos:pag.filter(r=>r.tipo==='ACORDO').length
+    },
+    entrantes:{
+      total:ent.length,
+      trabalhista:ent.filter(r=>r.nat==='TRABALHISTA').length,
+      civel:ent.filter(r=>r.nat==='CÍVEL').length,
+      terceiros:ent.filter(r=>r.tipo==='TERCEIRO').length,
+      topUF:Object.entries(ent.reduce((a,r)=>{a[r.uf]=(a[r.uf]||0)+1;return a},{})).sort((a,b)=>b[1]-a[1])[0]?.[0]||'N/A',
+      topTema:Object.entries(ent.reduce((a,r)=>{if(r.tema)a[r.tema]=(a[r.tema]||0)+1;return a},{})).sort((a,b)=>b[1]-a[1])[0]?.[0]||'N/A'
+    }
+  };
+
+  // Gerar interpretações via API Claude
+  btn.innerHTML='<span style="color:#f87171">IA analisando...</span>';
+  let interps={};
+  try{
+    const prompt=`Você é um analista jurídico sênior. Com base nos dados do contencioso jurídico da Alloha Fibra para o período ${per}, gere interpretações executivas formais e objetivas para cada seção do relatório. Para cada seção, escreva exatamente 2 frases: a primeira destaca o principal número/fato, a segunda traz contexto ou implicação estratégica. Use linguagem formal de relatório executivo em português. Não use markdown, bullet points ou formatação especial — apenas texto corrido.
+
+DADOS DO PERÍODO:
+${JSON.stringify(dadosResumo,null,2)}
+
+Retorne APENAS um JSON válido com esta estrutura exata:
+{
+  "resultado": "interpretação aqui",
+  "adicoes": "interpretação aqui",
+  "indenizacoes": "interpretação aqui",
+  "estoque": "interpretação aqui",
+  "risco": "interpretação aqui",
+  "proprios": "interpretação aqui",
+  "evolucao": "interpretação aqui",
+  "entrantes": "interpretação aqui",
+  "temas": "interpretação aqui",
+  "executivo": "parágrafo executivo geral de 3 frases resumindo o mês para a diretoria"
+}`;
+
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data=await resp.json();
+    const txt=data.content?.[0]?.text||'{}';
+    const clean=txt.replace(/```json|```/g,'').trim();
+    interps=JSON.parse(clean);
+  }catch(e){
+    console.error('Erro API Claude:',e);
+    interps={
+      resultado:'Dados de resultado do período processados com sucesso.',
+      adicoes:'Detalhamento das adições e reversões do período.',
+      indenizacoes:'Análise dos pagamentos realizados no período.',
+      estoque:'Visão consolidada do estoque ativo de processos.',
+      risco:'Distribuição do risco financeiro por categoria.',
+      proprios:'Segregação entre processos próprios e de terceiros.',
+      evolucao:'Evolução temporal dos indicadores jurídicos.',
+      entrantes:'Análise dos processos entrantes no período.',
+      temas:'Concentração por tema, UF e escritório.',
+      executivo:'Relatório jurídico executivo gerado automaticamente.'
+    };
+  }
+
+  // Montar PDF
+  btn.innerHTML='<span style="color:#f87171">Gerando PDF...</span>';
+  const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+
+  // Capa
+  pdf.setFillColor(5,15,86);pdf.rect(0,0,W,H,'F');
+  pdf.setFillColor(2,170,95);pdf.rect(0,0,W,6,'F');
+  pdf.setFillColor(5,101,100);pdf.rect(0,6,W,2,'F');
+  pdf.setTextColor(255,255,255);
+  pdf.setFontSize(32);pdf.setFont('helvetica','bold');
+  pdf.text('alloha',W/2,60,{align:'center'});
+  pdf.setFontSize(13);pdf.setFont('helvetica','normal');pdf.setTextColor(180,210,255);
+  pdf.text('Gestão Jurídica Contenciosa',W/2,71,{align:'center'});
+  pdf.setFontSize(20);pdf.setFont('helvetica','bold');pdf.setTextColor(255,255,255);
+  pdf.text(`Relatório Executivo — ${per}`,W/2,88,{align:'center'});
+  // Sumário executivo na capa
+  if(interps.executivo){
+    pdf.setFontSize(10);pdf.setFont('helvetica','normal');pdf.setTextColor(203,213,225);
+    const lines=pdf.splitTextToSize(interps.executivo,W-60);
+    pdf.text(lines,W/2,102,{align:'center'});
+  }
+  pdf.setFontSize(9);pdf.setFont('helvetica','normal');pdf.setTextColor(100,116,139);
+  pdf.text(`Gerado em ${dt} · ${D?.total?.toLocaleString('pt-BR')||'—'} processos · Confidencial`,W/2,H-8,{align:'center'});
+
+  // Páginas por seção
+  const pages=[
+    {id:'pg-resultado',label:'Resultado Geral',key:'resultado'},
+    {id:'pg-adicoes',label:'Adições & Reversões',key:'adicoes'},
+    {id:'pg-pagamentos',label:'Indenizações',key:'indenizacoes'},
+    {id:'pg-estoque',label:'Estoque Ativo',key:'estoque'},
+    {id:'pg-risco',label:'Risco & Exposição',key:'risco'},
+    {id:'pg-proprios',label:'Próprios vs. Terceiros',key:'proprios'},
+    {id:'pg-evolucao',label:'Evolução Temporal',key:'evolucao'},
+    {id:'pg-entrantes',label:'Entrantes',key:'entrantes'},
+    {id:'pg-temas',label:'Temas, UF & Escritórios',key:'temas'},
+  ];
+
+  const currPage=document.querySelector('.pg.ac');
+  const currNav=document.querySelector('.nb.ac');
+
+  for(let i=0;i<pages.length;i++){
+    const p=pages[i];
+    const el=document.getElementById(p.id);
+    if(!el) continue;
+    document.querySelectorAll('.pg').forEach(x=>x.classList.remove('ac'));
+    el.classList.add('ac');
+    await new Promise(r=>setTimeout(r,600));
+    btn.innerHTML=`<span style="color:#f87171">${i+1}/${pages.length}</span>`;
+    try{
+      const canvas=await html2canvas(el,{scale:1.8,useCORS:true,backgroundColor:'#080d20',logging:false,windowWidth:1400});
+      const img=canvas.toDataURL('image/jpeg',0.85);
+      pdf.addPage();
+      // Fundo
+      pdf.setFillColor(8,13,32);pdf.rect(0,0,W,H,'F');
+      pdf.setFillColor(2,170,95);pdf.rect(0,0,W,1.5,'F');
+      // Header da seção
+      pdf.setFontSize(11);pdf.setFont('helvetica','bold');pdf.setTextColor(255,255,255);
+      pdf.text(p.label,8,9);
+      pdf.setFontSize(7);pdf.setFont('helvetica','normal');pdf.setTextColor(100,116,139);
+      pdf.text(`${per} · Alloha Gestão Jurídica`,W-8,9,{align:'right'});
+      // Interpretação da IA
+      const interp=interps[p.key]||'';
+      if(interp){
+        pdf.setFontSize(8.5);pdf.setFont('helvetica','italic');pdf.setTextColor(148,163,184);
+        const lines=pdf.splitTextToSize(interp,W-16);
+        pdf.text(lines,8,16);
+      }
+      // Screenshot — ajusta posição conforme tamanho do texto
+      const textH=interp?pdf.splitTextToSize(interp,W-16).length*4:0;
+      const imgY=18+textH;
+      const iW=W-16,iH=H-imgY-6;
+      const cW=canvas.width,cH=canvas.height;
+      const ratio=Math.min(iW/cW*96,iH/cH*96);
+      const fW=cW*ratio/96,fH=cH*ratio/96;
+      pdf.addImage(img,'JPEG',8,imgY,Math.min(fW,iW),Math.min(fH,iH));
+      // Rodapé
+      pdf.setFontSize(7);pdf.setFont('helvetica','normal');pdf.setTextColor(100,116,139);
+      pdf.text(`${i+2}`,W-8,H-3,{align:'right'});
+    }catch(e){console.error('Erro página',p.label,e);}
+  }
+
+  // Restaurar
+  document.querySelectorAll('.pg').forEach(x=>x.classList.remove('ac'));
+  document.querySelectorAll('.nb').forEach(x=>x.classList.remove('ac'));
+  if(currPage)currPage.classList.add('ac');
+  if(currNav)currNav.classList.add('ac');
+
+  pdf.save(`Relatorio-Juridico-${D?.period||'Alloha'}.pdf`);
+  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" width="12" height="12"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span style="color:#f87171">PDF</span>';
+  btn.disabled=false;
+}  
 </script>
 </body>
 </html>
