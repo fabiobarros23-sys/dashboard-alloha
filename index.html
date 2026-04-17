@@ -515,8 +515,7 @@ tbody tr:hover td{background:var(--s0)}
           <div class="cdb npt"><div class="cw" style="height:200px"><canvas id="c-pag-tema"></canvas></div></div>
         </div>
       </div>
-      <div class="cd mb"><div class="cdh"><div><div class="cdt">Próprios vs. Terceiros — Indenizações</div><div class="cds">Distribuição por tipo de vínculo</div></div></div><div class="cdb" style="display:flex;gap:1.1rem;align-items:center"><div class="cw" style="height:165px;width:165px;flex-shrink:0"><canvas id="c-pag-pt-d"></canvas></div><div class="dl" id="lg-pag-pt" style="flex:1"></div></div></div>
-      <div class="cd mb">
+      <div class="g2 mb"><div class="cd"><div class="cdh"><div><div class="cdt">Próprios vs. Terceiros — Indenizações</div><div class="cds">Distribuição por tipo de vínculo</div></div></div><div class="cdb" style="display:flex;gap:1.1rem;align-items:center"><div class="cw" style="height:165px;width:165px;flex-shrink:0"><canvas id="c-pag-pt-d"></canvas></div><div class="dl" id="lg-pag-pt" style="flex:1"></div></div></div><div class="cd"><div class="cdh"><div><div class="cdt">Empresas Terceiras — Indenizações</div><div class="cds">Por valor pago ou volume de processos</div></div></div><div class="cdb npt"><div class="cw" style="height:165px"><canvas id="c-pag-emp-t3"></canvas></div></div></div></div>      <div class="cd mb">
         <div class="cdh"><div><div class="cdt">Análise de Eficiência por Processo</div><div class="cds">Provisão × Acordo/Condenação · Δ economia</div></div></div>
         <div class="cdb npt">
           <div class="tw">
@@ -1059,7 +1058,8 @@ function parse(wb,fname){
       const contVal=n2(g('Contingência'));
       const risco=normRk(g('Risco'));
       const terceiros=cl(g('Terceiros'))||'';
-      pag.push({proc,closing,nat,tipo,tema,pagamento:pagVal,contingencia:contVal,risco,terceiros});
+      const empTerceira=cl(g('Empresa Terceira'))||'';
+      pag.push({proc,closing,nat,tipo,tema,pagamento:pagVal,contingencia:contVal,risco,terceiros,empTerceira});
     });
   }
 
@@ -1350,6 +1350,7 @@ function bPagamentos(){
     return`<tr><td class="mono">${r.proc.length>22?r.proc.slice(0,21)+'…':r.proc}</td><td><span class="bdg ${r.nat==='TRABALHISTA'?'bt':'bc'}">${r.nat}</span></td><td style="font-size:.7rem;color:var(--sl)">${r.tipo}</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${r.tema}</td><td><span class="bdg ${r.risco==='PROVÁVEL'?'bp':r.risco==='POSSÍVEL'?'bpo':'br'}">${r.risco}</span></td><td style="font-size:.7rem;color:var(--sld)">${r.closing}</td><td style="font-weight:700;color:#f87171">${fBRL(r.pagamento)}</td><td style="color:var(--sl)">${r.contingencia>0?fBRL(r.contingencia):'—'}</td><td style="font-weight:700;color:${eco>=0?'#34d399':'#f87171'}">${r.contingencia>0?fBRL(eco)+' ('+ep+'%)':'—'}</td></tr>`;
   }).join('');
     const ptLabels=['Próprios','Terceiros'];const pagFiltPT=pag.filter(r=>r.terceiros==='Próprios'||r.terceiros==='Terceiros');const ptVals=ptLabels.map(t=>isV?pagFiltPT.filter(r=>r.terceiros===t).length:pagFiltPT.filter(r=>r.terceiros===t).reduce((a,r)=>a+r.pagamento,0));donut('c-pag-pt-d',ptLabels,ptVals,['#4f9cf9','#fb923c'],'lg-pag-pt');
+    const empT3=pag.filter(r=>r.terceiros==='Terceiros'&&r.empTerceira&&r.empTerceira!=='-'&&r.empTerceira!=='N/A');const empT3Grp=isV?Object.entries(empT3.reduce((a,r)=>{a[r.empTerceira]=(a[r.empTerceira]||0)+1;return a},{})):Object.entries(empT3.reduce((a,r)=>{a[r.empTerceira]=(a[r.empTerceira]||0)+r.pagamento;return a},{}));barH('c-pag-emp-t3',empT3Grp.sort((a,b)=>b[1]-a[1]).slice(0,8),!isV,'rgba(251,146,60,.65)');
 }
 
 // ═══════════════════════════════════════════════════════
