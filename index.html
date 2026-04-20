@@ -355,6 +355,8 @@ tbody tr:hover td{background:var(--s0)}
   </div>
 </div>
 
+<!-- MODAL HEATMAP -->
+<div id="modal-hm" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);align-items:center;justify-content:center"><div style="background:#111c38;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:1.5rem;width:90%;max-width:640px;max-height:85vh;overflow-y:auto;position:relative"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem"><div><div style="font-size:.58rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#2dd4bf;margin-bottom:.2rem">DRILL-DOWN · HEATMAP</div><div id="modal-hm-title" style="font-size:1.05rem;font-weight:800;color:#f1f5f9"></div></div><button onclick="closeModalHM()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:1rem;color:#94a3b8;display:flex;align-items:center;justify-content:center">✕</button></div><div id="modal-hm-total" style="font-size:.72rem;color:#64748b;margin-bottom:1rem"></div><div style="position:relative;height:280px"><canvas id="c-modal-hm"></canvas></div><div id="modal-hm-pareto" style="margin-top:1rem"></div></div></div>
 <!-- APP -->
 <div id="modal-tema" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);align-items:center;justify-content:center"><div style="background:#111c38;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:1.5rem;width:90%;max-width:620px;max-height:85vh;overflow-y:auto;position:relative"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem"><div><div style="font-size:.58rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#a78bfa;margin-bottom:.2rem">DRILL-DOWN · TEMA</div><div id="modal-tema-title" style="font-size:1.1rem;font-weight:800;color:#f1f5f9"></div></div><button onclick="closeModalTema()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:1rem;color:#94a3b8;display:flex;align-items:center;justify-content:center">✕</button></div><div id="modal-tema-total" style="font-size:.72rem;color:#64748b;margin-bottom:1rem"></div><div style="position:relative;height:300px"><canvas id="c-modal-tema"></canvas></div><div id="modal-tema-pareto" style="margin-top:1rem"></div></div></div>
 <div id="modal-uf" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);align-items:center;justify-content:center">
@@ -729,7 +731,7 @@ tbody tr:hover td{background:var(--s0)}
         </div>
       </div>
       <div class="cd mb">
-        <div class="cdh"><div><div class="cdt">Próprios vs. Terceiros — Evolução (R$)</div><div class="cds">Participação de terceiros na contingência</div></div></div>
+        <div class="cdh"><div><div class="cdt">Próprios vs. Terceiros — Evolução (R$)</div><div class="cds">Participação de terceiros na contingência total</div></div></div>
         <div class="cdb npt"><div class="cw" style="height:190px"><canvas id="c-hist-terc"></canvas></div></div>
       </div>
     </div>
@@ -1033,6 +1035,7 @@ function parse(wb,fname){
       const numero=cl(g('Nº. PROCESSO','NÚM. PROCESSO'))||'';
       const reclamada=cl(g('RECLAMADA/TERCEIRIZADA'))||'';
       const fase=clu(g('SITUAÇÃO/FASE','FASE'))||'';
+      const cidade=cl(g('CIDADE'))||'';
       // CRITICAL: use OBJETO 1 (TEMA) for all theme analysis
       const tema=clu(g('OBJETO 1 (TEMA)'))||'';
       // CRITICAL: use CONTINGENCIAR PÓS CLOSING for all financial calcs
@@ -1046,7 +1049,7 @@ function parse(wb,fname){
       const anoMes=fmtYM(dataDist);
       const anoMesAtual=fmtYM(dataAtual);
       const anoDist=dataDist?dataDist.getFullYear():null;
-      base.push({st,nat,risco,tipo,estado,empresa,escritorio,autor,numero,reclamada,fase,tema,contigPos,contigPre,pago,causa,deposito,dataAtual,dataDist,anoMes,anoMesAtual,anoDist});
+      base.push({st,nat,risco,tipo,estado,cidade,empresa,escritorio,autor,numero,reclamada,fase,tema,contigPos,contigPre,pago,causa,deposito,dataAtual,dataDist,anoMes,anoMesAtual,anoDist});
     });
 // Deduplicação removida — planilha é fonte da verdade,
 // processos com mesmo número em réus diferentes são registros intencionais.
@@ -1138,28 +1141,28 @@ function parse(wb,fname){
     }
     if(!period) period=fmtYM(new Date()); // fallback final
   }
-  // ── Parse aba Historico ──────────────────────────────────────────
+  // ── Parse aba Historico ──
   let hist=[];
   const wsH=wb.Sheets['Historico'];
   if(wsH){
     XLSX.utils.sheet_to_json(wsH,{defval:null}).forEach(row=>{
-      const g=k=>{const f=Object.keys(row).find(rk=>rk.trim().toUpperCase()===k.toUpperCase());return f!==undefined?row[f]:null;};
-      const mes=cl(g('Mês (AAAA-MM)')||g('Mês\n(AAAA-MM)')||g('MÊS (AAAA-MM)'));
-      if(!mes||mes==='Mês (AAAA-MM)'||typeof mes!=='string'||!mes.match(/\d{4}-\d{2}/))return;
+      const g=k=>{const f=Object.keys(row).find(rk=>rk.trim().replace(/\n/g,' ').toUpperCase()===k.trim().replace(/\n/g,' ').toUpperCase());return f!==undefined?row[f]:null;};
+      const mes=String(g('Mês\n(AAAA-MM)')||g('Mês (AAAA-MM)')||g('MÊS (AAAA-MM)')||'').trim();
+      if(!mes||!mes.match(/\d{4}-\d{2}/))return;
       hist.push({
         mes,
-        ativos:    n2(g('Processos Ativos')||g('Processos\nAtivos')||0),
-        contig:    n2(g('Contingência Total (R$)')||g('Contingência\nTotal (R$)')||0),
-        provavel:  n2(g('Provável (R$)')||g('Provável\n(R$)')||0),
-        possivel:  n2(g('Possível (R$)')||g('Possível\n(R$)')||0),
-        remoto:    n2(g('Remoto (qtd.)')||g('Remoto\n(qtd.)')||0),
-        trab:      n2(g('Trabalhista (R$)')||g('Trabalhista\n(R$)')||0),
-        civel:     n2(g('Cível (R$)')||g('Cível\n(R$)')||0),
-        terceiros: n2(g('Terceiros (R$)')||g('Terceiros\n(R$)')||0),
-        adicoes:   n2(g('Adições (R$)')||g('Adições\n(R$)')||0),
-        reversoes: n2(g('Reversões (R$)')||g('Reversões\n(R$)')||0),
-        entrantes: n2(g('Entrantes (qtd.)')||g('Entrantes\n(qtd.)')||0),
-        indem:     n2(g('Indenizações (R$)')||g('Indenizações\n(R$)')||0),
+        ativos:    n2(g('Processos\nAtivos')||g('Processos Ativos')||0),
+        contig:    n2(g('Contingência\nTotal (R$)')||g('Contingência Total (R$)')||0),
+        provavel:  n2(g('Provável\n(R$)')||g('Provável (R$)')||0),
+        possivel:  n2(g('Possível\n(R$)')||g('Possível (R$)')||0),
+        remoto:    n2(g('Remoto\n(qtd.)')||g('Remoto (qtd.)')||0),
+        trab:      n2(g('Trabalhista\n(R$)')||g('Trabalhista (R$)')||0),
+        civel:     n2(g('Cível\n(R$)')||g('Cível (R$)')||0),
+        terceiros: n2(g('Terceiros\n(R$)')||g('Terceiros (R$)')||0),
+        adicoes:   n2(g('Adições\n(R$)')||g('Adições (R$)')||0),
+        reversoes: n2(g('Reversões\n(R$)')||g('Reversões (R$)')||0),
+        entrantes: n2(g('Entrantes\n(qtd.)')||g('Entrantes (qtd.)')||0),
+        indem:     n2(g('Indenizações\n(R$)')||g('Indenizações (R$)')||0),
       });
     });
     hist.sort((a,b)=>a.mes.localeCompare(b.mes));
@@ -1604,7 +1607,7 @@ function bEvolucao(){
   arq.forEach(r=>{
     if(r.anoMesAtual){
       archByM[r.anoMesAtual]=(archByM[r.anoMesAtual]||0)+1;
-      archValM[r.anoMesAtual]=(archValM[r.anoMesAtual]||0)+r.causa;
+      archValM[r.anoMesAtual]=(archValM[r.anoMesAtual]||0)+(r.causa||0);
     }
   });
   const archS=Object.entries(archByM).sort().slice(-18);
@@ -1742,7 +1745,10 @@ function bTemas(){
   const hm=t5.map(t=>u6.map(u=>isV?ativos.filter(r=>r.tema===t&&r.estado===u).length:ativos.filter(r=>r.tema===t&&r.estado===u).reduce((a,r)=>a+r.contigPos,0)));
   const maxV=Math.max(1,...hm.flat());
   const htbl=document.getElementById('hm-tbl');
-  htbl.innerHTML=`<thead><tr><th>Tema \\ UF</th>${u6.map(u=>`<th>${u}</th>`).join('')}</tr></thead><tbody>${t5.map((t,ti)=>`<tr><th style="text-align:left;max-width:130px;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:#cbd5e1">${t.length>18?t.slice(0,17)+'…':t}</th>${u6.map((u,ui)=>{const v=hm[ti][ui];const int=Math.round((v/maxV)*100);const bg=`rgba(248,113,113,${(int/100).toFixed(2)})`;const fg=int>50?'#fff':'#e2e8f0';return`<td style="background:${bg};color:${fg}">${isV?v:v>0?fSh(v):''}</td>`;}).join('')}</tr>`).join('')}</tbody>`;
+  htbl.innerHTML=`<thead><tr><th>Tema \\ UF</th>${u6.map(u=>`<th>${u}</th>`).join('')}</tr></thead><tbody>${t5.map((t,ti)=>`<tr><th style="text-align:left;max-width:130px;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:#cbd5e1">${t.length>18?t.slice(0,17)+'…':t}</th>${u6.map((u,ui)=>{const v=hm[ti][ui];const int=Math.round((v/maxV)*100);const bg=`rgba(248,113,113,${(int/100).toFixed(2)})`;const fg=int>50?'#fff':'#e2e8f0';return'<td style="background:'+bg+';color:'+fg+';cursor:'+(v>0?'pointer':'default')+'" data-tema="'+t.replace(/"/g,'&quot;')+'" data-uf="'+u+'" data-val="'+v+'">'+(isV?v:v>0?fSh(v):'')+' </td>';}).join('')}</tr>`).join('')}</tbody>`;
+  htbl.querySelectorAll('td[data-val]').forEach(td=>{
+    if(parseFloat(td.dataset.val)>0) td.addEventListener('click',()=>openModalHM(td.dataset.tema,td.dataset.uf));
+  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2036,64 +2042,70 @@ function closeModalUF(){document.getElementById('modal-uf').style.display='none'
 function bHistorico(){
   const hist=getHist2();
   if(!hist.length){
-    document.getElementById('kpis-hist').innerHTML='<div style="color:#64748b;padding:2rem;text-align:center">Aba <strong>Historico</strong> não encontrada na planilha. Utilize a planilha <em>Dashboard_historico_final.xlsx</em>.</div>';
+    document.getElementById('kpis-hist').innerHTML='<div style="color:#64748b;padding:2rem;text-align:center;grid-column:1/-1">Aba <strong>Historico</strong> não encontrada. Use a planilha <em>Dashboard_historico_final.xlsx</em> renomeada para Dashboard_atual.xlsx.</div>';
     return;
   }
-  const meses=hist.map(h=>h.mes);
-  const fmtM=m=>{const[y,mo]=m.split('-');const ns=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];return ns[+mo]+'/'+y.slice(2);};
-  const labels=meses.map(fmtM);
-  const last=hist[hist.length-1];
-  const prev=hist.length>1?hist[hist.length-2]:null;
-
-  // KPIs
-  const kpiFmt=(l,v,vp,inv=false,money=true)=>{
+  const labels=hist.map(h=>{const[y,mo]=h.mes.split('-');const ns=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];return ns[+mo]+'/'+y.slice(2);});
+  const last=hist[hist.length-1];const prev=hist.length>1?hist[hist.length-2]:null;
+  const kpiFmt=(l,v,vp,money=true)=>{
     const fmt=money?fSh:v=>v.toLocaleString('pt-BR');
     const d=vp&&vp>0?Math.round(((v-vp)/vp)*1000)/10:null;
-    const up=d>0;const good=inv?!up:up;
-    return`<div class="kpi"><div class="kl">${l}</div><div class="kv">${fmt(v)}</div>${d!==null?`<div class="kd ${good?'ku':'kd2'}">${up?'▲':'▼'} ${Math.abs(d)}%</div>`:''}</div>`;
+    const up=d>0;
+    return`<div class="kpi"><div class="kl">${l}</div><div class="kv">${fmt(v)}</div>${d!==null?`<div class="kd ${up?'ku':'kd2'}">${up?'▲':'▼'} ${Math.abs(d)}%</div>`:''}</div>`;
   };
   document.getElementById('kpis-hist').innerHTML=
     kpiFmt('Contingência Atual',last.contig,prev?.contig)+
-    kpiFmt('Processos Ativos',last.ativos,prev?.ativos,false,false)+
+    kpiFmt('Processos Ativos',last.ativos,prev?.ativos,false)+
     kpiFmt('Provável',last.provavel,prev?.provavel)+
     kpiFmt('Terceiros',last.terceiros,prev?.terceiros);
-
-  // Gráfico 1: Contingência total + provável + possível
   lineC('c-hist-contig',labels,[
     {label:'Contingência Total',data:hist.map(h=>h.contig),borderColor:'#4f9cf9',backgroundColor:'rgba(79,156,249,.08)',fill:true,tension:.4,pointBackgroundColor:'#4f9cf9',pointRadius:4,borderWidth:2},
-    {label:'Provável',data:hist.map(h=>h.provavel),borderColor:'#a78bfa',backgroundColor:'rgba(167,139,250,.08)',fill:false,tension:.4,pointBackgroundColor:'#a78bfa',pointRadius:4,borderDash:[5,3]},
-    {label:'Possível',data:hist.map(h=>h.possivel),borderColor:'#4f9cf9',backgroundColor:'rgba(79,156,249,.04)',fill:false,tension:.4,pointBackgroundColor:'#4f9cf9',pointRadius:3,borderDash:[2,4],borderWidth:1.5},
+    {label:'Provável',data:hist.map(h=>h.provavel),borderColor:'#a78bfa',fill:false,tension:.4,pointBackgroundColor:'#a78bfa',pointRadius:4,borderDash:[5,3]},
+    {label:'Possível',data:hist.map(h=>h.possivel),borderColor:'#60a5fa',fill:false,tension:.4,pointBackgroundColor:'#60a5fa',pointRadius:3,borderDash:[2,4],borderWidth:1.5},
   ],false,fSh);
-
-  // Gráfico 2: Processos ativos
   lineC('c-hist-ativos',labels,[
     {label:'Processos Ativos',data:hist.map(h=>h.ativos),borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.1)',fill:true,tension:.4,pointBackgroundColor:'#34d399',pointRadius:4},
   ]);
-
-  // Gráfico 3: Entrantes
-  const entData=hist.map(h=>h.entrantes);
-  barV('c-hist-ent',labels,[{data:entData,backgroundColor:'rgba(79,156,249,.7)',borderRadius:6,borderSkipped:false,label:'Entrantes'}],true);
-
-  // Gráfico 4: Adições vs Reversões
+  barV('c-hist-ent',labels,[{data:hist.map(h=>h.entrantes),backgroundColor:'rgba(79,156,249,.7)',borderRadius:6,borderSkipped:false,label:'Entrantes'}],true);
   barV('c-hist-adic',labels,[
     {label:'Adições',data:hist.map(h=>h.adicoes),backgroundColor:'rgba(52,211,153,.7)',borderRadius:6,borderSkipped:false},
     {label:'Reversões',data:hist.map(h=>Math.abs(h.reversoes)),backgroundColor:'rgba(248,113,113,.6)',borderRadius:6,borderSkipped:false},
   ],true);
-
-  // Gráfico 5: Trabalhista vs Cível
   lineC('c-hist-nat',labels,[
     {label:'Trabalhista',data:hist.map(h=>h.trab),borderColor:'#a78bfa',backgroundColor:'rgba(167,139,250,.08)',fill:true,tension:.4,pointBackgroundColor:'#a78bfa',pointRadius:4},
-    {label:'Cível',data:hist.map(h=>h.civel),borderColor:'#4f9cf9',backgroundColor:'rgba(79,156,249,.06)',fill:true,tension:.4,pointBackgroundColor:'#4f9cf9',pointRadius:4},
+    {label:'Cível',data:hist.map(h=>h.civel),backgroundColor:'rgba(79,156,249,.06)',fill:true,tension:.4,pointBackgroundColor:'#4f9cf9',borderColor:'#4f9cf9',pointRadius:4},
   ],false,fSh);
-
-  // Gráfico 6: Próprios vs Terceiros
   lineC('c-hist-terc',labels,[
     {label:'Terceiros',data:hist.map(h=>h.terceiros),borderColor:'#fb923c',backgroundColor:'rgba(251,146,60,.1)',fill:true,tension:.4,pointBackgroundColor:'#fb923c',pointRadius:4},
     {label:'Total',data:hist.map(h=>h.contig),borderColor:'#4f9cf9',backgroundColor:'transparent',fill:false,tension:.4,pointBackgroundColor:'#4f9cf9',pointRadius:3,borderDash:[4,3],borderWidth:1.5},
   ],false,fSh);
 }
 
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModalUF();closeModalTema();}});
+function openModalHM(tema,uf){
+  const isV=VIEW==='vol';
+  const rows=getFD().ativos.filter(r=>r.tema===tema&&r.estado===uf&&r.cidade);
+  const total=isV?rows.length:rows.reduce((a,r)=>a+r.contigPos,0);
+  const cidGrp=Object.entries(rows.reduce((a,r)=>{const c=r.cidade||'N/A';a[c]=(a[c]||0)+(isV?1:r.contigPos);return a},{})).filter(([k])=>k&&k!=='N/A').sort((a,b)=>b[1]-a[1]);
+  document.getElementById('modal-hm-title').textContent=`${tema.length>40?tema.slice(0,39)+'…':tema} · ${uf}`;
+  document.getElementById('modal-hm-total').textContent=`${cidGrp.length} cidades · ${isV?rows.length+' processos':fSh(total)} · clique fora para fechar`;
+  let cum=0;
+  document.getElementById('modal-hm-pareto').innerHTML=cidGrp.map(([n,v],i)=>{cum+=v;const cp=pct(cum,total);const vp=pct(v,total);return`<div class="pr"><span class="pr-i">${i+1}</span><span class="pr-name">${n}</span><div class="pr-bb" style="width:90px"><div class="pr-bf" style="width:${vp}%;background:${cp<=80?'#2dd4bf':'#64748b'}"></div></div><span class="pr-val">${isV?v.toLocaleString('pt-BR'):fSh(v)}</span><span class="pr-cum">${cp}%</span></div>`;}).join('');
+  if(CH['c-modal-hm']){CH['c-modal-hm'].destroy();delete CH['c-modal-hm'];}
+  const top10=cidGrp.slice(0,10);
+  const colors=top10.map((_,i)=>`hsl(${170+i*12},60%,${55-i*2}%)`);
+  CH['c-modal-hm']=new Chart(document.getElementById('c-modal-hm').getContext('2d'),{
+    type:'bar',data:{labels:top10.map(([k])=>k.length>22?k.slice(0,21)+'…':k),datasets:[{data:top10.map(([,v])=>v),backgroundColor:colors,borderRadius:6,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:64}},
+      plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'right',color:'rgba(255,255,255,.75)',font:{size:10,family:'Outfit'},formatter:v=>isV?v.toLocaleString('pt-BR'):fSh(v)},tooltip:{...CB.plugins.tooltip,callbacks:{label:ctx=>isV?ctx.raw.toLocaleString('pt-BR'):fBRL(ctx.raw)}}},
+      scales:{x:{...AX,ticks:{...AX.ticks,callback:v=>isV?v:fSh(v)}},y:{...AX}}}
+  });
+  const modal=document.getElementById('modal-hm');
+  modal.style.display='flex';
+  modal.onclick=e=>{if(e.target===modal)closeModalHM();};
+}
+function closeModalHM(){document.getElementById('modal-hm').style.display='none';if(CH['c-modal-hm']){CH['c-modal-hm'].destroy();delete CH['c-modal-hm'];}}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModalUF();closeModalTema();if(typeof closeModalHM==='function')closeModalHM();}});
+function openModalTema(tema){const{mes}=getFD();const adic=mes.filter(r=>r.sit==='Adição'&&r.tema===tema);const isV=VIEW==='vol';const total=isV?adic.length:adic.reduce((a,r)=>a+r.valor,0);const ufGrp=Object.entries(isV?adic.reduce((a,r)=>{a[r.estado||'N/A']=(a[r.estado||'N/A']||0)+1;return a},{}):adic.reduce((a,r)=>{a[r.estado||'N/A']=(a[r.estado||'N/A']||0)+r.valor;return a},{})).filter(([k])=>k&&k!=='N/A'&&k!=='').sort((a,b)=>b[1]-a[1]);document.getElementById('modal-tema-title').textContent=`${tema} — ${isV?adic.length+' processos':fSh(total)}`;document.getElementById('modal-tema-total').textContent=`${ufGrp.length} UFs envolvidas · clique fora para fechar`;let cum=0;document.getElementById('modal-tema-pareto').innerHTML=ufGrp.map(([n,v],i)=>{cum+=v;const cp=pct(cum,total);const vp=pct(v,total);return`<div class="pr"><span class="pr-i">${i+1}</span><span class="pr-name">${n}</span><div class="pr-bb" style="width:90px"><div class="pr-bf" style="width:${vp}%;background:${cp<=80?'#a78bfa':'#64748b'}"></div></div><span class="pr-val">${isV?v.toLocaleString('pt-BR'):fSh(v)}</span><span class="pr-cum">${cp}%</span></div>`;}).join('');if(CH['c-modal-tema']){CH['c-modal-tema'].destroy();delete CH['c-modal-tema'];}const top8=ufGrp.slice(0,8);const colors=top8.map((_,i)=>`hsl(${260+i*15},65%,${62-i*3}%)`);CH['c-modal-tema']=new Chart(document.getElementById('c-modal-tema').getContext('2d'),{type:'bar',data:{labels:top8.map(([k])=>k),datasets:[{data:top8.map(([,v])=>v),backgroundColor:colors,borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:60}},plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'right',color:'rgba(255,255,255,.7)',font:{size:10,family:'Outfit'},formatter:v=>isV?v.toLocaleString('pt-BR'):fSh(v)},tooltip:{...CB.plugins.tooltip,callbacks:{label:ctx=>isV?ctx.raw.toLocaleString('pt-BR'):fBRL(ctx.raw)}}},scales:{x:{...AX,ticks:{...AX.ticks,callback:v=>isV?v:fSh(v)}},y:{...AX}}}});const modal=document.getElementById('modal-tema');modal.style.display='flex';modal.onclick=e=>{if(e.target===modal)closeModalTema();};}
 function closeModalTema(){document.getElementById('modal-tema').style.display='none';if(CH['c-modal-tema']){CH['c-modal-tema'].destroy();delete CH['c-modal-tema'];}}
 </script>
 </body>
