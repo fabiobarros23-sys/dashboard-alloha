@@ -355,6 +355,8 @@ tbody tr:hover td{background:var(--s0)}
   </div>
 </div>
 
+<!-- MODAL HEATMAP -->
+<div id="modal-hm" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);align-items:center;justify-content:center"><div style="background:#111c38;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:1.5rem;width:90%;max-width:640px;max-height:85vh;overflow-y:auto;position:relative"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem"><div><div style="font-size:.58rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#2dd4bf;margin-bottom:.2rem">DRILL-DOWN · HEATMAP</div><div id="modal-hm-title" style="font-size:1.05rem;font-weight:800;color:#f1f5f9"></div></div><button onclick="closeModalHM()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:1rem;color:#94a3b8;display:flex;align-items:center;justify-content:center">✕</button></div><div id="modal-hm-total" style="font-size:.72rem;color:#64748b;margin-bottom:1rem"></div><div style="position:relative;height:280px"><canvas id="c-modal-hm"></canvas></div><div id="modal-hm-pareto" style="margin-top:1rem"></div></div></div>
 <!-- APP -->
 <div id="modal-tema" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);align-items:center;justify-content:center"><div style="background:#111c38;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:1.5rem;width:90%;max-width:620px;max-height:85vh;overflow-y:auto;position:relative"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem"><div><div style="font-size:.58rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#a78bfa;margin-bottom:.2rem">DRILL-DOWN · TEMA</div><div id="modal-tema-title" style="font-size:1.1rem;font-weight:800;color:#f1f5f9"></div></div><button onclick="closeModalTema()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:1rem;color:#94a3b8;display:flex;align-items:center;justify-content:center">✕</button></div><div id="modal-tema-total" style="font-size:.72rem;color:#64748b;margin-bottom:1rem"></div><div style="position:relative;height:300px"><canvas id="c-modal-tema"></canvas></div><div id="modal-tema-pareto" style="margin-top:1rem"></div></div></div>
 <div id="modal-uf" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);align-items:center;justify-content:center">
@@ -997,6 +999,7 @@ function parse(wb,fname){
       const numero=cl(g('Nº. PROCESSO','NÚM. PROCESSO'))||'';
       const reclamada=cl(g('RECLAMADA/TERCEIRIZADA'))||'';
       const fase=clu(g('SITUAÇÃO/FASE','FASE'))||'';
+      const cidade=cl(g('CIDADE'))||'';
       // CRITICAL: use OBJETO 1 (TEMA) for all theme analysis
       const tema=clu(g('OBJETO 1 (TEMA)'))||'';
       // CRITICAL: use CONTINGENCIAR PÓS CLOSING for all financial calcs
@@ -1010,7 +1013,7 @@ function parse(wb,fname){
       const anoMes=fmtYM(dataDist);
       const anoMesAtual=fmtYM(dataAtual);
       const anoDist=dataDist?dataDist.getFullYear():null;
-      base.push({st,nat,risco,tipo,estado,empresa,escritorio,autor,numero,reclamada,fase,tema,contigPos,contigPre,pago,causa,deposito,dataAtual,dataDist,anoMes,anoMesAtual,anoDist});
+      base.push({st,nat,risco,tipo,estado,cidade,empresa,escritorio,autor,numero,reclamada,fase,tema,contigPos,contigPre,pago,causa,deposito,dataAtual,dataDist,anoMes,anoMesAtual,anoDist});
     });
 // Deduplicação removida — planilha é fonte da verdade,
 // processos com mesmo número em réus diferentes são registros intencionais.
@@ -1672,7 +1675,10 @@ function bTemas(){
   const hm=t5.map(t=>u6.map(u=>isV?ativos.filter(r=>r.tema===t&&r.estado===u).length:ativos.filter(r=>r.tema===t&&r.estado===u).reduce((a,r)=>a+r.contigPos,0)));
   const maxV=Math.max(1,...hm.flat());
   const htbl=document.getElementById('hm-tbl');
-  htbl.innerHTML=`<thead><tr><th>Tema \\ UF</th>${u6.map(u=>`<th>${u}</th>`).join('')}</tr></thead><tbody>${t5.map((t,ti)=>`<tr><th style="text-align:left;max-width:130px;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:#cbd5e1">${t.length>18?t.slice(0,17)+'…':t}</th>${u6.map((u,ui)=>{const v=hm[ti][ui];const int=Math.round((v/maxV)*100);const bg=`rgba(248,113,113,${(int/100).toFixed(2)})`;const fg=int>50?'#fff':'#e2e8f0';return`<td style="background:${bg};color:${fg}">${isV?v:v>0?fSh(v):''}</td>`;}).join('')}</tr>`).join('')}</tbody>`;
+  htbl.innerHTML=`<thead><tr><th>Tema \\ UF</th>${u6.map(u=>`<th>${u}</th>`).join('')}</tr></thead><tbody>${t5.map((t,ti)=>`<tr><th style="text-align:left;max-width:130px;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:#cbd5e1">${t.length>18?t.slice(0,17)+'…':t}</th>${u6.map((u,ui)=>{const v=hm[ti][ui];const int=Math.round((v/maxV)*100);const bg=`rgba(248,113,113,${(int/100).toFixed(2)})`;const fg=int>50?'#fff':'#e2e8f0';return'<td style="background:'+bg+';color:'+fg+';cursor:'+(v>0?'pointer':'default')+'" data-tema="'+t.replace(/"/g,'&quot;')+'" data-uf="'+u+'" data-val="'+v+'">'+(isV?v:v>0?fSh(v):'')+' </td>';}).join('')}</tr>`).join('')}</tbody>`;
+  htbl.querySelectorAll('td[data-val]').forEach(td=>{
+    if(parseFloat(td.dataset.val)>0) td.addEventListener('click',()=>openModalHM(td.dataset.tema,td.dataset.uf));
+  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1961,6 +1967,29 @@ Retorne APENAS um JSON válido com esta estrutura exata:
 function openModalUF(uf){const{mes}=getFD();const adic=mes.filter(r=>r.sit==='Adição'&&r.estado===uf);const isV=VIEW==='vol';const total=isV?adic.length:adic.reduce((a,r)=>a+r.valor,0);const temaGrp=Object.entries(isV?adic.reduce((a,r)=>{a[r.tema||'N/A']=(a[r.tema||'N/A']||0)+1;return a},{}):adic.reduce((a,r)=>{a[r.tema||'N/A']=(a[r.tema||'N/A']||0)+r.valor;return a},{})).filter(([k])=>k&&k!=='N/A'&&k!=='').sort((a,b)=>b[1]-a[1]);document.getElementById('modal-uf-title').textContent=`Adições em ${uf} — ${isV?adic.length+' processos':fSh(total)}`;document.getElementById('modal-uf-total').textContent=`${temaGrp.length} temas · clique fora para fechar`;let cum=0;document.getElementById('modal-uf-pareto').innerHTML=temaGrp.map(([n,v],i)=>{cum+=v;const cp=pct(cum,total);const vp=pct(v,total);return`<div class="pr"><span class="pr-i">${i+1}</span><span class="pr-name">${n}</span><div class="pr-bb" style="width:90px"><div class="pr-bf" style="width:${vp}%;background:${cp<=80?'#fb923c':'#64748b'}"></div></div><span class="pr-val">${isV?v.toLocaleString('pt-BR'):fSh(v)}</span><span class="pr-cum">${cp}%</span></div>`;}).join('');if(CH['c-modal-uf']){CH['c-modal-uf'].destroy();delete CH['c-modal-uf'];}const top8=temaGrp.slice(0,8);const colors=top8.map((_,i)=>`hsl(${200+i*18},70%,${60-i*3}%)`);CH['c-modal-uf']=new Chart(document.getElementById('c-modal-uf').getContext('2d'),{type:'bar',data:{labels:top8.map(([k])=>k.length>28?k.slice(0,27)+'…':k),datasets:[{data:top8.map(([,v])=>v),backgroundColor:colors,borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:60}},plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'right',color:'rgba(255,255,255,.7)',font:{size:10,family:'Outfit'},formatter:v=>isV?v.toLocaleString('pt-BR'):fSh(v)},tooltip:{...CB.plugins.tooltip,callbacks:{label:ctx=>isV?ctx.raw.toLocaleString('pt-BR'):fBRL(ctx.raw)}}},scales:{x:{...AX,ticks:{...AX.ticks,callback:v=>isV?v:fSh(v)}},y:{...AX}}}});const modal=document.getElementById('modal-uf');modal.style.display='flex';modal.onclick=e=>{if(e.target===modal)closeModalUF();};}
 function closeModalUF(){document.getElementById('modal-uf').style.display='none';if(CH['c-modal-uf']){CH['c-modal-uf'].destroy();delete CH['c-modal-uf'];}}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModalUF();closeModalTema();if(typeof closeModalHM==='function')closeModalHM();}});
+function openModalHM(tema,uf){
+  const isV=VIEW==='vol';
+  const rows=getFD().ativos.filter(r=>r.tema===tema&&r.estado===uf&&r.cidade);
+  const total=isV?rows.length:rows.reduce((a,r)=>a+r.contigPos,0);
+  const cidGrp=Object.entries(rows.reduce((a,r)=>{const c=r.cidade||'N/A';a[c]=(a[c]||0)+(isV?1:r.contigPos);return a},{})).filter(([k])=>k&&k!=='N/A').sort((a,b)=>b[1]-a[1]);
+  document.getElementById('modal-hm-title').textContent=`${tema.length>40?tema.slice(0,39)+'…':tema} · ${uf}`;
+  document.getElementById('modal-hm-total').textContent=`${cidGrp.length} cidades · ${isV?rows.length+' processos':fSh(total)} · clique fora para fechar`;
+  let cum=0;
+  document.getElementById('modal-hm-pareto').innerHTML=cidGrp.map(([n,v],i)=>{cum+=v;const cp=pct(cum,total);const vp=pct(v,total);return`<div class="pr"><span class="pr-i">${i+1}</span><span class="pr-name">${n}</span><div class="pr-bb" style="width:90px"><div class="pr-bf" style="width:${vp}%;background:${cp<=80?'#2dd4bf':'#64748b'}"></div></div><span class="pr-val">${isV?v.toLocaleString('pt-BR'):fSh(v)}</span><span class="pr-cum">${cp}%</span></div>`;}).join('');
+  if(CH['c-modal-hm']){CH['c-modal-hm'].destroy();delete CH['c-modal-hm'];}
+  const top10=cidGrp.slice(0,10);
+  const colors=top10.map((_,i)=>`hsl(${170+i*12},60%,${55-i*2}%)`);
+  CH['c-modal-hm']=new Chart(document.getElementById('c-modal-hm').getContext('2d'),{
+    type:'bar',data:{labels:top10.map(([k])=>k.length>22?k.slice(0,21)+'…':k),datasets:[{data:top10.map(([,v])=>v),backgroundColor:colors,borderRadius:6,borderSkipped:false}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:64}},
+      plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'right',color:'rgba(255,255,255,.75)',font:{size:10,family:'Outfit'},formatter:v=>isV?v.toLocaleString('pt-BR'):fSh(v)},tooltip:{...CB.plugins.tooltip,callbacks:{label:ctx=>isV?ctx.raw.toLocaleString('pt-BR'):fBRL(ctx.raw)}}},
+      scales:{x:{...AX,ticks:{...AX.ticks,callback:v=>isV?v:fSh(v)}},y:{...AX}}}
+  });
+  const modal=document.getElementById('modal-hm');
+  modal.style.display='flex';
+  modal.onclick=e=>{if(e.target===modal)closeModalHM();};
+}
+function closeModalHM(){document.getElementById('modal-hm').style.display='none';if(CH['c-modal-hm']){CH['c-modal-hm'].destroy();delete CH['c-modal-hm'];}}
 function openModalTema(tema){const{mes}=getFD();const adic=mes.filter(r=>r.sit==='Adição'&&r.tema===tema);const isV=VIEW==='vol';const total=isV?adic.length:adic.reduce((a,r)=>a+r.valor,0);const ufGrp=Object.entries(isV?adic.reduce((a,r)=>{a[r.estado||'N/A']=(a[r.estado||'N/A']||0)+1;return a},{}):adic.reduce((a,r)=>{a[r.estado||'N/A']=(a[r.estado||'N/A']||0)+r.valor;return a},{})).filter(([k])=>k&&k!=='N/A'&&k!=='').sort((a,b)=>b[1]-a[1]);document.getElementById('modal-tema-title').textContent=`${tema} — ${isV?adic.length+' processos':fSh(total)}`;document.getElementById('modal-tema-total').textContent=`${ufGrp.length} UFs envolvidas · clique fora para fechar`;let cum=0;document.getElementById('modal-tema-pareto').innerHTML=ufGrp.map(([n,v],i)=>{cum+=v;const cp=pct(cum,total);const vp=pct(v,total);return`<div class="pr"><span class="pr-i">${i+1}</span><span class="pr-name">${n}</span><div class="pr-bb" style="width:90px"><div class="pr-bf" style="width:${vp}%;background:${cp<=80?'#a78bfa':'#64748b'}"></div></div><span class="pr-val">${isV?v.toLocaleString('pt-BR'):fSh(v)}</span><span class="pr-cum">${cp}%</span></div>`;}).join('');if(CH['c-modal-tema']){CH['c-modal-tema'].destroy();delete CH['c-modal-tema'];}const top8=ufGrp.slice(0,8);const colors=top8.map((_,i)=>`hsl(${260+i*15},65%,${62-i*3}%)`);CH['c-modal-tema']=new Chart(document.getElementById('c-modal-tema').getContext('2d'),{type:'bar',data:{labels:top8.map(([k])=>k),datasets:[{data:top8.map(([,v])=>v),backgroundColor:colors,borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:60}},plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'right',color:'rgba(255,255,255,.7)',font:{size:10,family:'Outfit'},formatter:v=>isV?v.toLocaleString('pt-BR'):fSh(v)},tooltip:{...CB.plugins.tooltip,callbacks:{label:ctx=>isV?ctx.raw.toLocaleString('pt-BR'):fBRL(ctx.raw)}}},scales:{x:{...AX,ticks:{...AX.ticks,callback:v=>isV?v:fSh(v)}},y:{...AX}}}});const modal=document.getElementById('modal-tema');modal.style.display='flex';modal.onclick=e=>{if(e.target===modal)closeModalTema();};}
 function closeModalTema(){document.getElementById('modal-tema').style.display='none';if(CH['c-modal-tema']){CH['c-modal-tema'].destroy();delete CH['c-modal-tema'];}}
 </script>
