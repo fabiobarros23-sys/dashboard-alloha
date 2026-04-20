@@ -1147,22 +1147,12 @@ function parse(wb,fname){
   if(wsH){
     // Ler com header numérico e pular as 3 linhas de título (linha 4 = headers reais)
     const rawH=XLSX.utils.sheet_to_json(wsH,{header:1,defval:null});
-    // Encontrar a linha de header (que contém 'Mês' ou variação)
-    let hdrIdx=-1;
-    for(let i=0;i<Math.min(rawH.length,6);i++){
-      const r=rawH[i];
-      if(r&&r[0]&&String(r[0]).includes('2025')||String(r[0]||'').includes('2026')) break;
-      if(r&&r.some(c=>c&&String(c).toLowerCase().includes('mês'))){hdrIdx=i;break;}
-    }
-    if(hdrIdx<0) hdrIdx=3; // fallback: linha 4 (índice 3)
-    const hdrs=rawH[hdrIdx]||[];
-    const dataRows=rawH.slice(hdrIdx+1);
-    const normalize=s=>String(s||'').replace(/\n/g,' ').trim().toUpperCase();
-    dataRows.forEach(rowArr=>{
-      const row={};hdrs.forEach((h,i)=>{if(h)row[normalize(h)]=rowArr[i];});
-      const g=k=>{const nk=normalize(k);return row[nk]!==undefined?row[nk]:null;};
-      const mes=String(g('MÊS (AAAA-MM)')||g('MES (AAAA-MM)')||'').trim();
-      if(!mes||!mes.match(/\d{4}-\d{2}/))return;
+    // Encontrar primeira linha com padrão AAAA-MM na coluna 0
+    const dataStart=rawH.findIndex(r=>r&&/^\d{4}-\d{2}$/.test(String(r[0]||'').trim()));
+    if(dataStart<0){hist=[];return;}
+    rawH.slice(dataStart).forEach(rowArr=>{
+      const mes=String(rowArr[0]||'').trim();
+      if(!mes||!/^\d{4}-\d{2}$/.test(mes))return;
       hist.push({
         mes,
         ativos:    n2v(rowArr[1]),
