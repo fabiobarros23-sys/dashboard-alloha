@@ -1145,24 +1145,38 @@ function parse(wb,fname){
   let hist=[];
   const wsH=wb.Sheets['Historico'];
   if(wsH){
-    XLSX.utils.sheet_to_json(wsH,{defval:null}).forEach(row=>{
-      const g=k=>{const f=Object.keys(row).find(rk=>rk.trim().replace(/\n/g,' ').toUpperCase()===k.trim().replace(/\n/g,' ').toUpperCase());return f!==undefined?row[f]:null;};
-      const mes=String(g('Mês\n(AAAA-MM)')||g('Mês (AAAA-MM)')||g('MÊS (AAAA-MM)')||'').trim();
+    // Ler com header numérico e pular as 3 linhas de título (linha 4 = headers reais)
+    const rawH=XLSX.utils.sheet_to_json(wsH,{header:1,defval:null});
+    // Encontrar a linha de header (que contém 'Mês' ou variação)
+    let hdrIdx=-1;
+    for(let i=0;i<Math.min(rawH.length,6);i++){
+      const r=rawH[i];
+      if(r&&r[0]&&String(r[0]).includes('2025')||String(r[0]||'').includes('2026')) break;
+      if(r&&r.some(c=>c&&String(c).toLowerCase().includes('mês'))){hdrIdx=i;break;}
+    }
+    if(hdrIdx<0) hdrIdx=3; // fallback: linha 4 (índice 3)
+    const hdrs=rawH[hdrIdx]||[];
+    const dataRows=rawH.slice(hdrIdx+1);
+    const normalize=s=>String(s||'').replace(/\n/g,' ').trim().toUpperCase();
+    dataRows.forEach(rowArr=>{
+      const row={};hdrs.forEach((h,i)=>{if(h)row[normalize(h)]=rowArr[i];});
+      const g=k=>{const nk=normalize(k);return row[nk]!==undefined?row[nk]:null;};
+      const mes=String(g('MÊS (AAAA-MM)')||g('MES (AAAA-MM)')||'').trim();
       if(!mes||!mes.match(/\d{4}-\d{2}/))return;
       hist.push({
         mes,
-        ativos:    n2(g('Processos\nAtivos')||g('Processos Ativos')||0),
-        contig:    n2(g('Contingência\nTotal (R$)')||g('Contingência Total (R$)')||0),
-        provavel:  n2(g('Provável\n(R$)')||g('Provável (R$)')||0),
-        possivel:  n2(g('Possível\n(R$)')||g('Possível (R$)')||0),
-        remoto:    n2(g('Remoto\n(qtd.)')||g('Remoto (qtd.)')||0),
-        trab:      n2(g('Trabalhista\n(R$)')||g('Trabalhista (R$)')||0),
-        civel:     n2(g('Cível\n(R$)')||g('Cível (R$)')||0),
-        terceiros: n2(g('Terceiros\n(R$)')||g('Terceiros (R$)')||0),
-        adicoes:   n2(g('Adições\n(R$)')||g('Adições (R$)')||0),
-        reversoes: n2(g('Reversões\n(R$)')||g('Reversões (R$)')||0),
-        entrantes: n2(g('Entrantes\n(qtd.)')||g('Entrantes (qtd.)')||0),
-        indem:     n2(g('Indenizações\n(R$)')||g('Indenizações (R$)')||0),
+        ativos:    n2v(rowArr[1]),
+        contig:    n2v(rowArr[2]),
+        provavel:  n2v(rowArr[3]),
+        possivel:  n2v(rowArr[4]),
+        remoto:    n2v(rowArr[5]),
+        trab:      n2v(rowArr[6]),
+        civel:     n2v(rowArr[7]),
+        terceiros: n2v(rowArr[8]),
+        adicoes:   n2v(rowArr[9]),
+        reversoes: n2v(rowArr[10]),
+        entrantes: n2v(rowArr[11]),
+        indem:     n2v(rowArr[12]),
       });
     });
     hist.sort((a,b)=>a.mes.localeCompare(b.mes));
