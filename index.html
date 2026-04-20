@@ -1579,6 +1579,7 @@ function bProprios(){
 // PAGE: EVOLUÇÃO TEMPORAL
 // ═══════════════════════════════════════════════════════
 function bEvolucao(){
+  const isV=VIEW==='vol';
   const{base,ent}=getFD();
   const arq=base.filter(r=>r.st==='ARQUIVADO');
   // Usar D.period (período da base) em vez de new Date() para mês corrente
@@ -1633,6 +1634,7 @@ function bEvolucao(){
 // PAGE: ENTRANTES — use EXCLUSIVELY from Entrantes tab
 // ═══════════════════════════════════════════════════════
 function bEntrantes(){
+  const isV=VIEW==='vol';
   let{ent}=getFD();
   const efMes=document.getElementById('ef-mes')?.value||'';
   if(efMes) ent=ent.filter(r=>r.anoMesEnt===efMes);
@@ -2040,6 +2042,7 @@ function closeModalUF(){document.getElementById('modal-uf').style.display='none'
 // PAGE: HISTÓRICO
 // ═══════════════════════════════════════════════════════
 function bHistorico(){
+  const isV=VIEW==='vol';
   const hist=getHist2();
   if(!hist.length){
     document.getElementById('kpis-hist').innerHTML='<div style="color:#64748b;padding:2rem;text-align:center;grid-column:1/-1">Aba <strong>Historico</strong> não encontrada. Use a planilha <em>Dashboard_historico_final.xlsx</em> renomeada para Dashboard_atual.xlsx.</div>';
