@@ -1675,7 +1675,12 @@ function bTemas(){
   const hm=t5.map(t=>u6.map(u=>isV?ativos.filter(r=>r.tema===t&&r.estado===u).length:ativos.filter(r=>r.tema===t&&r.estado===u).reduce((a,r)=>a+r.contigPos,0)));
   const maxV=Math.max(1,...hm.flat());
   const htbl=document.getElementById('hm-tbl');
-  htbl.innerHTML=`<thead><tr><th>Tema \\ UF</th>${u6.map(u=>`<th>${u}</th>`).join('')}</tr></thead><tbody>${t5.map((t,ti)=>`<tr><th style="text-align:left;max-width:130px;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:#cbd5e1">${t.length>18?t.slice(0,17)+'…':t}</th>${u6.map((u,ui)=>{const v=hm[ti][ui];const int=Math.round((v/maxV)*100);const bg=`rgba(248,113,113,${(int/100).toFixed(2)})`;const fg=int>50?'#fff':'#e2e8f0';return`<td style="background:${bg};color:${fg};cursor:${v>0?'pointer':'default'}" onclick="${v>0?`openModalHM('${t.replace(/'/g,'\\'')}','${u}')`:''}">${isV?v:v>0?fSh(v):''}</td>`;}).join('')}</tr>`).join('')}</tbody>`;
+  htbl.innerHTML=`<thead><tr><th>Tema \\ UF</th>${u6.map(u=>`<th>${u}</th>`).join('')}</tr></thead><tbody>${t5.map((t,ti)=>`<tr><th style="text-align:left;max-width:130px;overflow:hidden;text-overflow:ellipsis;font-weight:600;color:#cbd5e1">${t.length>18?t.slice(0,17)+'…':t}</th>${u6.map((u,ui)=>{const v=hm[ti][ui];const int=Math.round((v/maxV)*100);const bg='rgba(248,113,113,'+(int/100).toFixed(2)+')';const fg=int>50?'#fff':'#e2e8f0';return'<td style="background:'+bg+';color:'+fg+';cursor:'+(v>0?'pointer':'default')+'" data-tema="'+t.replace(/"/g,'&quot;')+'" data-uf="'+u+'" data-v="'+v+'">'+(isV?v:v>0?fSh(v):'')+' </td>';}).join('')}</tr>`).join('')}</tbody>`;
+  // Adicionar listeners de clique nas células do heatmap
+  htbl.querySelectorAll('td[data-v]').forEach(td=>{
+    const v=parseFloat(td.dataset.v);
+    if(v>0) td.addEventListener('click',()=>openModalHM(td.dataset.tema,td.dataset.uf));
+  });
 }
 
 // ═══════════════════════════════════════════════════════
