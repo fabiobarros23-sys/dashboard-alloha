@@ -1143,33 +1143,33 @@ function parse(wb,fname){
   }
   // ── Parse aba Historico ──
   let hist=[];
+  const n2v=v=>{const p=parseFloat(String(v||'').replace(',','.'));return isNaN(p)?0:p;};
   const wsH=wb.Sheets['Historico'];
   if(wsH){
-    // Ler com header numérico e pular as 3 linhas de título (linha 4 = headers reais)
     const rawH=XLSX.utils.sheet_to_json(wsH,{header:1,defval:null});
-    // Encontrar primeira linha com padrão AAAA-MM na coluna 0
     const dataStart=rawH.findIndex(r=>r&&/^\d{4}-\d{2}$/.test(String(r[0]||'').trim()));
-    if(dataStart<0){hist=[];return;}
-    rawH.slice(dataStart).forEach(rowArr=>{
-      const mes=String(rowArr[0]||'').trim();
-      if(!mes||!/^\d{4}-\d{2}$/.test(mes))return;
-      hist.push({
-        mes,
-        ativos:    n2v(rowArr[1]),
-        contig:    n2v(rowArr[2]),
-        provavel:  n2v(rowArr[3]),
-        possivel:  n2v(rowArr[4]),
-        remoto:    n2v(rowArr[5]),
-        trab:      n2v(rowArr[6]),
-        civel:     n2v(rowArr[7]),
-        terceiros: n2v(rowArr[8]),
-        adicoes:   n2v(rowArr[9]),
-        reversoes: n2v(rowArr[10]),
-        entrantes: n2v(rowArr[11]),
-        indem:     n2v(rowArr[12]),
+    if(dataStart>=0){
+      rawH.slice(dataStart).forEach(rowArr=>{
+        const mes=String(rowArr[0]||'').trim();
+        if(!mes||!/^\d{4}-\d{2}$/.test(mes))return;
+        hist.push({
+          mes,
+          ativos:    n2v(rowArr[1]),
+          contig:    n2v(rowArr[2]),
+          provavel:  n2v(rowArr[3]),
+          possivel:  n2v(rowArr[4]),
+          remoto:    n2v(rowArr[5]),
+          trab:      n2v(rowArr[6]),
+          civel:     n2v(rowArr[7]),
+          terceiros: n2v(rowArr[8]),
+          adicoes:   n2v(rowArr[9]),
+          reversoes: n2v(rowArr[10]),
+          entrantes: n2v(rowArr[11]),
+          indem:     n2v(rowArr[12]),
+        });
       });
-    });
-    hist.sort((a,b)=>a.mes.localeCompare(b.mes));
+      hist.sort((a,b)=>a.mes.localeCompare(b.mes));
+    }
   }
   const ativos=base.filter(r=>r.st==='ATIVO');
   const now=new Date();
