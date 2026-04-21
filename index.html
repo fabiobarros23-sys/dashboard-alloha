@@ -132,6 +132,18 @@ body{font-family:'Outfit',sans-serif;background:var(--ink);color:#e2e8f0;min-hei
 .gfb{display:flex;align-items:center;gap:.55rem;padding:.45rem 1.6rem;border-bottom:1px solid var(--bd);flex-wrap:wrap;background:rgba(13,17,23,.92)}
 .gfl{font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--sld);white-space:nowrap}
 .gfs{background:var(--ink8);border:1px solid var(--bd);border-radius:7px;padding:.28rem .6rem;font-family:'Outfit',sans-serif;font-size:.73rem;color:#e2e8f0;outline:none;cursor:pointer;transition:border-color .2s}
+/* Multi-select dropdown */
+.msd{position:relative;display:inline-block;}
+.msd-btn{background:var(--ink8);border:1px solid var(--bd);border-radius:7px;padding:.28rem .6rem .28rem .8rem;font-family:'Outfit',sans-serif;font-size:.73rem;color:#94a3b8;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:.4rem;min-width:120px;user-select:none;}
+.msd-btn:hover,.msd-btn.af{border-color:var(--g);}
+.msd-btn.af{background:var(--gdim);color:var(--gl);}
+.msd-btn::after{content:'▾';font-size:.6rem;margin-left:auto;opacity:.6;}
+.msd-drop{display:none;position:absolute;top:calc(100% + 4px);left:0;background:#1e293b;border:1px solid var(--bd);border-radius:8px;padding:.35rem 0;min-width:180px;z-index:9000;box-shadow:0 8px 24px rgba(0,0,0,.5);}
+.msd-drop.open{display:block;}
+.msd-item{display:flex;align-items:center;gap:.5rem;padding:.3rem .75rem;cursor:pointer;font-size:.72rem;color:#94a3b8;transition:background .15s;}
+.msd-item:hover{background:rgba(255,255,255,.06);color:#e2e8f0;}
+.msd-item input[type=checkbox]{accent-color:var(--g);width:13px;height:13px;cursor:pointer;}
+.msd-item.checked{color:#e2e8f0;}
 .gfs:hover,.gfs:focus{border-color:var(--g)}
 .gfs.af{border-color:var(--g);background:var(--gdim);color:var(--gl)}
 .vt{display:flex;background:var(--s1);border:1px solid var(--bd);border-radius:7px;padding:2px;gap:2px}
@@ -429,10 +441,10 @@ tbody tr:hover td{background:var(--s0)}
       </div>
       <div class="gfb">
         <span class="gfl">Filtros:</span>
-        <select class="gfs" id="gf-nat" onchange="applyGF()"><option value="">Natureza: Todas</option><option value="CÍVEL">Cível</option><option value="TRABALHISTA">Trabalhista</option></select>
-        <select class="gfs" id="gf-st" onchange="applyGF()"><option value="">Status: Todos</option><option value="ATIVO">Apenas Ativos</option><option value="NAO_ATIVO">Não Ativos</option><option value="ARQUIVADO">Arquivados</option></select>
-        <select class="gfs" id="gf-tp" onchange="applyGF()"><option value="">Tipo: Todos</option><option value="PROPRIO">Próprios</option><option value="TERCEIRO">Terceiros</option></select>
-        <select class="gfs" id="gf-rk" onchange="applyGF()"><option value="">Risco: Todos</option><option value="PROVÁVEL">Provável</option><option value="POSSÍVEL">Possível</option><option value="REMOTO">Remoto</option></select>
+        <div class="msd" id="msd-wrap-nat"><div class="msd-btn" id="msd-btn-nat" onclick="openMSD('nat')">Natureza: Todas</div><div class="msd-drop" id="msd-drop-nat"><label class="msd-item" onclick="toggleMSD(event,'nat','CÍVEL')"><input type="checkbox" value="CÍVEL" id="msd-nat-CÍVEL"> Cível</label><label class="msd-item" onclick="toggleMSD(event,'nat','TRABALHISTA')"><input type="checkbox" value="TRABALHISTA" id="msd-nat-TRABALHISTA"> Trabalhista</label></div></div>
+        <div class="msd" id="msd-wrap-st"><div class="msd-btn" id="msd-btn-st" onclick="openMSD('st')">Status: Todos</div><div class="msd-drop" id="msd-drop-st"><label class="msd-item" onclick="toggleMSD(event,'st','ATIVO')"><input type="checkbox" value="ATIVO" id="msd-st-ATIVO"> Apenas Ativos</label><label class="msd-item" onclick="toggleMSD(event,'st','NAO_ATIVO')"><input type="checkbox" value="NAO_ATIVO" id="msd-st-NAO_ATIVO"> Não Ativos</label><label class="msd-item" onclick="toggleMSD(event,'st','ARQUIVADO')"><input type="checkbox" value="ARQUIVADO" id="msd-st-ARQUIVADO"> Arquivado</label></div></div>
+        <div class="msd" id="msd-wrap-tp"><div class="msd-btn" id="msd-btn-tp" onclick="openMSD('tp')">Tipo: Todos</div><div class="msd-drop" id="msd-drop-tp"><label class="msd-item" onclick="toggleMSD(event,'tp','PROPRIO')"><input type="checkbox" value="PROPRIO" id="msd-tp-PROPRIO"> Próprios</label><label class="msd-item" onclick="toggleMSD(event,'tp','TERCEIRO')"><input type="checkbox" value="TERCEIRO" id="msd-tp-TERCEIRO"> Terceiros</label></div></div>
+        <div class="msd" id="msd-wrap-rk"><div class="msd-btn" id="msd-btn-rk" onclick="openMSD('rk')">Risco: Todos</div><div class="msd-drop" id="msd-drop-rk"><label class="msd-item" onclick="toggleMSD(event,'rk','PROVÁVEL')"><input type="checkbox" value="PROVÁVEL" id="msd-rk-PROVÁVEL"> Provável</label><label class="msd-item" onclick="toggleMSD(event,'rk','POSSÍVEL')"><input type="checkbox" value="POSSÍVEL" id="msd-rk-POSSÍVEL"> Possível</label><label class="msd-item" onclick="toggleMSD(event,'rk','REMOTO')"><input type="checkbox" value="REMOTO" id="msd-rk-REMOTO"> Remoto</label></div></div>
         <div class="gfsep"></div>
         <select class="gfs" id="gf-per" onchange="applyGF()"><option value="">Período: Atual</option></select>
         <div class="gfsep"></div>
@@ -510,8 +522,8 @@ tbody tr:hover td{background:var(--s0)}
       <div class="sh"><div class="sn">Indenizações</div><div class="st">Desembolso do Mês</div><div class="sd">Análise dos pagamentos realizados no período: acordos, condenações e custas. Relação com provisão constituída.</div></div>
       <div class="pag-fbar">
         <span class="pag-fbar-lbl">Filtro da seção:</span>
-        <select class="gfs" id="pf-tipo" onchange="bPagamentos()" style="font-size:.72rem"><option value="">Tipo de Pagamento: Todos</option><option value="ACORDO">Acordo</option><option value="CONDENAÇÃO/CUMPRIMENTO DE SENTENÇA">Condenação/Cumprimento</option><option value="CUSTAS">Custas</option><option value="DJ RECURSAL">DJ Recursal</option></select>
-        <select class="gfs" id="pf-risco" onchange="bPagamentos()" style="font-size:.72rem"><option value="">Risco: Todos</option><option value="PROVÁVEL">Provável</option><option value="POSSÍVEL">Possível</option><option value="REMOTO">Remoto</option></select>
+        <div class="msd" id="msd-wrap-pf-tipo"><div class="msd-btn" id="msd-btn-pf-tipo" onclick="openMSD('pf-tipo')">Tipo de Pagamento: Todos</div><div class="msd-drop" id="msd-drop-pf-tipo"><label class="msd-item" onclick="toggleMSD(event,'pf-tipo','ACORDO')"><input type="checkbox" value="ACORDO" id="msd-pf-tipo-ACORDO"> Acordo</label><label class="msd-item" onclick="toggleMSD(event,'pf-tipo','CONDENAÇÃO/CUMPRIMENTO DE SENTENÇA')"><input type="checkbox" value="CONDENAÇÃO/CUMPRIMENTO DE SENTENÇA" id="msd-pf-tipo-CONDENAÇÃO/CUMPRIMENTO_DE_SENTENÇA"> Condenação/Sentença</label><label class="msd-item" onclick="toggleMSD(event,'pf-tipo','ASSISTÊNCIA JURÍDICA')"><input type="checkbox" value="ASSISTÊNCIA JURÍDICA" id="msd-pf-tipo-ASSISTÊNCIA_JURÍDICA"> Assist. Jurídica</label></div></div>
+        <div class="msd" id="msd-wrap-pf-risco"><div class="msd-btn" id="msd-btn-pf-risco" onclick="openMSD('pf-risco')">Risco: Todos</div><div class="msd-drop" id="msd-drop-pf-risco"><label class="msd-item" onclick="toggleMSD(event,'pf-risco','PROVÁVEL')"><input type="checkbox" value="PROVÁVEL" id="msd-pf-risco-PROVÁVEL"> Provável</label><label class="msd-item" onclick="toggleMSD(event,'pf-risco','POSSÍVEL')"><input type="checkbox" value="POSSÍVEL" id="msd-pf-risco-POSSÍVEL"> Possível</label><label class="msd-item" onclick="toggleMSD(event,'pf-risco','REMOTO')"><input type="checkbox" value="REMOTO" id="msd-pf-risco-REMOTO"> Remoto</label></div></div>
         <select class="gfs" id="pf-closing" onchange="bPagamentos()" style="font-size:.72rem"><option value="">Closing: Todos</option><option value="PÓS CLOSING">Pós Closing</option><option value="PRÉ CLOSING">Pré Closing</option><option value="MISTO">Misto</option></select>
       </div>
       <div class="kr kr4 mb2" id="kpis-pag"></div>
@@ -669,7 +681,7 @@ tbody tr:hover td{background:var(--s0)}
     <!-- ██ ENTRANTES ██ -->
     <div id="pg-entrantes" class="pg">
       <div class="sh"><div class="sn">Entrantes</div><div class="st">Processos Entrantes</div><div class="sd">Evolução desde out/2025. Insights automáticos sobre variação mensal, temas ofensores e concentração de terceirizadas.</div></div>
-      <div class="pag-fbar" style="margin-bottom:.8rem"><span class="pag-fbar-lbl">Filtro da seção:</span><select class="gfs" id="ef-mes" onchange="bEntrantes()" style="font-size:.72rem"><option value="">Mês: Todos</option></select></div>
+      <div class="pag-fbar" style="margin-bottom:.8rem"><span class="pag-fbar-lbl">Filtro da seção:</span><div class="msd" id="msd-wrap-ef-mes"><div class="msd-btn" id="msd-btn-ef-mes" onclick="openMSD('ef-mes')">Mês: Todos</div><div class="msd-drop" id="msd-drop-ef-mes" id="msd-drop-ef-mes"></div></div></div>
       <div class="ins"><div class="ins-t">★ INTELIGÊNCIA AUTOMÁTICA · ENTRANTES</div><div class="ins-g" id="ig-ent"></div></div>
       <div class="kr kr4 mb2" id="kpis-ent"></div>
       <div class="cd mb2">
@@ -733,6 +745,28 @@ tbody tr:hover td{background:var(--s0)}
       <div class="cd mb">
         <div class="cdh"><div><div class="cdt">Próprios vs. Terceiros — Evolução (R$)</div><div class="cds">Participação de terceiros na contingência total</div></div></div>
         <div class="cdb npt"><div class="cw" style="height:190px"><canvas id="c-hist-terc"></canvas></div></div>
+      </div>
+    </div>
+
+      <div class="cd mb">
+        <div class="cdh"><div><div class="cdt">Indicadores Financeiros — Tabela Comparativa</div><div class="cds">Ticket Médio, Saldo Líquido e Exposição sobre Receita por mês</div></div></div>
+        <div class="cdb" style="overflow-x:auto">
+          <table class="hm-table" id="tbl-ind-fin" style="min-width:100%;font-size:.72rem">
+            <thead><tr>
+              <th style="text-align:left">Mês</th>
+              <th>Contingência Total</th>
+              <th>Ticket Médio</th>
+              <th>Adições</th>
+              <th>Reversões</th>
+              <th>Saldo Líquido</th>
+              <th>Indenizações</th>
+              <th style="background:rgba(255,235,59,.08);color:#fbbf24">Receita Líq. *</th>
+              <th style="background:rgba(255,235,59,.08);color:#fbbf24">Conting./Receita</th>
+            </tr></thead>
+            <tbody id="tbl-ind-fin-body"></tbody>
+          </table>
+          <div style="font-size:.62rem;color:#475569;margin-top:.5rem">* Receita Líquida: preencher na coluna R da aba Historico da planilha.</div>
+        </div>
       </div>
     </div>
 
@@ -806,7 +840,7 @@ if(sessionStorage.getItem('alloha_auth')==='1'){
 // ═══════════════════════════════════════════════════════
 // GLOBALS
 // ═══════════════════════════════════════════════════════
-let D=null, CH={}, GF={nat:'',st:'',tp:'',rk:'',per:''}, VIEW='vol', PRES=false;
+let D=null, CH={}, GF={nat:[],st:[],tp:[],rk:[],per:''}, VIEW='vol', PRES=false;
 const SK='alloha_v6';
 const MONTHS_PT={janeiro:'01',fevereiro:'02',março:'03',abril:'04',maio:'05',junho:'06',julho:'07',agosto:'08',setembro:'09',outubro:'10',novembro:'11',dezembro:'12'};
 
@@ -1167,6 +1201,7 @@ function parse(wb,fname){
           reversoes: n2v(rowArr[10]),
           entrantes: n2v(rowArr[11]),
           indem:     n2v(rowArr[12]),
+          _receita:  n2v(rowArr[17]),
         });
       });
       hist.sort((a,b)=>a.mes.localeCompare(b.mes));
@@ -1188,37 +1223,77 @@ function getHist2(){return D&&D.hist?D.hist:[];}
 function getFD(){
   if(!D)return{base:[],ativos:[],mes:[],ent:[],pag:[]};
   let base=D.base;
-  if(GF.nat) base=base.filter(r=>r.nat===GF.nat);
-  if(GF.st==='ATIVO') base=base.filter(r=>r.st==='ATIVO');
-  else if(GF.st==='NAO_ATIVO') base=base.filter(r=>r.st!=='ATIVO');
-  else if(GF.st) base=base.filter(r=>r.st===GF.st);
-  if(GF.tp) base=base.filter(r=>r.tipo===GF.tp);
-  if(GF.rk) base=base.filter(r=>r.risco===GF.rk);
+  if(GF.nat.length) base=base.filter(r=>GF.nat.includes(r.nat));
+  if(GF.st.length){
+    base=base.filter(r=>{
+      return GF.st.some(s=>s==='ATIVO'?r.st==='ATIVO':s==='NAO_ATIVO'?r.st!=='ATIVO':r.st===s);
+    });
+  }
+  if(GF.tp.length) base=base.filter(r=>GF.tp.includes(r.tipo));
+  if(GF.rk.length) base=base.filter(r=>GF.rk.includes(r.risco));
   const ativos=base.filter(r=>r.st==='ATIVO');
   let mes=D.mes;
-  if(GF.nat) mes=mes.filter(r=>r.nat===GF.nat);
-  if(GF.tp) mes=mes.filter(r=>r.tipo===GF.tp);
+  if(GF.nat.length) mes=mes.filter(r=>GF.nat.includes(r.nat));
+  if(GF.tp.length) mes=mes.filter(r=>GF.tp.includes(r.tipo));
   let ent=D.ent;
-  if(GF.nat) ent=ent.filter(r=>r.nat===GF.nat);
-  if(GF.tp) ent=ent.filter(r=>r.tipo===GF.tp);
+  if(GF.nat.length) ent=ent.filter(r=>GF.nat.includes(r.nat));
+  if(GF.tp.length) ent=ent.filter(r=>GF.tp.includes(r.tipo));
   let pag=D.pag;
-  if(GF.nat) pag=pag.filter(r=>r.nat===GF.nat);
-  if(GF.rk) pag=pag.filter(r=>r.risco===GF.rk);
+  if(GF.nat.length) pag=pag.filter(r=>GF.nat.includes(r.nat));
+  if(GF.rk.length) pag=pag.filter(r=>GF.rk.includes(r.risco));
   return{base,ativos,mes,ent,pag};
 }
+function getMSDVals(id){
+  const drop=document.getElementById('msd-drop-'+id);
+  if(!drop)return[];
+  return Array.from(drop.querySelectorAll('input[type=checkbox]:checked')).map(c=>c.value);
+}
+function openMSD(id){
+  const drop=document.getElementById('msd-drop-'+id);
+  if(!drop)return;
+  const isOpen=drop.classList.contains('open');
+  // Fechar todos
+  document.querySelectorAll('.msd-drop.open').forEach(d=>d.classList.remove('open'));
+  if(!isOpen) drop.classList.add('open');
+}
+function toggleMSD(e,id,val){
+  e.stopPropagation();
+  applyGF();
+}
+function updateMSDBtnLabel(id,defaultLabel){
+  const vals=getMSDVals(id);
+  const btn=document.getElementById('msd-btn-'+id);
+  if(!btn)return;
+  if(vals.length===0){btn.textContent=defaultLabel;btn.classList.remove('af');}
+  else{btn.textContent=vals.length===1?vals[0]:vals.length+' selecionados';btn.classList.add('af');}
+  btn.insertAdjacentHTML('beforeend','');
+}
+// Fechar dropdowns ao clicar fora
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.msd')) document.querySelectorAll('.msd-drop.open').forEach(d=>d.classList.remove('open'));
+});
 function applyGF(){
-  GF.nat=document.getElementById('gf-nat').value;
-  GF.st=document.getElementById('gf-st').value;
-  GF.tp=document.getElementById('gf-tp').value;
-  GF.rk=document.getElementById('gf-rk').value;
-  GF.per=document.getElementById('gf-per').value;
-  ['gf-nat','gf-st','gf-tp','gf-rk'].forEach(id=>{const el=document.getElementById(id);el.classList.toggle('af',el.value!=='');});
+  GF.nat=getMSDVals('nat');
+  GF.st=getMSDVals('st');
+  GF.tp=getMSDVals('tp');
+  GF.rk=getMSDVals('rk');
+  GF.per=document.getElementById('gf-per')?.value||'';
+  ['nat','st','tp','rk'].forEach(id=>{
+    const defaultLabels={nat:'Natureza: Todas',st:'Status: Todos',tp:'Tipo: Todos',rk:'Risco: Todos'};
+    updateMSDBtnLabel(id,defaultLabels[id]);
+  });
   if(GF.per){const h=getHist();const e=h.find(x=>x.key===GF.per);if(e){try{D=desD(JSON.parse(e.data));}catch{}}}
   rebuildAll();
 }
 function resetGF(){
-  ['gf-nat','gf-st','gf-tp','gf-rk'].forEach(id=>{document.getElementById(id).value='';document.getElementById(id).classList.remove('af');});
-  document.getElementById('gf-per').value='';GF={nat:'',st:'',tp:'',rk:'',per:''};
+  ['nat','st','tp','rk'].forEach(id=>{
+    const drop=document.getElementById('msd-drop-'+id);
+    if(drop) drop.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);
+  });
+  const defaultLabels={nat:'Natureza: Todas',st:'Status: Todos',tp:'Tipo: Todos',rk:'Risco: Todos'};
+  ['nat','st','tp','rk'].forEach(id=>updateMSDBtnLabel(id,defaultLabels[id]));
+  const per=document.getElementById('gf-per');if(per)per.value='';
+  GF={nat:[],st:[],tp:[],rk:[],per:''};
   rebuildAll();
 }
 function setView(v){VIEW=v;document.getElementById('vt-v').classList.toggle('ac',v==='vol');document.getElementById('vt-f').classList.toggle('ac',v==='fin');rebuildAll();}
@@ -1383,12 +1458,16 @@ function bAdicoes(){
 function bPagamentos(){
   let{pag}=getFD();
   // Local section filters
-  const pfTipo=document.getElementById('pf-tipo')?.value||'';
-  const pfRisco=document.getElementById('pf-risco')?.value||'';
+  const pfTipo=getMSDVals('pf-tipo');
+  const pfRisco=getMSDVals('pf-risco');
   const pfClosing=document.getElementById('pf-closing')?.value||'';
-  if(pfTipo) pag=pag.filter(r=>r.tipo===pfTipo);
-  if(pfRisco) pag=pag.filter(r=>r.risco===pfRisco);
+  if(pfTipo.length) pag=pag.filter(r=>pfTipo.includes(r.tipo));
+  if(pfRisco.length) pag=pag.filter(r=>pfRisco.includes(r.risco));
   if(pfClosing) pag=pag.filter(r=>r.closing===pfClosing);
+  ['pf-tipo','pf-risco'].forEach(id=>{
+    const labels={'pf-tipo':'Tipo de Pagamento: Todos','pf-risco':'Risco: Todos'};
+    updateMSDBtnLabel(id,labels[id]);
+  });
   const tPag=pag.reduce((a,r)=>a+r.pagamento,0);
   const tCont=pag.reduce((a,r)=>a+r.contingencia,0);
   const economia=tCont-tPag;
@@ -1641,8 +1720,8 @@ function bEvolucao(){
 function bEntrantes(){
   const isV=VIEW==='vol';
   let{ent}=getFD();
-  const efMes=document.getElementById('ef-mes')?.value||'';
-  if(efMes) ent=ent.filter(r=>r.anoMesEnt===efMes);
+  const efMes=getMSDVals('ef-mes');
+  if(efMes.length) ent=ent.filter(r=>efMes.includes(r.anoMesEnt));
   const t3=ent.filter(r=>r.tipo==='TERCEIRO');
   const prop=ent.filter(r=>r.tipo==='PROPRIO');
   const meses=[...new Set(ent.map(r=>r.anoMesEnt))].sort();
@@ -1693,7 +1772,14 @@ function bEntrantes(){
     ].map(x=>`<div class="ic"><div class="ic-dot" style="background:${x.c}"></div><div class="ic-tx">${x.t}</div></div>`).join('');
   }
 
-  const efEl=document.getElementById('ef-mes');if(efEl){const mesesDisp=[...new Set(getFD().ent.map(r=>r.anoMesEnt).filter(Boolean))].sort();const selAtual=efEl.value;efEl.innerHTML='<option value="">Mês: Todos</option>'+mesesDisp.map(m=>`<option value="${m}" ${m===selAtual?'selected':''}>${fMon(m)}</option>`).join('');}
+  // Popular multi-select de meses dos entrantes
+  const efDrop=document.getElementById('msd-drop-ef-mes');
+  if(efDrop){
+    const mesesDisp=[...new Set(getFD().ent.map(r=>r.anoMesEnt).filter(Boolean))].sort();
+    const selAtual=getMSDVals('ef-mes');
+    efDrop.innerHTML=mesesDisp.map(m=>`<label class="msd-item" onclick="toggleMSD(event,'ef-mes','${m}')"><input type="checkbox" value="${m}" ${selAtual.includes(m)?'checked':''}> ${fMon(m)}</label>`).join('');
+    updateMSDBtnLabel('ef-mes','Mês: Todos');
+  }
   document.getElementById('kpis-ent').innerHTML=
     kpi('Total Entrantes',ent.length.toLocaleString('pt-BR'),`${meses.length} meses · desde out/2025`,'#4f9cf9')+
     kpi('Próprios',prop.length.toLocaleString('pt-BR'),`${pct(prop.length,ent.length)}% do total`,'#4f9cf9')+
@@ -2087,6 +2173,29 @@ function bHistorico(){
     {label:'Terceiros',data:hist.map(h=>h.terceiros),borderColor:'#fb923c',backgroundColor:'rgba(251,146,60,.1)',fill:true,tension:.4,pointBackgroundColor:'#fb923c',pointRadius:4},
     {label:'Total',data:hist.map(h=>h.contig),borderColor:'#4f9cf9',backgroundColor:'transparent',fill:false,tension:.4,pointBackgroundColor:'#4f9cf9',pointRadius:3,borderDash:[4,3],borderWidth:1.5},
   ],false,fSh);
+  // Tabela comparativa de indicadores financeiros
+  const tbody=document.getElementById('tbl-ind-fin-body');
+  if(tbody){
+    tbody.innerHTML=hist.map((h,i)=>{
+      const prev=i>0?hist[i-1]:null;
+      const ticket=h.ativos>0?(h.contig/h.ativos):0;
+      const saldo=h.adicoes+h.reversoes;
+      const contRec=h.contig&&h.contig>0&&hist[i]._receita>0?(h.contig/hist[i]._receita):null;
+      const fVar=(v,vp,inv=false)=>{if(!vp||vp===0)return'';const d=Math.round(((v-vp)/Math.abs(vp))*1000)/10;const up=d>0;const good=inv?!up:up;return`<span style="font-size:.65rem;color:${good?'#34d399':'#f87171'}">${up?'▲':'▼'}${Math.abs(d)}%</span>`;};
+      return`<tr>
+        <td style="font-weight:700;color:#4f9cf9;text-align:left">${fMon(h.mes)}</td>
+        <td>${fSh(h.contig)} ${fVar(h.contig,prev?.contig)}</td>
+        <td>${fSh(ticket)} ${fVar(ticket,prev&&prev.ativos>0?prev.contig/prev.ativos:0)}</td>
+        <td style="color:#34d399">${h.adicoes>0?fSh(h.adicoes):'—'}</td>
+        <td style="color:#f87171">${h.reversoes<0?fSh(Math.abs(h.reversoes)):'—'}</td>
+        <td style="font-weight:600;color:${saldo>=0?'#34d399':'#f87171'}">${fSh(Math.abs(saldo))} ${saldo>=0?'▲':'▼'}</td>
+        <td>${h.indem>0?fSh(h.indem):'—'}</td>
+        <td style="color:#fbbf24">${h._receita>0?fSh(h._receita):'—'}</td>
+        <td style="color:#fbbf24">${contRec?`${(contRec*100).toFixed(1)}%`:'—'}</td>
+      </tr>`;
+    }).join('');
+  }
+
 }
 
 function openModalHM(tema,uf){
