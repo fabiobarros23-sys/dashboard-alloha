@@ -1143,33 +1143,43 @@ function parse(wb,fname){
   }
   // ── Parse aba Historico ──
   let hist=[];
-  const n2v=v=>{const p=parseFloat(String(v||'').replace(',','.'));return isNaN(p)?0:p;};
   const wsH=wb.Sheets['Historico'];
   if(wsH){
+    // Ler com header numérico e pular as 3 linhas de título (linha 4 = headers reais)
     const rawH=XLSX.utils.sheet_to_json(wsH,{header:1,defval:null});
-    const dataStart=rawH.findIndex(r=>r&&/^\d{4}-\d{2}$/.test(String(r[0]||'').trim()));
-    if(dataStart>=0){
-      rawH.slice(dataStart).forEach(rowArr=>{
-        const mes=String(rowArr[0]||'').trim();
-        if(!mes||!/^\d{4}-\d{2}$/.test(mes))return;
-        hist.push({
-          mes,
-          ativos:    n2v(rowArr[1]),
-          contig:    n2v(rowArr[2]),
-          provavel:  n2v(rowArr[3]),
-          possivel:  n2v(rowArr[4]),
-          remoto:    n2v(rowArr[5]),
-          trab:      n2v(rowArr[6]),
-          civel:     n2v(rowArr[7]),
-          terceiros: n2v(rowArr[8]),
-          adicoes:   n2v(rowArr[9]),
-          reversoes: n2v(rowArr[10]),
-          entrantes: n2v(rowArr[11]),
-          indem:     n2v(rowArr[12]),
-        });
-      });
-      hist.sort((a,b)=>a.mes.localeCompare(b.mes));
+    // Encontrar a linha de header (que contém 'Mês' ou variação)
+    let hdrIdx=-1;
+    for(let i=0;i<Math.min(rawH.length,6);i++){
+      const r=rawH[i];
+      if(r&&r[0]&&String(r[0]).includes('2025')||String(r[0]||'').includes('2026')) break;
+      if(r&&r.some(c=>c&&String(c).toLowerCase().includes('mês'))){hdrIdx=i;break;}
     }
+    if(hdrIdx<0) hdrIdx=3; // fallback: linha 4 (índice 3)
+    const hdrs=rawH[hdrIdx]||[];
+    const dataRows=rawH.slice(hdrIdx+1);
+    const normalize=s=>String(s||'').replace(/\n/g,' ').trim().toUpperCase();
+    dataRows.forEach(rowArr=>{
+      const row={};hdrs.forEach((h,i)=>{if(h)row[normalize(h)]=rowArr[i];});
+      const g=k=>{const nk=normalize(k);return row[nk]!==undefined?row[nk]:null;};
+      const mes=String(g('MÊS (AAAA-MM)')||g('MES (AAAA-MM)')||'').trim();
+      if(!mes||!mes.match(/\d{4}-\d{2}/))return;
+      hist.push({
+        mes,
+        ativos:    n2v(rowArr[1]),
+        contig:    n2v(rowArr[2]),
+        provavel:  n2v(rowArr[3]),
+        possivel:  n2v(rowArr[4]),
+        remoto:    n2v(rowArr[5]),
+        trab:      n2v(rowArr[6]),
+        civel:     n2v(rowArr[7]),
+        terceiros: n2v(rowArr[8]),
+        adicoes:   n2v(rowArr[9]),
+        reversoes: n2v(rowArr[10]),
+        entrantes: n2v(rowArr[11]),
+        indem:     n2v(rowArr[12]),
+      });
+    });
+    hist.sort((a,b)=>a.mes.localeCompare(b.mes));
   }
   const ativos=base.filter(r=>r.st==='ATIVO');
   const now=new Date();
@@ -2073,7 +2083,7 @@ function bHistorico(){
   lineC('c-hist-ativos',labels,[
     {label:'Processos Ativos',data:hist.map(h=>h.ativos),borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.1)',fill:true,tension:.4,pointBackgroundColor:'#34d399',pointRadius:4},
   ]);
-  barV('c-hist-ent',labels,[{data:hist.map(h=>h.entrantes),backgroundColor:'rgba(79,156,249,.7)',borderRadius:6,borderSkipped:false,label:'Entrantes'}],true);
+  barV('c-hist-ent',labels,[{data:hist.map(h=>h.entrantes),backgroundColor:'rgba(79,156,249,.7)',borderRadius:6,borderSkipped:false,label:'Entrantes'}],false);
   barV('c-hist-adic',labels,[
     {label:'Adições',data:hist.map(h=>h.adicoes),backgroundColor:'rgba(52,211,153,.7)',borderRadius:6,borderSkipped:false},
     {label:'Reversões',data:hist.map(h=>Math.abs(h.reversoes)),backgroundColor:'rgba(248,113,113,.6)',borderRadius:6,borderSkipped:false},
