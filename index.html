@@ -831,12 +831,17 @@ tbody tr:hover td{background:var(--s0)}
     document.getElementById('login-pwd').focus();
   }
 }
-if(sessionStorage.getItem('alloha_auth')==='1'){
-  document.addEventListener('DOMContentLoaded',()=>{
-    const ls=document.getElementById('login-screen');
-    if(ls) ls.style.display='none';
-  });
-}
+document.addEventListener('DOMContentLoaded',()=>{
+  // Sempre mostrar tela de login — só esconde após senha correta na sessão atual
+  const ls=document.getElementById('login-screen');
+  if(ls && sessionStorage.getItem('alloha_auth')==='1'){
+    ls.style.display='none';
+  } else if(ls){
+    ls.style.display='flex';
+    // Limpar qualquer auth anterior para forçar nova autenticação
+    sessionStorage.removeItem('alloha_auth');
+  }
+});
 // ═══════════════════════════════════════════════════════
 // GLOBALS
 // ═══════════════════════════════════════════════════════
@@ -1110,7 +1115,8 @@ function parse(wb,fname){
       const dataAlt=pD(g('Data Alteração'));
       const dataDist=pD(g('Data Distribuição'));
       const procNum=cl(g('Rótulos de Linha'))||'';
-      mes.push({sit,op,nat,tema,estado,tipo,emp3,rAnt,valor,aging,dataAlt,dataDist,procNum});
+      const compMes=cl(g('Competência'))||'';
+      mes.push({sit,op,nat,tema,estado,tipo,emp3,rAnt,valor,aging,dataAlt,dataDist,procNum,comp:compMes});
     });
   }
 
@@ -1215,8 +1221,7 @@ function parse(wb,fname){
     totalContig:ativos.reduce((a,r)=>a+r.contigPos,0),
     totalPago:base.reduce((a,r)=>a+r.pago,0),
     totalDeposito:base.reduce((a,r)=>a+r.deposito,0),
-    loadedAt:now.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}),hist,
-    procComp:Object.fromEntries(base.filter(r=>r.comp).map(r=>[r.numero,r.comp]))}; 
+    loadedAt:now.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}),hist};
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1239,7 +1244,14 @@ function getFD(){
   let mes=D.mes;
   if(GF.nat.length) mes=mes.filter(r=>GF.nat.includes(r.nat));
   if(GF.tp.length) mes=mes.filter(r=>GF.tp.includes(r.tipo));
-  if(GF.comp.length&&D.procComp) mes=mes.filter(r=>!r.procNum||!D.procComp[r.procNum]||GF.comp.includes(D.procComp[r.procNum]));
+  // Filtro competência na mes: afeta apenas adições cíveis
+  // Reversões e trabalhistas passam sem filtro (competência não se aplica)
+  if(GF.comp.length) mes=mes.filter(r=>{
+    if(r.nat!=='CÍVEL') return true;       // trabalhista: sempre passa
+    if(r.sit!=='Adição') return true;       // reversão cível: sempre passa
+    if(!r.comp) return true;                // sem comp definida: passa
+    return GF.comp.includes(r.comp);        // adição cível: filtra por comp
+  });
   let ent=D.ent;
   if(GF.nat.length) ent=ent.filter(r=>GF.nat.includes(r.nat));
   if(GF.tp.length) ent=ent.filter(r=>GF.tp.includes(r.tipo));
