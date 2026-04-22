@@ -445,6 +445,7 @@ tbody tr:hover td{background:var(--s0)}
         <div class="msd" id="msd-wrap-st"><div class="msd-btn" id="msd-btn-st" onclick="openMSD('st')">Status: Todos</div><div class="msd-drop" id="msd-drop-st"><label class="msd-item" onclick="toggleMSD(event,'st','ATIVO')"><input type="checkbox" value="ATIVO" id="msd-st-ATIVO"> Apenas Ativos</label><label class="msd-item" onclick="toggleMSD(event,'st','NAO_ATIVO')"><input type="checkbox" value="NAO_ATIVO" id="msd-st-NAO_ATIVO"> Não Ativos</label><label class="msd-item" onclick="toggleMSD(event,'st','ARQUIVADO')"><input type="checkbox" value="ARQUIVADO" id="msd-st-ARQUIVADO"> Arquivado</label></div></div>
         <div class="msd" id="msd-wrap-tp"><div class="msd-btn" id="msd-btn-tp" onclick="openMSD('tp')">Tipo: Todos</div><div class="msd-drop" id="msd-drop-tp"><label class="msd-item" onclick="toggleMSD(event,'tp','PROPRIO')"><input type="checkbox" value="PROPRIO" id="msd-tp-PROPRIO"> Próprios</label><label class="msd-item" onclick="toggleMSD(event,'tp','TERCEIRO')"><input type="checkbox" value="TERCEIRO" id="msd-tp-TERCEIRO"> Terceiros</label></div></div>
         <div class="msd" id="msd-wrap-rk"><div class="msd-btn" id="msd-btn-rk" onclick="openMSD('rk')">Risco: Todos</div><div class="msd-drop" id="msd-drop-rk"><label class="msd-item" onclick="toggleMSD(event,'rk','PROVÁVEL')"><input type="checkbox" value="PROVÁVEL" id="msd-rk-PROVÁVEL"> Provável</label><label class="msd-item" onclick="toggleMSD(event,'rk','POSSÍVEL')"><input type="checkbox" value="POSSÍVEL" id="msd-rk-POSSÍVEL"> Possível</label><label class="msd-item" onclick="toggleMSD(event,'rk','REMOTO')"><input type="checkbox" value="REMOTO" id="msd-rk-REMOTO"> Remoto</label></div></div>
+        <div class="msd" id="msd-wrap-comp"><div class="msd-btn" id="msd-btn-comp" onclick="openMSD('comp')" title="Válido apenas para processos Cíveis Ativos">Competência ✱</div><div class="msd-drop" id="msd-drop-comp"><label class="msd-item" onclick="toggleMSD(event,'comp','JUSTIÇA COMUM')"><input type="checkbox" value="JUSTIÇA COMUM"> Justiça Comum</label><label class="msd-item" onclick="toggleMSD(event,'comp','JEC')"><input type="checkbox" value="JEC"> JEC</label><label class="msd-item" onclick="toggleMSD(event,'comp','ADMINISTRATIVO')"><input type="checkbox" value="ADMINISTRATIVO"> Administrativo</label><div style="font-size:.6rem;color:#64748b;padding:.3rem .75rem;border-top:1px solid rgba(255,255,255,.06);margin-top:.25rem">✱ Apenas Cíveis Ativos</div></div></div>
         <div class="gfsep"></div>
         <select class="gfs" id="gf-per" onchange="applyGF()"><option value="">Período: Atual</option></select>
         <div class="gfsep"></div>
@@ -745,6 +746,9 @@ tbody tr:hover td{background:var(--s0)}
       <div class="cd mb">
         <div class="cdh"><div><div class="cdt">Próprios vs. Terceiros — Evolução (R$)</div><div class="cds">Participação de terceiros na contingência total</div></div></div>
         <div class="cdb npt"><div class="cw" style="height:190px"><canvas id="c-hist-terc"></canvas></div></div>
+      </div>
+    </div>
+
       <div class="cd mb">
         <div class="cdh"><div><div class="cdt">Indicadores Financeiros — Tabela Comparativa</div><div class="cds">Ticket Médio, Saldo Líquido e Exposição sobre Receita por mês</div></div></div>
         <div class="cdb" style="overflow-x:auto">
@@ -765,9 +769,7 @@ tbody tr:hover td{background:var(--s0)}
           <div style="font-size:.62rem;color:#475569;margin-top:.5rem">* Receita Líquida: preencher na coluna R da aba Historico da planilha.</div>
         </div>
       </div>
-      </div>
     </div>
-
 
     <div id="pg-temas" class="pg">
       <div class="sh"><div class="sn">Concentração</div><div class="st">Temas, UF &amp; Escritórios</div><div class="sd">SP, CE e RJ concentram o maior volume financeiro. Toggle Volume/Financeiro ativo para todos os gráficos.</div></div>
@@ -839,7 +841,7 @@ if(sessionStorage.getItem('alloha_auth')==='1'){
 // ═══════════════════════════════════════════════════════
 // GLOBALS
 // ═══════════════════════════════════════════════════════
-let D=null, CH={}, GF={nat:[],st:[],tp:[],rk:[],per:''}, VIEW='vol', PRES=false;
+let D=null, CH={}, GF={nat:[],st:[],tp:[],rk:[],comp:[],per:''}, VIEW='vol', PRES=false;
 const SK='alloha_v6';
 const MONTHS_PT={janeiro:'01',fevereiro:'02',março:'03',abril:'04',maio:'05',junho:'06',julho:'07',agosto:'08',setembro:'09',outubro:'10',novembro:'11',dezembro:'12'};
 
@@ -1069,6 +1071,7 @@ function parse(wb,fname){
       const reclamada=cl(g('RECLAMADA/TERCEIRIZADA'))||'';
       const fase=clu(g('SITUAÇÃO/FASE','FASE'))||'';
       const cidade=cl(g('CIDADE'))||'';
+      const comp=cl(g('Competência'))||'';
       // CRITICAL: use OBJETO 1 (TEMA) for all theme analysis
       const tema=clu(g('OBJETO 1 (TEMA)'))||'';
       // CRITICAL: use CONTINGENCIAR PÓS CLOSING for all financial calcs
@@ -1082,7 +1085,7 @@ function parse(wb,fname){
       const anoMes=fmtYM(dataDist);
       const anoMesAtual=fmtYM(dataAtual);
       const anoDist=dataDist?dataDist.getFullYear():null;
-      base.push({st,nat,risco,tipo,estado,cidade,empresa,escritorio,autor,numero,reclamada,fase,tema,contigPos,contigPre,pago,causa,deposito,dataAtual,dataDist,anoMes,anoMesAtual,anoDist});
+      base.push({st,nat,risco,tipo,estado,cidade,comp,empresa,escritorio,autor,numero,reclamada,fase,tema,contigPos,contigPre,pago,causa,deposito,dataAtual,dataDist,anoMes,anoMesAtual,anoDist});
     });
 // Deduplicação removida — planilha é fonte da verdade,
 // processos com mesmo número em réus diferentes são registros intencionais.
@@ -1230,6 +1233,7 @@ function getFD(){
   }
   if(GF.tp.length) base=base.filter(r=>GF.tp.includes(r.tipo));
   if(GF.rk.length) base=base.filter(r=>GF.rk.includes(r.risco));
+  if(GF.comp.length) base=base.filter(r=>GF.comp.includes(r.comp));
   const ativos=base.filter(r=>r.st==='ATIVO');
   let mes=D.mes;
   if(GF.nat.length) mes=mes.filter(r=>GF.nat.includes(r.nat));
@@ -1276,21 +1280,22 @@ function applyGF(){
   GF.st=getMSDVals('st');
   GF.tp=getMSDVals('tp');
   GF.rk=getMSDVals('rk');
+  GF.comp=getMSDVals('comp');
   GF.per=document.getElementById('gf-per')?.value||'';
-  ['nat','st','tp','rk'].forEach(id=>{
-    const defaultLabels={nat:'Natureza: Todas',st:'Status: Todos',tp:'Tipo: Todos',rk:'Risco: Todos'};
+  ['nat','st','tp','rk','comp'].forEach(id=>{
+    const defaultLabels={nat:'Natureza: Todas',st:'Status: Todos',tp:'Tipo: Todos',rk:'Risco: Todos',comp:'Competência ✱'};
     updateMSDBtnLabel(id,defaultLabels[id]);
   });
   if(GF.per){const h=getHist();const e=h.find(x=>x.key===GF.per);if(e){try{D=desD(JSON.parse(e.data));}catch{}}}
   rebuildAll();
 }
 function resetGF(){
-  ['nat','st','tp','rk'].forEach(id=>{
+  ['nat','st','tp','rk','comp'].forEach(id=>{
     const drop=document.getElementById('msd-drop-'+id);
     if(drop) drop.querySelectorAll('input[type=checkbox]').forEach(c=>c.checked=false);
   });
-  const defaultLabels={nat:'Natureza: Todas',st:'Status: Todos',tp:'Tipo: Todos',rk:'Risco: Todos'};
-  ['nat','st','tp','rk'].forEach(id=>updateMSDBtnLabel(id,defaultLabels[id]));
+  const defaultLabels={nat:'Natureza: Todas',st:'Status: Todos',tp:'Tipo: Todos',rk:'Risco: Todos',comp:'Competência ✱'};
+  ['nat','st','tp','rk','comp'].forEach(id=>updateMSDBtnLabel(id,defaultLabels[id]));
   const per=document.getElementById('gf-per');if(per)per.value='';
   GF={nat:[],st:[],tp:[],rk:[],per:''};
   rebuildAll();
@@ -1680,11 +1685,17 @@ function bEvolucao(){
     const d=prev?Math.round(((curr-prev)/prev)*1000)/10:null;const up=d>0;const good=inv?!up:up;
     return`<div class="cc"><div class="ccl">${l}</div><div class="ccv">${isMoney?fSh(curr):curr.toLocaleString('pt-BR')}</div><div class="ccp">Mês ant.: ${isMoney?fSh(prev||0):(prev||0).toLocaleString('pt-BR')}</div>${d!==null?`<div class="ccd ${good?'du':'dd'}">${up?'▲':'▼'} ${Math.abs(d)}%</div>`:''}</div>`;
   };
+  // Buscar mês anterior no histórico para Contingência e Ativos
+  const histData=getHist2();
+  const histCm=histData.find(h=>h.mes===cm);
+  const histPm=histData.find(h=>h.mes===pm);
+  const contigPm=histPm?.contig||null;
+  const ativosPm=histPm?.ativos||null;
   document.getElementById('evo-comp').innerHTML=
     compCard('Novos Entrantes (aba)',newCm,newPm)+
     compCard('Arquivamentos',archCm,archPm,true)+
-    compCard('Contingência Total',D.totalContig,D.totalContig,false,true)+
-    compCard('Processos Ativos',D.totalAtivos,D.totalAtivos);
+    compCard('Contingência Total',D.totalContig,contigPm,false,true)+
+    compCard('Processos Ativos',D.totalAtivos,ativosPm);
 
   // Arquivamentos - LINE CHART com toggle Volume/Financeiro
   const archByM={};const archValM={};
@@ -1696,7 +1707,10 @@ function bEvolucao(){
   });
   const archS=Object.entries(archByM).sort().slice(-18);
   const archData=isV?archS.map(([,v])=>v):archS.map(([k])=>archValM[k]||0);
-  lineC('c-evo-arq',archS.map(([k])=>fMon(k)),[{label:isV?'Arquivamentos':'Valor da Causa (R$)',data:archData,borderColor:'#e9b44c',backgroundColor:'rgba(233,180,76,.1)',fill:true,tension:.4,pointBackgroundColor:'#e9b44c',pointRadius:4}],false,isV?null:fSh);
+  // Arquivamentos com fonte maior nos datalabels
+  if(CH['c-evo-arq']){CH['c-evo-arq'].destroy();delete CH['c-evo-arq'];}
+  {const c=document.getElementById('c-evo-arq');if(c){const n=archS.length;
+  CH['c-evo-arq']=new Chart(c.getContext('2d'),{type:'line',data:{labels:archS.map(([k])=>fMon(k)),datasets:[{label:isV?'Arquivamentos':'Valor da Causa (R$)',data:archData,borderColor:'#e9b44c',backgroundColor:'rgba(233,180,76,.1)',fill:true,tension:.4,pointBackgroundColor:'#e9b44c',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,right:6,bottom:4,left:4}},scales:{x:{...AX,grid:{color:'rgba(255,255,255,.04)'}},y:{...AX,grid:{color:'rgba(255,255,255,.04)'},ticks:{...AX.ticks,callback:v=>isV?v:fSh(v)}}},plugins:{...CB.plugins,legend:{display:false},datalabels:{display:true,clamp:true,clip:false,color:'rgba(255,255,255,.9)',font:{family:'Outfit',size:12,weight:'700'},anchor:'end',align:'top',formatter:v=>isV?v.toLocaleString('pt-BR'):fSh(v)}}}});}}
 
   // Novos (from Entrantes) vs Arquivados - last 5 months
   const meses5=Array.from({length:5},(_,i)=>fmtYM(new Date(now.getFullYear(),now.getMonth()-4+i,1)));
