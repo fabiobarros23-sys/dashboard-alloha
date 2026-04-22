@@ -333,6 +333,7 @@ tbody tr:hover td{background:var(--s0)}
     <button class="login-btn" onclick="checkLogin()">Entrar</button>
     <div class="login-err" id="login-err"></div>
   </div>
+  <div style="position:fixed;bottom:1rem;right:1.2rem;font-size:.62rem;color:rgba(255,255,255,.25);pointer-events:none;user-select:none">Desenvolvido por Fabio Barros · Dir. Jurídica</div>
 </div>
   <div id="up">
   <div class="up-logo">
@@ -446,8 +447,6 @@ tbody tr:hover td{background:var(--s0)}
         <div class="msd" id="msd-wrap-tp"><div class="msd-btn" id="msd-btn-tp" onclick="openMSD('tp')">Tipo: Todos</div><div class="msd-drop" id="msd-drop-tp"><label class="msd-item" onclick="toggleMSD(event,'tp','PROPRIO')"><input type="checkbox" value="PROPRIO" id="msd-tp-PROPRIO"> Próprios</label><label class="msd-item" onclick="toggleMSD(event,'tp','TERCEIRO')"><input type="checkbox" value="TERCEIRO" id="msd-tp-TERCEIRO"> Terceiros</label></div></div>
         <div class="msd" id="msd-wrap-rk"><div class="msd-btn" id="msd-btn-rk" onclick="openMSD('rk')">Risco: Todos</div><div class="msd-drop" id="msd-drop-rk"><label class="msd-item" onclick="toggleMSD(event,'rk','PROVÁVEL')"><input type="checkbox" value="PROVÁVEL" id="msd-rk-PROVÁVEL"> Provável</label><label class="msd-item" onclick="toggleMSD(event,'rk','POSSÍVEL')"><input type="checkbox" value="POSSÍVEL" id="msd-rk-POSSÍVEL"> Possível</label><label class="msd-item" onclick="toggleMSD(event,'rk','REMOTO')"><input type="checkbox" value="REMOTO" id="msd-rk-REMOTO"> Remoto</label></div></div>
         <div class="msd" id="msd-wrap-comp"><div class="msd-btn" id="msd-btn-comp" onclick="openMSD('comp')" title="Válido apenas para processos Cíveis Ativos">Competência ✱</div><div class="msd-drop" id="msd-drop-comp"><label class="msd-item" onclick="toggleMSD(event,'comp','JUSTIÇA COMUM')"><input type="checkbox" value="JUSTIÇA COMUM"> Justiça Comum</label><label class="msd-item" onclick="toggleMSD(event,'comp','JEC')"><input type="checkbox" value="JEC"> JEC</label><label class="msd-item" onclick="toggleMSD(event,'comp','ADMINISTRATIVO')"><input type="checkbox" value="ADMINISTRATIVO"> Administrativo</label><div style="font-size:.6rem;color:#64748b;padding:.3rem .75rem;border-top:1px solid rgba(255,255,255,.06);margin-top:.25rem">✱ Apenas Cíveis Ativos</div></div></div>
-        <div class="gfsep"></div>
-        <select class="gfs" id="gf-per" onchange="applyGF()"><option value="">Período: Atual</option></select>
         <div class="gfsep"></div>
         <div class="vt">
           <button class="vt-btn ac" id="vt-v" onclick="setView('vol')">Volume</button>
@@ -845,7 +844,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 // ═══════════════════════════════════════════════════════
 // GLOBALS
 // ═══════════════════════════════════════════════════════
-let D=null, CH={}, GF={nat:[],st:[],tp:[],rk:[],comp:[],per:''}, VIEW='vol', PRES=false;
+let D=null, CH={}, GF={nat:[],st:[],tp:[],rk:[],comp:[]}, VIEW='vol', PRES=false;
 const SK='alloha_v6';
 const MONTHS_PT={janeiro:'01',fevereiro:'02',março:'03',abril:'04',maio:'05',junho:'06',julho:'07',agosto:'08',setembro:'09',outubro:'10',novembro:'11',dezembro:'12'};
 
@@ -1047,11 +1046,7 @@ function loadHist(k){
   const h=getHist();const e=h.find(x=>x.key===k);if(!e)return;
   try{D=desD(JSON.parse(e.data));launch();}catch(err){console.error(err);}
 }
-function populatePer(){
-  const h=getHist();const sel=document.getElementById('gf-per');
-  sel.innerHTML='<option value="">Período: Atual</option>';
-  h.forEach(x=>sel.add(new Option(x.period||x.key,x.key)));
-}
+// populatePer removido — filtro Período excluído
 
 // ═══════════════════════════════════════════════════════
 // PARSE
@@ -1295,12 +1290,10 @@ function applyGF(){
   GF.tp=getMSDVals('tp');
   GF.rk=getMSDVals('rk');
   GF.comp=getMSDVals('comp');
-  GF.per=document.getElementById('gf-per')?.value||'';
   ['nat','st','tp','rk','comp'].forEach(id=>{
     const defaultLabels={nat:'Natureza: Todas',st:'Status: Todos',tp:'Tipo: Todos',rk:'Risco: Todos',comp:'Competência ✱'};
     updateMSDBtnLabel(id,defaultLabels[id]);
   });
-  if(GF.per){const h=getHist();const e=h.find(x=>x.key===GF.per);if(e){try{D=desD(JSON.parse(e.data));}catch{}}}
   rebuildAll();
 }
 function resetGF(){
@@ -1310,8 +1303,7 @@ function resetGF(){
   });
   const defaultLabels={nat:'Natureza: Todas',st:'Status: Todos',tp:'Tipo: Todos',rk:'Risco: Todos',comp:'Competência ✱'};
   ['nat','st','tp','rk','comp'].forEach(id=>updateMSDBtnLabel(id,defaultLabels[id]));
-  const per=document.getElementById('gf-per');if(per)per.value='';
-  GF={nat:[],st:[],tp:[],rk:[],comp:[],per:''};
+  GF={nat:[],st:[],tp:[],rk:[],comp:[]};
   rebuildAll();
 }
 function setView(v){VIEW=v;document.getElementById('vt-v').classList.toggle('ac',v==='vol');document.getElementById('vt-f').classList.toggle('ac',v==='fin');rebuildAll();}
@@ -1342,7 +1334,7 @@ function launch(){
   const ufs=[...new Set(D.base.map(r=>r.estado).filter(e=>e&&e.length===2))].sort();
   const ufSel=document.getElementById('bs-uf');ufSel.innerHTML='<option value="">UF</option>';
   ufs.forEach(u=>ufSel.add(new Option(u,u)));
-  populatePer();rebuildAll();
+  rebuildAll();
 }
 function goUp(){
   document.getElementById('up').style.display='flex';document.getElementById('app').style.display='none';
