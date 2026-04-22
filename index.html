@@ -1703,8 +1703,9 @@ function bEvolucao(){
 
   // Arquivamentos - LINE CHART com toggle Volume/Financeiro
   const archByM={};const archValM={};
+  const periodoLimite=D?.period||'';  // limitar ao período da base
   arq.forEach(r=>{
-    if(r.anoMesAtual){
+    if(r.anoMesAtual && (!periodoLimite || r.anoMesAtual<=periodoLimite)){
       archByM[r.anoMesAtual]=(archByM[r.anoMesAtual]||0)+1;
       archValM[r.anoMesAtual]=(archValM[r.anoMesAtual]||0)+(r.causa||0);
     }
