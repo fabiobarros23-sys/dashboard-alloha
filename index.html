@@ -819,28 +819,26 @@ tbody tr:hover td{background:var(--s0)}
 </div>
 
 <script>
+  // Auth em memória — nunca persiste entre carregamentos
+  let _authenticated = false;
   function checkLogin(){
-  const pwd=document.getElementById('login-pwd').value;
-  if(pwd==='Jur12345'){
-    document.getElementById('login-screen').style.display='none';
-    sessionStorage.setItem('alloha_auth','1');
-  } else {
-    document.getElementById('login-err').textContent='Senha incorreta. Tente novamente.';
-    document.getElementById('login-pwd').value='';
-    document.getElementById('login-pwd').focus();
+    const pwd=document.getElementById('login-pwd').value;
+    if(pwd==='Jur12345'){
+      _authenticated=true;
+      document.getElementById('login-screen').style.display='none';
+    } else {
+      document.getElementById('login-err').textContent='Senha incorreta. Tente novamente.';
+      document.getElementById('login-pwd').value='';
+      document.getElementById('login-pwd').focus();
+    }
   }
-}
-document.addEventListener('DOMContentLoaded',()=>{
-  // Sempre mostrar tela de login — só esconde após senha correta na sessão atual
-  const ls=document.getElementById('login-screen');
-  if(ls && sessionStorage.getItem('alloha_auth')==='1'){
-    ls.style.display='none';
-  } else if(ls){
-    ls.style.display='flex';
-    // Limpar qualquer auth anterior para forçar nova autenticação
+  // Sempre exibir tela de login ao carregar — sem exceções
+  document.addEventListener('DOMContentLoaded',()=>{
+    // Limpar qualquer sessionStorage residual
     sessionStorage.removeItem('alloha_auth');
-  }
-});
+    const ls=document.getElementById('login-screen');
+    if(ls) ls.style.display='flex';
+  });
 // ═══════════════════════════════════════════════════════
 // GLOBALS
 // ═══════════════════════════════════════════════════════
