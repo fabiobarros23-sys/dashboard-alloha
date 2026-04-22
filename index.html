@@ -747,8 +747,6 @@ tbody tr:hover td{background:var(--s0)}
         <div class="cdh"><div><div class="cdt">Próprios vs. Terceiros — Evolução (R$)</div><div class="cds">Participação de terceiros na contingência total</div></div></div>
         <div class="cdb npt"><div class="cw" style="height:190px"><canvas id="c-hist-terc"></canvas></div></div>
       </div>
-    </div>
-
       <div class="cd mb">
         <div class="cdh"><div><div class="cdt">Indicadores Financeiros — Tabela Comparativa</div><div class="cds">Ticket Médio, Saldo Líquido e Exposição sobre Receita por mês</div></div></div>
         <div class="cdb" style="overflow-x:auto">
@@ -770,6 +768,7 @@ tbody tr:hover td{background:var(--s0)}
         </div>
       </div>
     </div>
+
 
     <div id="pg-temas" class="pg">
       <div class="sh"><div class="sn">Concentração</div><div class="st">Temas, UF &amp; Escritórios</div><div class="sd">SP, CE e RJ concentram o maior volume financeiro. Toggle Volume/Financeiro ativo para todos os gráficos.</div></div>
@@ -1110,7 +1109,8 @@ function parse(wb,fname){
       const aging=n2(g('Aging'));
       const dataAlt=pD(g('Data Alteração'));
       const dataDist=pD(g('Data Distribuição'));
-      mes.push({sit,op,nat,tema,estado,tipo,emp3,rAnt,valor,aging,dataAlt,dataDist});
+      const procNum=cl(g('Rótulos de Linha'))||'';
+      mes.push({sit,op,nat,tema,estado,tipo,emp3,rAnt,valor,aging,dataAlt,dataDist,procNum});
     });
   }
 
@@ -1215,7 +1215,8 @@ function parse(wb,fname){
     totalContig:ativos.reduce((a,r)=>a+r.contigPos,0),
     totalPago:base.reduce((a,r)=>a+r.pago,0),
     totalDeposito:base.reduce((a,r)=>a+r.deposito,0),
-    loadedAt:now.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}),hist};
+    loadedAt:now.toLocaleDateString('pt-BR',{month:'long',year:'numeric'}),hist,
+    procComp:Object.fromEntries(base.filter(r=>r.comp).map(r=>[r.numero,r.comp]))}; 
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1238,6 +1239,7 @@ function getFD(){
   let mes=D.mes;
   if(GF.nat.length) mes=mes.filter(r=>GF.nat.includes(r.nat));
   if(GF.tp.length) mes=mes.filter(r=>GF.tp.includes(r.tipo));
+  if(GF.comp.length&&D.procComp) mes=mes.filter(r=>!r.procNum||!D.procComp[r.procNum]||GF.comp.includes(D.procComp[r.procNum]));
   let ent=D.ent;
   if(GF.nat.length) ent=ent.filter(r=>GF.nat.includes(r.nat));
   if(GF.tp.length) ent=ent.filter(r=>GF.tp.includes(r.tipo));
