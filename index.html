@@ -522,7 +522,7 @@ tbody tr:hover td{background:var(--s0)}
       <div class="sh"><div class="sn">Indenizações</div><div class="st">Desembolso do Mês</div><div class="sd">Análise dos pagamentos realizados no período: acordos, condenações e custas. Relação com provisão constituída.</div></div>
       <div class="pag-fbar">
         <span class="pag-fbar-lbl">Filtro da seção:</span>
-        <div class="msd" id="msd-wrap-pf-tipo"><div class="msd-btn" id="msd-btn-pf-tipo" onclick="openMSD('pf-tipo')">Tipo de Pagamento: Todos</div><div class="msd-drop" id="msd-drop-pf-tipo"><label class="msd-item" onclick="toggleMSD(event,'pf-tipo','ACORDO')"><input type="checkbox" value="ACORDO"> Acordo</label><label class="msd-item" onclick="toggleMSD(event,'pf-tipo','CONDENAÇÃO/CUMPRIMENTO DE SENTENÇA')"><input type="checkbox" value="CONDENAÇÃO/CUMPRIMENTO DE SENTENÇA"> Condenação/Cumprimento</label><label class="msd-item" onclick="toggleMSD(event,'pf-tipo','CUSTAS')"><input type="checkbox" value="CUSTAS"> Custas</label><label class="msd-item" onclick="toggleMSD(event,'pf-tipo','DJ RECURSAL')"><input type="checkbox" value="DJ RECURSAL"> DJ Recursal</label><label class="msd-item" onclick="toggleMSD(event,'pf-tipo','LANÇAMENTO CONTÁBIL MANUAL')"><input type="checkbox" value="LANÇAMENTO CONTÁBIL MANUAL"> Lançamento Contábil</label></div></div>
+        <div class="msd" id="msd-wrap-pf-tipo"><div class="msd-btn" id="msd-btn-pf-tipo" onclick="openMSD('pf-tipo')">Tipo de Pagamento: Todos</div><div class="msd-drop" id="msd-drop-pf-tipo"><label class="msd-item" onclick="toggleMSD(event,'pf-tipo','ACORDO')"><input type="checkbox" value="ACORDO" id="msd-pf-tipo-ACORDO"> Acordo</label><label class="msd-item" onclick="toggleMSD(event,'pf-tipo','CONDENAÇÃO/CUMPRIMENTO DE SENTENÇA')"><input type="checkbox" value="CONDENAÇÃO/CUMPRIMENTO DE SENTENÇA" id="msd-pf-tipo-CONDENAÇÃO/CUMPRIMENTO_DE_SENTENÇA"> Condenação/Sentença</label><label class="msd-item" onclick="toggleMSD(event,'pf-tipo','ASSISTÊNCIA JURÍDICA')"><input type="checkbox" value="ASSISTÊNCIA JURÍDICA" id="msd-pf-tipo-ASSISTÊNCIA_JURÍDICA"> Assist. Jurídica</label></div></div>
         <div class="msd" id="msd-wrap-pf-risco"><div class="msd-btn" id="msd-btn-pf-risco" onclick="openMSD('pf-risco')">Risco: Todos</div><div class="msd-drop" id="msd-drop-pf-risco"><label class="msd-item" onclick="toggleMSD(event,'pf-risco','PROVÁVEL')"><input type="checkbox" value="PROVÁVEL" id="msd-pf-risco-PROVÁVEL"> Provável</label><label class="msd-item" onclick="toggleMSD(event,'pf-risco','POSSÍVEL')"><input type="checkbox" value="POSSÍVEL" id="msd-pf-risco-POSSÍVEL"> Possível</label><label class="msd-item" onclick="toggleMSD(event,'pf-risco','REMOTO')"><input type="checkbox" value="REMOTO" id="msd-pf-risco-REMOTO"> Remoto</label></div></div>
         <select class="gfs" id="pf-closing" onchange="bPagamentos()" style="font-size:.72rem"><option value="">Closing: Todos</option><option value="PÓS CLOSING">Pós Closing</option><option value="PRÉ CLOSING">Pré Closing</option><option value="MISTO">Misto</option></select>
       </div>
@@ -745,9 +745,6 @@ tbody tr:hover td{background:var(--s0)}
       <div class="cd mb">
         <div class="cdh"><div><div class="cdt">Próprios vs. Terceiros — Evolução (R$)</div><div class="cds">Participação de terceiros na contingência total</div></div></div>
         <div class="cdb npt"><div class="cw" style="height:190px"><canvas id="c-hist-terc"></canvas></div></div>
-      </div>
-    </div>
-
       <div class="cd mb">
         <div class="cdh"><div><div class="cdt">Indicadores Financeiros — Tabela Comparativa</div><div class="cds">Ticket Médio, Saldo Líquido e Exposição sobre Receita por mês</div></div></div>
         <div class="cdb" style="overflow-x:auto">
@@ -768,7 +765,9 @@ tbody tr:hover td{background:var(--s0)}
           <div style="font-size:.62rem;color:#475569;margin-top:.5rem">* Receita Líquida: preencher na coluna R da aba Historico da planilha.</div>
         </div>
       </div>
+      </div>
     </div>
+
 
     <div id="pg-temas" class="pg">
       <div class="sh"><div class="sn">Concentração</div><div class="st">Temas, UF &amp; Escritórios</div><div class="sd">SP, CE e RJ concentram o maior volume financeiro. Toggle Volume/Financeiro ativo para todos os gráficos.</div></div>
