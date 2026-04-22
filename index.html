@@ -1311,7 +1311,7 @@ function resetGF(){
   const defaultLabels={nat:'Natureza: Todas',st:'Status: Todos',tp:'Tipo: Todos',rk:'Risco: Todos',comp:'Competência ✱'};
   ['nat','st','tp','rk','comp'].forEach(id=>updateMSDBtnLabel(id,defaultLabels[id]));
   const per=document.getElementById('gf-per');if(per)per.value='';
-  GF={nat:[],st:[],tp:[],rk:[],per:''};
+  GF={nat:[],st:[],tp:[],rk:[],comp:[],per:''};
   rebuildAll();
 }
 function setView(v){VIEW=v;document.getElementById('vt-v').classList.toggle('ac',v==='vol');document.getElementById('vt-f').classList.toggle('ac',v==='fin');rebuildAll();}
