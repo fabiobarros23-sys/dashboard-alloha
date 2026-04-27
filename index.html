@@ -368,6 +368,10 @@ tbody tr:hover td{background:var(--s0)}
   </div>
 </div>
 
+<!-- MODAL TOP TEMA → UFs -->
+<div id="modal-ttema" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);align-items:center;justify-content:center"><div style="background:#111c38;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:1.5rem;width:90%;max-width:620px;max-height:85vh;overflow-y:auto"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem"><div><div style="font-size:.58rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#a78bfa;margin-bottom:.2rem">DRILL-DOWN · TOP TEMAS</div><div id="modal-ttema-title" style="font-size:1.05rem;font-weight:800;color:#f1f5f9"></div></div><button onclick="closeModalTTema()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;width:32px;height:32px;cursor:pointer;color:#94a3b8">✕</button></div><div id="modal-ttema-sub" style="font-size:.72rem;color:#64748b;margin-bottom:1rem"></div><div style="position:relative;height:280px"><canvas id="c-modal-ttema"></canvas></div><div id="modal-ttema-pareto" style="margin-top:1rem"></div></div></div>
+<!-- MODAL TOP UF → Temas -->
+<div id="modal-tuf" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);align-items:center;justify-content:center"><div style="background:#111c38;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:1.5rem;width:90%;max-width:620px;max-height:85vh;overflow-y:auto"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem"><div><div style="font-size:.58rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#4f9cf9;margin-bottom:.2rem">DRILL-DOWN · TOP UF</div><div id="modal-tuf-title" style="font-size:1.05rem;font-weight:800;color:#f1f5f9"></div></div><button onclick="closeModalTUF()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;width:32px;height:32px;cursor:pointer;color:#94a3b8">✕</button></div><div id="modal-tuf-sub" style="font-size:.72rem;color:#64748b;margin-bottom:1rem"></div><div style="position:relative;height:280px"><canvas id="c-modal-tuf"></canvas></div><div id="modal-tuf-pareto" style="margin-top:1rem"></div></div></div>
 <!-- MODAL HEATMAP -->
 <div id="modal-hm" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);align-items:center;justify-content:center"><div style="background:#111c38;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:1.5rem;width:90%;max-width:640px;max-height:85vh;overflow-y:auto;position:relative"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem"><div><div style="font-size:.58rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#2dd4bf;margin-bottom:.2rem">DRILL-DOWN · HEATMAP</div><div id="modal-hm-title" style="font-size:1.05rem;font-weight:800;color:#f1f5f9"></div></div><button onclick="closeModalHM()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:1rem;color:#94a3b8;display:flex;align-items:center;justify-content:center">✕</button></div><div id="modal-hm-total" style="font-size:.72rem;color:#64748b;margin-bottom:1rem"></div><div style="position:relative;height:280px"><canvas id="c-modal-hm"></canvas></div><div id="modal-hm-pareto" style="margin-top:1rem"></div></div></div>
 <!-- APP -->
@@ -412,6 +416,8 @@ tbody tr:hover td{background:var(--s0)}
       <button class="nb" onclick="nav('entrantes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>Entrantes</button>
       <div class="sb-sec">Concentração</div>
       <button class="nb" onclick="nav('temas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Temas, UF &amp; Escritórios</button>
+      <div class="sb-sec">Projeção</div>
+      <button class="nb" onclick="nav('riscos')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Riscos Futuros</button>
       <div class="sb-sec">Histórico</div>
       <button class="nb" onclick="nav('historico')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Série Histórica</button>
       <div class="sb-sec">Dados</div>
@@ -715,6 +721,27 @@ tbody tr:hover td{background:var(--s0)}
 
     <!-- ██ TEMAS, UF & ESCRITÓRIOS ██ -->
     <!-- ██ HISTÓRICO ██ -->
+    <!-- ██ RISCOS FUTUROS ██ -->
+    <div id="pg-riscos" class="pg">
+      <div class="sh"><div class="sn">Projeção</div><div class="st">Riscos Futuros</div><div class="sd">Projeção de impacto dos entrantes de 2026 na provisão e nos pagamentos, baseada no aging histórico por tema (mediana, excluindo outliers &lt;50 dias).</div></div>
+      <div class="kr kr4 mb2" id="kpis-riscos"></div>
+      <div class="cd mb2">
+        <div class="cdh"><div><div class="cdt">Curva de Provisão Projetada — Entrantes 2026</div><div class="cds">Estimativa de quando cada processo entrante deve impactar a provisão (por mês)</div></div></div>
+        <div class="cdb npt"><div class="cw" style="height:240px"><canvas id="c-riscos-prov"></canvas></div></div>
+      </div>
+      <div class="cd mb2">
+        <div class="cdh"><div><div class="cdt">Curva de Pagamento Projetado — Entrantes 2026</div><div class="cds">Estimativa de quando cada processo entrante pode gerar pagamento (por mês)</div></div></div>
+        <div class="cdb npt"><div class="cw" style="height:240px"><canvas id="c-riscos-pag"></canvas></div></div>
+      </div>
+      <div class="cd mb">
+        <div class="cdh"><div><div class="cdt">Tabela de Aging por Tema</div><div class="cds">Entrantes 2026 · Mediana de dias até provisão e até pagamento · Dados históricos</div></div></div>
+        <div class="cdb" style="overflow-x:auto"><table class="hm-table" id="tbl-riscos" style="min-width:100%;font-size:.72rem">
+          <thead><tr><th style="text-align:left">Tema</th><th>Entrantes 2026</th><th>Risco Projetado</th><th>Aging → Provisão</th><th>Previsão Provisão</th><th>Aging → Pagamento</th><th>Previsão Pagamento</th></tr></thead>
+          <tbody id="tbl-riscos-body"></tbody>
+        </table></div>
+      </div>
+    </div>
+
     <div id="pg-historico" class="pg">
       <div class="sh"><div class="sn">Histórico</div><div class="st">Série Histórica</div><div class="sd">Evolução dos principais indicadores jurídicos mês a mês. Baseado na aba Historico da planilha.</div></div>
       <div class="kr kr4 mb2" id="kpis-hist"></div>
@@ -1133,7 +1160,8 @@ function parse(wb,fname){
       const dataEntRaw=g('DATA ENTRANTE','Data Entrante');
       const dataEnt=pD(dataEntRaw);
       const anoMesEnt=fmtYM(dataEnt)||anoMes;
-      ent.push({dataEnc,empresa,nat,tipo,terc,uf:ufN,tema,anoMes,anoMesEnt});
+      const _deRaw=g('Data Entrante')||null;
+      ent.push({dataEnc,empresa,nat,tipo,terc,uf:ufN,tema,anoMes,anoMesEnt,dataEnt:_deRaw});
     });
   }
 
@@ -1313,7 +1341,7 @@ function togglePres(){
 }
 
 function rebuildAll(){
-  bResultado();bAdicoes();bPagamentos();bEstoque();bRisco();bProprios();bEvolucao();bEntrantes();bTemas();bHistorico();filterBase();
+  bResultado();bAdicoes();bPagamentos();bEstoque();bRisco();bProprios();bEvolucao();bEntrantes();bTemas();bRiscos();bHistorico();filterBase();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1839,11 +1867,23 @@ function bTemas(){
   const tE=Object.entries(tData).filter(([k])=>k&&k!=='N/A'&&k!=='').sort((a,b)=>b[1]-a[1]).slice(0,15);
   const tot_t=tE.reduce((a,[,v])=>a+v,0);
   barH('c-t-tema',tE,!isV,'rgba(167,139,250,.65)');
+  // Drill-down: clicar em tema → abre UFs desse tema
+  if(CH['c-t-tema']){
+    CH['c-t-tema'].options.onClick=(evt,els)=>{if(!els.length)return;const tema=tE[els[0].index]?.[0];if(tema)openModalTemaTemas(tema);};
+    CH['c-t-tema'].options.onHover=(evt,els)=>{evt.native.target.style.cursor=els.length?'pointer':'default';};
+    CH['c-t-tema'].update();
+  }
 
   // UF
   const uData=isV?gCnt(ativos,'estado'):gSum(ativos,'contigPos','estado');
   const uE=Object.entries(uData).filter(([k])=>k&&k.length===2).sort((a,b)=>b[1]-a[1]).slice(0,12);
   barH('c-t-uf',uE,!isV,'rgba(79,156,249,.65)');
+  // Drill-down: clicar em UF → abre temas dessa UF
+  if(CH['c-t-uf']){
+    CH['c-t-uf'].options.onClick=(evt,els)=>{if(!els.length)return;const uf=uE[els[0].index]?.[0];if(uf)openModalUFTemas(uf);};
+    CH['c-t-uf'].options.onHover=(evt,els)=>{evt.native.target.style.cursor=els.length?'pointer':'default';};
+    CH['c-t-uf'].update();
+  }
 
   // Escritórios
   const eData=isV?gCnt(ativos,'escritorio'):gSum(ativos,'contigPos','escritorio');
@@ -2148,7 +2188,134 @@ Retorne APENAS um JSON válido com esta estrutura exata:
 function openModalUF(uf){const{mes}=getFD();const adic=mes.filter(r=>r.sit==='Adição'&&r.estado===uf);const isV=VIEW==='vol';const total=isV?adic.length:adic.reduce((a,r)=>a+r.valor,0);const temaGrp=Object.entries(isV?adic.reduce((a,r)=>{a[r.tema||'N/A']=(a[r.tema||'N/A']||0)+1;return a},{}):adic.reduce((a,r)=>{a[r.tema||'N/A']=(a[r.tema||'N/A']||0)+r.valor;return a},{})).filter(([k])=>k&&k!=='N/A'&&k!=='').sort((a,b)=>b[1]-a[1]);document.getElementById('modal-uf-title').textContent=`Adições em ${uf} — ${isV?adic.length+' processos':fSh(total)}`;document.getElementById('modal-uf-total').textContent=`${temaGrp.length} temas · clique fora para fechar`;let cum=0;document.getElementById('modal-uf-pareto').innerHTML=temaGrp.map(([n,v],i)=>{cum+=v;const cp=pct(cum,total);const vp=pct(v,total);return`<div class="pr"><span class="pr-i">${i+1}</span><span class="pr-name">${n}</span><div class="pr-bb" style="width:90px"><div class="pr-bf" style="width:${vp}%;background:${cp<=80?'#fb923c':'#64748b'}"></div></div><span class="pr-val">${isV?v.toLocaleString('pt-BR'):fSh(v)}</span><span class="pr-cum">${cp}%</span></div>`;}).join('');if(CH['c-modal-uf']){CH['c-modal-uf'].destroy();delete CH['c-modal-uf'];}const top8=temaGrp.slice(0,8);const colors=top8.map((_,i)=>`hsl(${200+i*18},70%,${60-i*3}%)`);CH['c-modal-uf']=new Chart(document.getElementById('c-modal-uf').getContext('2d'),{type:'bar',data:{labels:top8.map(([k])=>k.length>28?k.slice(0,27)+'…':k),datasets:[{data:top8.map(([,v])=>v),backgroundColor:colors,borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:60}},plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'right',color:'rgba(255,255,255,.7)',font:{size:10,family:'Outfit'},formatter:v=>isV?v.toLocaleString('pt-BR'):fSh(v)},tooltip:{...CB.plugins.tooltip,callbacks:{label:ctx=>isV?ctx.raw.toLocaleString('pt-BR'):fBRL(ctx.raw)}}},scales:{x:{...AX,ticks:{...AX.ticks,callback:v=>isV?v:fSh(v)}},y:{...AX}}}});const modal=document.getElementById('modal-uf');modal.style.display='flex';modal.onclick=e=>{if(e.target===modal)closeModalUF();};}
 function closeModalUF(){document.getElementById('modal-uf').style.display='none';if(CH['c-modal-uf']){CH['c-modal-uf'].destroy();delete CH['c-modal-uf'];}}
 // ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// PAGE: RISCOS FUTUROS
+// ═══════════════════════════════════════════════════════
+const MEDIANA_TEMA={"HORAS EXTRAS": 52500, "VERBAS SALARIAIS": 41728, "COMISSÃO": 28814, "DIFERENÇA SALARIAL": 20484, "DANO MORAL": 5360, "FALHA DE PRESTAÇÃO DE SERVIÇO": 2000, "COBRANÇA INDEVIDA": 2014, "ACIDENTE": 5000, "DANOS MATERIAIS": 2000, "FRAUDE CONTRATUAL": 5000, "DANOS MORAIS": 2000, "NEGATIVAÇÃO": 2000, "MULTA ABUSIVA": 3000, "RESPONSABILIDADE SUBSIDIÁRIA": 22748, "VÍNCULO EMPREGATÍCIO": 128325, "PERICULOSIDADE": 228177, "ASSÉDIO MORAL": 55854, "RESCISÃO INDIRETA": 27394, "REVERSÃO DA JUSTA CAUSA": 20000, "ACÚMULO DE FUNÇÃO": 13336, "DIFERENÇAS SALARIAIS": 40000, "NULIDADE DO PEDIDO DE DEMISSÃO": 15000, "EQUIPARAÇÃO SALARIAL": 18000, "DOENÇA OCUPACIONAL": 40443, "FALHA NA PRESTAÇÃO DE SERVIÇO": 4500, "DADOS DE IP": 1000, "SUPERENDIVIDAMENTO": 2014, "ACIDENTE DE TRÂNSITO": 2014, "VELOCIDADE INFERIOR AO CONTRATADO": 2014, "FALHA NA PRESTAÇÃO DO SERVIÇO": 2014, "SUSPENSÃO INDEVIDA": 2014, "CONTRATAÇÃO FRAUDULENTA": 2014, "FALHA NO REPARO": 2014, "PROBLEMA COM MUDANÇA DE ENDEREÇO": 2014, "MULTA POR FIDELIDADE": 2014, "PROBLEMA COM CANCELAMENTO": 2014, "ALTERAÇÃO NO PLANO": 2014, "NCC": 2014, "DEVOLUÇÃO DE EQUIPAMENTO": 2014, "AÇÃO DE COBRANÇA": 2014, "DEMORA NA INSTALAÇÃO": 2014, "OFERTA NÃO CUMPRIDA": 2014, "CANCELAMENTO UNILATERAL DO CONTRATO": 2014, "SVA": 2014, "DANO MATERIAL": 196765, "ILEGITIMIDADE PASSIVA": 2014, "ALTERAÇÃO UNILATERAL DO CONTRATO": 2014, "INTERRUPÇÃO DO SERVIÇO": 2014, "CUMPRIMENTO DE SENTENÇA": 42239, "ADICIONAL NOTURNO": 30786, "RELAÇÃO DE TRABALHO": 49726, "CONSUMIDOR": 6235};
+const AGING_TEMA={"CONTRATAÇÃO FRAUDULENTA": {"prov": 178, "pag": 337}, "VERBAS SALARIAIS": {"prov": 139, "pag": null}, "RESPONSABILIDADE SUBSIDIÁRIA": {"prov": 406, "pag": 904}, "COBRANÇA INDEVIDA": {"prov": 196, "pag": 416}, "SUSPENSÃO INDEVIDA": {"prov": 152, "pag": 334}, "INTERRUPÇÃO DO SERVIÇO": {"prov": 478, "pag": null}, "FRAUDE CONTRATUAL": {"prov": 154, "pag": 248}, "FALHA NA PRESTAÇÃO DO SERVIÇO": {"prov": 154, "pag": 339}, "DANOS MORAIS": {"prov": 136, "pag": null}, "HORAS EXTRAS": {"prov": 387, "pag": 677}, "FALHA NA PRESTAÇÃO DE SERVIÇO": {"prov": 113, "pag": 325}, "FALHA DE PRESTAÇÃO DE SERVIÇO": {"prov": 84, "pag": 455}, "VÍNCULO EMPREGATÍCIO": {"prov": 233, "pag": 1035}, "PROBLEMA COM MUDANÇA DE ENDEREÇO": {"prov": 179, "pag": 353}, "VERBAS TRABALHISTAS": {"prov": 257, "pag": 294}, "RESCISÃO INDIRETA": {"prov": 129, "pag": 384}, "DIFERENÇAS SALARIAIS": {"prov": 246, "pag": 617}, "ACIDENTE DE TRÂNSITO": {"prov": 209, "pag": 350}, "SUSPENSÃO DE SERVIÇO DEVIDAMENTE QUITADO": {"prov": 147, "pag": 378}, "ILEGITIMIDADE PASSIVA": {"prov": 163, "pag": 320}, "CONTRATAÇÃO FRAUDULENTA TRABALHISTA": {"prov": 178, "pag": 337}};
+
+function bRiscos(){
+  const isV=VIEW==='vol';
+  const{ent}=getFD();
+  // Filtra entrantes de 2026 com tema válido
+  const ent2026=ent.filter(r=>r.anoMesEnt&&r.anoMesEnt>='2026-01'&&r.tema&&AGING_TEMA[r.tema]);
+
+  // Agrupar por tema
+  const porTema={};
+  ent2026.forEach(r=>{
+    if(!porTema[r.tema]) porTema[r.tema]={cnt:0,datas:[]};
+    porTema[r.tema].cnt++;
+    if(r.dataEnt) porTema[r.tema].datas.push(new Date(r.dataEnt));
+  });
+
+  // KPIs
+  const totalEnt=ent2026.length;
+  const temasComProv=Object.keys(porTema).filter(t=>AGING_TEMA[t]?.prov).length;
+  const temasComPag=Object.keys(porTema).filter(t=>AGING_TEMA[t]?.pag).length;
+  const medianaGeral=Math.round(Object.values(AGING_TEMA).filter(d=>d.prov).reduce((a,d)=>a+d.prov,0)/Object.values(AGING_TEMA).filter(d=>d.prov).length);
+  // Risco financeiro projetado total
+  let riscoTotal=0;
+  Object.entries(porTema).forEach(([tema,d])=>{
+    if(MEDIANA_TEMA[tema]) riscoTotal+=d.cnt*MEDIANA_TEMA[tema];
+  });
+  document.getElementById('kpis-riscos').innerHTML=
+    kpi('Entrantes 2026 Analisados',totalEnt.toLocaleString('pt-BR'),'Com tema mapeado no histórico','#4f9cf9')+
+    kpi('Risco Financeiro Projetado',fSh(riscoTotal),'Mediana histórica × entrantes por tema','#f87171')+
+    kpi('Temas com Aging de Provisão',temasComProv,'Temas com dados históricos suficientes','#a78bfa')+
+    kpi('Mediana Geral → Provisão',medianaGeral+'d','Mediana de todos os temas analisados','#34d399');
+
+  // Construir curvas mensais
+  const hoje=new Date();
+  const mesesFuturos=[];
+  for(let m=0;m<24;m++){
+    const d=new Date(hoje.getFullYear(),hoje.getMonth()+m,1);
+    mesesFuturos.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+  }
+  const provPorMes={};const pagPorMes={};
+  mesesFuturos.forEach(m=>{provPorMes[m]=0;pagPorMes[m]=0;});
+
+  // Para cada entrante, estimar quando vai provisionar/pagar
+  ent2026.forEach(r=>{
+    const ag=AGING_TEMA[r.tema];
+    if(!ag||!r.dataEnt) return;
+    const de=new Date(r.dataEnt);
+    if(ag.prov){
+      const dp=new Date(de.getTime()+ag.prov*86400000);
+      const ym=`${dp.getFullYear()}-${String(dp.getMonth()+1).padStart(2,'0')}`;
+      if(provPorMes[ym]!==undefined) provPorMes[ym]++;
+    }
+    if(ag.pag){
+      const dp=new Date(de.getTime()+ag.pag*86400000);
+      const ym=`${dp.getFullYear()}-${String(dp.getMonth()+1).padStart(2,'0')}`;
+      if(pagPorMes[ym]!==undefined) pagPorMes[ym]++;
+    }
+  });
+
+  const fmtM=ym=>{const[y,m]=ym.split('-');const ns=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];return ns[+m]+'/'+y.slice(2);};
+  const labelsM=mesesFuturos.map(fmtM);
+
+  // Acumular também risco financeiro por mês
+  const provFinMes={};const pagFinMes={};
+  mesesFuturos.forEach(m=>{provFinMes[m]=0;pagFinMes[m]=0;});
+  ent2026.forEach(r=>{
+    const ag=AGING_TEMA[r.tema];const med=MEDIANA_TEMA[r.tema]||0;
+    if(!ag||!r.dataEnt) return;
+    const de=new Date(r.dataEnt);
+    if(ag.prov){
+      const dp=new Date(de.getTime()+ag.prov*86400000);
+      const ym=`${dp.getFullYear()}-${String(dp.getMonth()+1).padStart(2,'0')}`;
+      if(provFinMes[ym]!==undefined){provPorMes[ym]+=0;provFinMes[ym]+=med;}
+    }
+    if(ag.pag){
+      const dp=new Date(de.getTime()+ag.pag*86400000);
+      const ym=`${dp.getFullYear()}-${String(dp.getMonth()+1).padStart(2,'0')}`;
+      if(pagFinMes[ym]!==undefined) pagFinMes[ym]+=med;
+    }
+  });
+
+  // Gráfico curva provisão — Volume ou Financeiro
+  lineC('c-riscos-prov',labelsM,[{
+    label:isV?'Processos chegando à provisão':'Valor projetado de provisão (R$)',
+    data:mesesFuturos.map(m=>isV?provPorMes[m]:provFinMes[m]),
+    borderColor:'#a78bfa',backgroundColor:'rgba(167,139,250,.1)',
+    fill:true,tension:.4,pointBackgroundColor:'#a78bfa',pointRadius:4
+  }],false,isV?null:fSh);
+
+  // Gráfico curva pagamento — Volume ou Financeiro
+  lineC('c-riscos-pag',labelsM,[{
+    label:isV?'Processos chegando ao pagamento':'Valor projetado de pagamento (R$)',
+    data:mesesFuturos.map(m=>isV?pagPorMes[m]:pagFinMes[m]),
+    borderColor:'#fb923c',backgroundColor:'rgba(251,146,60,.1)',
+    fill:true,tension:.4,pointBackgroundColor:'#fb923c',pointRadius:4
+  }],false,isV?null:fSh);
+
+  // Tabela por tema
+  const rows=Object.entries(porTema)
+    .map(([tema,d])=>{const ag=AGING_TEMA[tema];return{tema,cnt:d.cnt,prov:ag?.prov,pag:ag?.pag};  })
+    .sort((a,b)=>b.cnt-a.cnt);
+
+  const addMeses=(dias)=>{
+    if(!dias)return'—';
+    const d=new Date();d.setDate(d.getDate()+dias);
+    return`${fmtM(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'))} (~${Math.round(dias/30)} meses)`;
+  };
+
+  document.getElementById('tbl-riscos-body').innerHTML=rows.map(r=>{
+    const med=MEDIANA_TEMA[r.tema]||0;
+    const riscoProj=med>0?fSh(r.cnt*med):'—';
+    return`<tr>
+      <td style="text-align:left;font-weight:600;color:#e2e8f0">${r.tema}</td>
+      <td style="color:#4f9cf9;font-weight:700">${r.cnt}</td>
+      <td style="color:#f87171;font-weight:600">${riscoProj}</td>
+      <td>${r.prov?r.prov+'d ('+Math.round(r.prov/30)+' meses)':'—'}</td>
+      <td style="color:#a78bfa">${addMeses(r.prov)}</td>
+      <td>${r.pag?r.pag+'d ('+Math.round(r.pag/30)+' meses)':'—'}</td>
+      <td style="color:#fb923c">${addMeses(r.pag)}</td>
+    </tr>`;}).join('');
+}
+
 // PAGE: HISTÓRICO
+
 // ═══════════════════════════════════════════════════════
 function bHistorico(){
   const isV=VIEW==='vol';
@@ -2239,7 +2406,35 @@ function openModalHM(tema,uf){
   modal.onclick=e=>{if(e.target===modal)closeModalHM();};
 }
 function closeModalHM(){document.getElementById('modal-hm').style.display='none';if(CH['c-modal-hm']){CH['c-modal-hm'].destroy();delete CH['c-modal-hm'];}}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModalUF();closeModalTema();if(typeof closeModalHM==='function')closeModalHM();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModalUF();closeModalTema();if(typeof closeModalHM==='function')closeModalHM();closeModalTTema();closeModalTUF();}})
+function openModalTemaTemas(tema){
+  const{ativos}=getFD();const isV=VIEW==='vol';
+  const filtered=ativos.filter(r=>r.tema===tema);
+  const total=isV?filtered.length:filtered.reduce((a,r)=>a+r.contigPos,0);
+  const grp=Object.entries(isV?filtered.reduce((a,r)=>{a[r.estado]=(a[r.estado]||0)+1;return a},{}):filtered.reduce((a,r)=>{a[r.estado]=(a[r.estado]||0)+r.contigPos;return a},{})).filter(([k])=>k&&k.length===2).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('modal-ttema-title').textContent=`${tema} — ${isV?filtered.length+' processos':fSh(total)}`;
+  document.getElementById('modal-ttema-sub').textContent=`${grp.length} UFs · clique fora para fechar`;
+  let cum=0;document.getElementById('modal-ttema-pareto').innerHTML=grp.map(([n,v],i)=>{cum+=v;const cp=pct(cum,total);const vp=pct(v,total);return`<div class="pr"><span class="pr-i">${i+1}</span><span class="pr-name">${n}</span><div class="pr-bb" style="width:90px"><div class="pr-bf" style="width:${vp}%;background:${cp<=80?'#a78bfa':'#64748b'}"></div></div><span class="pr-val">${isV?v.toLocaleString('pt-BR'):fSh(v)}</span><span class="pr-cum">${cp}%</span></div>`;}).join('');
+  if(CH['c-modal-ttema']){CH['c-modal-ttema'].destroy();delete CH['c-modal-ttema'];}
+  const top8=grp.slice(0,8);const colors=top8.map((_,i)=>`hsl(${260+i*15},65%,${62-i*3}%)`);
+  CH['c-modal-ttema']=new Chart(document.getElementById('c-modal-ttema').getContext('2d'),{type:'bar',data:{labels:top8.map(([k])=>k),datasets:[{data:top8.map(([,v])=>v),backgroundColor:colors,borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:60}},plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'right',color:'rgba(255,255,255,.7)',font:{size:10,family:'Outfit'},formatter:v=>isV?v.toLocaleString('pt-BR'):fSh(v)},tooltip:{...CB.plugins.tooltip,callbacks:{label:ctx=>isV?ctx.raw.toLocaleString('pt-BR'):fBRL(ctx.raw)}}},scales:{x:{...AX,ticks:{...AX.ticks,callback:v=>isV?v:fSh(v)}},y:{...AX}}}});
+  const modal=document.getElementById('modal-ttema');modal.style.display='flex';modal.onclick=e=>{if(e.target===modal)closeModalTTema();};
+}
+function closeModalTTema(){document.getElementById('modal-ttema').style.display='none';if(CH['c-modal-ttema']){CH['c-modal-ttema'].destroy();delete CH['c-modal-ttema'];}}
+function openModalUFTemas(uf){
+  const{ativos}=getFD();const isV=VIEW==='vol';
+  const filtered=ativos.filter(r=>r.estado===uf);
+  const total=isV?filtered.length:filtered.reduce((a,r)=>a+r.contigPos,0);
+  const grp=Object.entries(isV?filtered.reduce((a,r)=>{a[r.tema]=(a[r.tema]||0)+1;return a},{}):filtered.reduce((a,r)=>{a[r.tema]=(a[r.tema]||0)+r.contigPos;return a},{})).filter(([k])=>k&&k!=='N/A'&&k!=='').sort((a,b)=>b[1]-a[1]).slice(0,12);
+  document.getElementById('modal-tuf-title').textContent=`${uf} — ${isV?filtered.length+' processos':fSh(total)}`;
+  document.getElementById('modal-tuf-sub').textContent=`${grp.length} temas · clique fora para fechar`;
+  let cum=0;document.getElementById('modal-tuf-pareto').innerHTML=grp.map(([n,v],i)=>{cum+=v;const cp=pct(cum,total);const vp=pct(v,total);return`<div class="pr"><span class="pr-i">${i+1}</span><span class="pr-name">${n}</span><div class="pr-bb" style="width:90px"><div class="pr-bf" style="width:${vp}%;background:${cp<=80?'#4f9cf9':'#64748b'}"></div></div><span class="pr-val">${isV?v.toLocaleString('pt-BR'):fSh(v)}</span><span class="pr-cum">${cp}%</span></div>`;}).join('');
+  if(CH['c-modal-tuf']){CH['c-modal-tuf'].destroy();delete CH['c-modal-tuf'];}
+  const top8=grp.slice(0,8);const colors=top8.map((_,i)=>`hsl(${200+i*18},70%,${60-i*3}%)`);
+  CH['c-modal-tuf']=new Chart(document.getElementById('c-modal-tuf').getContext('2d'),{type:'bar',data:{labels:top8.map(([k])=>k.length>28?k.slice(0,27)+'…':k),datasets:[{data:top8.map(([,v])=>v),backgroundColor:colors,borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:60}},plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'right',color:'rgba(255,255,255,.7)',font:{size:10,family:'Outfit'},formatter:v=>isV?v.toLocaleString('pt-BR'):fSh(v)},tooltip:{...CB.plugins.tooltip,callbacks:{label:ctx=>isV?ctx.raw.toLocaleString('pt-BR'):fBRL(ctx.raw)}}},scales:{x:{...AX,ticks:{...AX.ticks,callback:v=>isV?v:fSh(v)}},y:{...AX}}}});
+  const modal=document.getElementById('modal-tuf');modal.style.display='flex';modal.onclick=e=>{if(e.target===modal)closeModalTUF();};
+}
+function closeModalTUF(){document.getElementById('modal-tuf').style.display='none';if(CH['c-modal-tuf']){CH['c-modal-tuf'].destroy();delete CH['c-modal-tuf'];}};
 function openModalTema(tema){const{mes}=getFD();const adic=mes.filter(r=>r.sit==='Adição'&&r.tema===tema);const isV=VIEW==='vol';const total=isV?adic.length:adic.reduce((a,r)=>a+r.valor,0);const ufGrp=Object.entries(isV?adic.reduce((a,r)=>{a[r.estado||'N/A']=(a[r.estado||'N/A']||0)+1;return a},{}):adic.reduce((a,r)=>{a[r.estado||'N/A']=(a[r.estado||'N/A']||0)+r.valor;return a},{})).filter(([k])=>k&&k!=='N/A'&&k!=='').sort((a,b)=>b[1]-a[1]);document.getElementById('modal-tema-title').textContent=`${tema} — ${isV?adic.length+' processos':fSh(total)}`;document.getElementById('modal-tema-total').textContent=`${ufGrp.length} UFs envolvidas · clique fora para fechar`;let cum=0;document.getElementById('modal-tema-pareto').innerHTML=ufGrp.map(([n,v],i)=>{cum+=v;const cp=pct(cum,total);const vp=pct(v,total);return`<div class="pr"><span class="pr-i">${i+1}</span><span class="pr-name">${n}</span><div class="pr-bb" style="width:90px"><div class="pr-bf" style="width:${vp}%;background:${cp<=80?'#a78bfa':'#64748b'}"></div></div><span class="pr-val">${isV?v.toLocaleString('pt-BR'):fSh(v)}</span><span class="pr-cum">${cp}%</span></div>`;}).join('');if(CH['c-modal-tema']){CH['c-modal-tema'].destroy();delete CH['c-modal-tema'];}const top8=ufGrp.slice(0,8);const colors=top8.map((_,i)=>`hsl(${260+i*15},65%,${62-i*3}%)`);CH['c-modal-tema']=new Chart(document.getElementById('c-modal-tema').getContext('2d'),{type:'bar',data:{labels:top8.map(([k])=>k),datasets:[{data:top8.map(([,v])=>v),backgroundColor:colors,borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:60}},plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'right',color:'rgba(255,255,255,.7)',font:{size:10,family:'Outfit'},formatter:v=>isV?v.toLocaleString('pt-BR'):fSh(v)},tooltip:{...CB.plugins.tooltip,callbacks:{label:ctx=>isV?ctx.raw.toLocaleString('pt-BR'):fBRL(ctx.raw)}}},scales:{x:{...AX,ticks:{...AX.ticks,callback:v=>isV?v:fSh(v)}},y:{...AX}}}});const modal=document.getElementById('modal-tema');modal.style.display='flex';modal.onclick=e=>{if(e.target===modal)closeModalTema();};}
 function closeModalTema(){document.getElementById('modal-tema').style.display='none';if(CH['c-modal-tema']){CH['c-modal-tema'].destroy();delete CH['c-modal-tema'];}}
 </script>
