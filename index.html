@@ -2374,7 +2374,7 @@ function bRiscos(){
   const provMesProcs={};const pagMesProcs={};
   mesesFuturos.forEach(m=>{provMesProcs[m]=[];pagMesProcs[m]=[];});
 
-  ENT2026_FULL.forEach(r=>{
+  ent2026all.forEach(r=>{
     if(!r.dataEnt) return;
     const aprov=AGING_TEMA[r.tema]?.prov||(AGING_NAT_PROV[getNatKey(r.nat)]||333);
     const apag =AGING_TEMA[r.tema]?.pag ||(AGING_NAT_PAG [getNatKey(r.nat)]||673);
@@ -2492,9 +2492,9 @@ function bRiscos(){
 
   // Gráfico excesso de aging
   // Excesso de aging ordenado por risco financeiro (maior→menor)
+  // Excesso: top 8 por risco financeiro, ordenados por excesso de dias (maior→menor)
   const top8aByRisco=[...alertas].sort((a,b)=>b[1].contig-a[1].contig).slice(0,8);
-  // Reordenar do maior para menor excesso DENTRO dos 8 selecionados por risco
-  const top8aOrdenado=[...top8aByRisco].sort((a,b)=>b[1].contig-a[1].contig);
+  const top8aOrdenado=[...top8aByRisco].sort((a,b)=>b[1].excesso-a[1].excesso);
   barH('c-alerta-excesso',top8aOrdenado.map(([t,d])=>[t.length>30?t.slice(0,29)+'…':t,d.excesso]),false,'rgba(251,191,36,.65)');
 
   // Tabela detalhada
