@@ -2295,25 +2295,28 @@ function closeModalUF(){document.getElementById('modal-uf').style.display='none'
 // PAGE: RISCOS FUTUROS
 // ═══════════════════════════════════════════════════════
 // Constantes carregadas de data.js
-  
+
+// Funções helper globais para projeção de riscos
+function getNatKey(nat){return nat==='TRABALHISTA'?'TRABALHISTA':'CIVEL';}
+function getMedTema(r){
+  if(MEDIANA_TEMA[r.tema]) return MEDIANA_TEMA[r.tema];
+  return MEDIANA_NAT[getNatKey(r.nat)]||0;
+}
+function getAgingProv(r){
+  if(AGING_TEMA[r.tema]?.prov) return AGING_TEMA[r.tema].prov;
+  return AGING_NAT_PROV[getNatKey(r.nat)]||333;
+}
+function getAgingPag(r){
+  if(AGING_TEMA[r.tema]?.pag) return AGING_TEMA[r.tema].pag;
+  return AGING_NAT_PAG[getNatKey(r.nat)]||673;
+}
+
 function bRiscos(){
   const isV=VIEW==='vol';
   const{ent}=getFD();
   // Filtra entrantes de 2026 com tema válido
   // Fallback: se tema não tem mediana própria, usar mediana da natureza
-  const getNatKey=nat=>nat==='TRABALHISTA'?'TRABALHISTA':'CIVEL';
-  const getMedTema=r=>{
-    if(MEDIANA_TEMA[r.tema]) return MEDIANA_TEMA[r.tema];
-    return MEDIANA_NAT[getNatKey(r.nat)]||0;
-  };
-  const getAgingProv=r=>{
-    if(AGING_TEMA[r.tema]?.prov) return AGING_TEMA[r.tema].prov;
-    return AGING_NAT_PROV[getNatKey(r.nat)]||333;
-  };
-  const getAgingPag=r=>{
-    if(AGING_TEMA[r.tema]?.pag) return AGING_TEMA[r.tema].pag;
-    return AGING_NAT_PAG[getNatKey(r.nat)]||673;
-  };
+  // getNatKey, getMedTema, getAgingProv, getAgingPag definidas no escopo global abaixo
   // Todos os entrantes 2026 com tema válido (declarado antes de qualquer uso)
   const ent2026all=ent.filter(r=>r.anoMesEnt&&r.anoMesEnt>='2026-01'&&r.tema);
   const ent2026=ent2026all.filter(r=>AGING_TEMA[r.tema]);
