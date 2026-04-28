@@ -368,6 +368,36 @@ tbody tr:hover td{background:var(--s0)}
   </div>
 </div>
 
+<!-- MODAL CURVA DRILL-DOWN -->
+<div id="modal-curva" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);align-items:flex-start;justify-content:center;overflow-y:auto;padding:2rem 1rem">
+  <div style="background:#111c38;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:1.5rem;width:100%;max-width:900px;margin:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <div>
+        <div style="font-size:.58rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#a78bfa;margin-bottom:.2rem" id="modal-curva-tipo-label">PROJEÇÃO</div>
+        <div id="modal-curva-title" style="font-size:1.05rem;font-weight:800;color:#f1f5f9"></div>
+        <div id="modal-curva-sub" style="font-size:.72rem;color:#64748b;margin-top:.2rem"></div>
+      </div>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <button onclick="exportCurvaExcel()" style="background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);border-radius:8px;padding:.35rem .8rem;cursor:pointer;color:#34d399;font-size:.72rem;font-family:'Outfit',sans-serif;font-weight:600">⬇ Excel</button>
+        <button onclick="closeModalCurva()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;width:32px;height:32px;cursor:pointer;color:#94a3b8;flex-shrink:0">✕</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="hm-table" id="tbl-modal-curva" style="min-width:100%;font-size:.71rem">
+        <thead><tr>
+          <th style="text-align:left">#</th>
+          <th>Natureza</th>
+          <th style="text-align:left">Tema</th>
+          <th>Data Entrada</th>
+          <th>Aging Projetado</th>
+          <th>Risco Provisão *</th>
+        </tr></thead>
+        <tbody id="tbl-modal-curva-body"></tbody>
+      </table>
+      <div style="font-size:.62rem;color:#475569;margin-top:.5rem">* Risco Provisão = mediana histórica do tema (ou fallback por natureza)</div>
+    </div>
+  </div>
+</div>
 <!-- MODAL ALERTA PROCESSOS -->
 <div id="modal-alerta" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);align-items:flex-start;justify-content:center;overflow-y:auto;padding:2rem 1rem">
   <div style="background:#111c38;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:1.5rem;width:100%;max-width:900px;margin:auto">
@@ -2336,6 +2366,10 @@ function bRiscos(){
   // Acumular também risco financeiro por mês
   const provFinMes={};const pagFinMes={};
   mesesFuturos.forEach(m=>{provFinMes[m]=0;pagFinMes[m]=0;});
+  // Mapas mes→processos para drill-down
+  const provMesProcs={};const pagMesProcs={};
+  mesesFuturos.forEach(m=>{provMesProcs[m]=[];pagMesProcs[m]=[];});
+
   // Curvas usando fallback por natureza para temas sem aging próprio
   ent2026all.forEach(r=>{
     if(!r.dataEnt) return;
@@ -2343,21 +2377,26 @@ function bRiscos(){
     const aprov=getAgingProv(r);
     const apag=getAgingPag(r);
     const de=new Date(r.dataEnt);
-    // Volume
     const dpProv=new Date(de.getTime()+aprov*86400000);
     const ymProv=`${dpProv.getFullYear()}-${String(dpProv.getMonth()+1).padStart(2,'0')}`;
-    if(provPorMes[ymProv]!==undefined) provPorMes[ymProv]++;
-    if(provFinMes[ymProv]!==undefined) provFinMes[ymProv]+=med;
+    if(provPorMes[ymProv]!==undefined){
+      provPorMes[ymProv]++;
+      provFinMes[ymProv]+=med;
+      provMesProcs[ymProv].push({tema:r.tema,nat:r.nat,med,aprov,dataEnt:r.dataEnt});
+    }
     const dpPag=new Date(de.getTime()+apag*86400000);
     const ymPag=`${dpPag.getFullYear()}-${String(dpPag.getMonth()+1).padStart(2,'0')}`;
-    if(pagPorMes[ymPag]!==undefined) pagPorMes[ymPag]++;
-    if(pagFinMes[ymPag]!==undefined) pagFinMes[ymPag]+=med;
+    if(pagPorMes[ymPag]!==undefined){
+      pagPorMes[ymPag]++;
+      pagFinMes[ymPag]+=med;
+      pagMesProcs[ymPag].push({tema:r.tema,nat:r.nat,med,apag,dataEnt:r.dataEnt});
+    }
   });
 
   // Gráfico curva provisão — Volume ou Financeiro
   // Curvas de riscos com fonte maior nos datalabels
   ['c-riscos-prov','c-riscos-pag'].forEach(id=>{if(CH[id]){CH[id].destroy();delete CH[id];}});
-  const mkRiscoLine=(id,label,data,color,bgColor,fmtFn)=>{
+  const mkRiscoLine=(id,label,data,color,bgColor,fmtFn,onClickCb)=>{
     const c=document.getElementById(id);if(!c)return;
     const n=labelsM.length;
     CH[id]=new Chart(c.getContext('2d'),{type:'line',
@@ -2371,10 +2410,20 @@ function bRiscos(){
             color:'rgba(255,255,255,.9)',
             font:{family:'Outfit',size:11,weight:'700'},
             anchor:'end',align:'top',
-            formatter:(v)=>v>0?(fmtFn?fmtFn(v):v.toLocaleString('pt-BR')):null}}}});
+            formatter:(v)=>v>0?(fmtFn?fmtFn(v):v.toLocaleString('pt-BR')):null}},
+        onClick:(evt,els)=>{if(els.length&&onClickCb)onClickCb(els[0].index);},
+        onHover:(evt,els)=>{evt.native.target.style.cursor=els.length?'pointer':'default';}}});
   };
-  mkRiscoLine('c-riscos-prov',isV?'Processos chegando à provisão':'Valor projetado de provisão (R$)',mesesFuturos.map(m=>isV?provPorMes[m]:provFinMes[m]),'#a78bfa','rgba(167,139,250,.1)',isV?null:fSh);
-  mkRiscoLine('c-riscos-pag',isV?'Processos chegando ao pagamento':'Valor projetado de pagamento (R$)',mesesFuturos.map(m=>isV?pagPorMes[m]:pagFinMes[m]),'#fb923c','rgba(251,146,60,.1)',isV?null:fSh);
+  mkRiscoLine('c-riscos-prov',
+    isV?'Processos chegando à provisão':'Valor projetado de provisão (R$)',
+    mesesFuturos.map(m=>isV?provPorMes[m]:provFinMes[m]),
+    '#a78bfa','rgba(167,139,250,.1)',isV?null:fSh,
+    (idx)=>openModalCurva('prov',mesesFuturos[idx],labelsM[idx],provMesProcs,isV));
+  mkRiscoLine('c-riscos-pag',
+    isV?'Processos chegando ao pagamento':'Valor projetado de pagamento (R$)',
+    mesesFuturos.map(m=>isV?pagPorMes[m]:pagFinMes[m]),
+    '#fb923c','rgba(251,146,60,.1)',isV?null:fSh,
+    (idx)=>openModalCurva('pag',mesesFuturos[idx],labelsM[idx],pagMesProcs,isV));
 
   // Tabela por tema
   // Agrupar temas com < 5 entrantes como OUTROS
@@ -2564,14 +2613,68 @@ function openModalAlerta(filtro){
     <td style="font-family:monospace;font-size:.65rem;color:#94a3b8">${p.proc}</td>
     <td><span style="font-size:.63rem;padding:.15rem .4rem;border-radius:4px;background:${p.nat==='TRABALHISTA'?'rgba(167,139,250,.2)':'rgba(79,156,249,.2)'};color:${p.nat==='TRABALHISTA'?'#a78bfa':'#4f9cf9'}">${p.nat==='TRABALHISTA'?'TRAB':'CÍVEL'}</span></td>
     <td style="text-align:left;color:#e2e8f0;font-size:.68rem">${p.tema}</td>
-    <td style="color:#fb923c;font-weight:600">${fSh(p.contig)}</td>
-    <td style="color:#f87171;font-weight:700">${fSh(p.med)}</td>
+    <td style="color:#fb923c;font-weight:600" data-val="${p.contig}">${p.contig.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+    <td style="color:#f87171;font-weight:700" data-val="${p.med}">${p.med.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
     <td style="color:#64748b;font-size:.66rem">${p.fase||'—'}</td>
     <td style="color:#fbbf24">${urgLabel(p.excesso)} ${p.excesso}d</td>
   </tr>`).join('');
   const modal=document.getElementById('modal-alerta');
   modal.style.display='flex';
   modal.onclick=e=>{if(e.target===modal)closeModalAlerta();};
+}
+function openModalCurva(tipo,ym,ymLabel,mesProcs,isVol){
+  const procs=(mesProcs[ym]||[]).sort((a,b)=>b.med-a.med);
+  const label=tipo==='prov'?'Provisão Projetada':'Pagamento Projetado';
+  const cor=tipo==='prov'?'#a78bfa':'#fb923c';
+  document.getElementById('modal-curva-tipo-label').textContent=`CURVA DE ${label.toUpperCase()}`;
+  document.getElementById('modal-curva-tipo-label').style.color=cor;
+  document.getElementById('modal-curva-title').textContent=`${ymLabel} — ${procs.length} processos projetados`;
+  const totalRisco=procs.reduce((s,p)=>s+p.med,0);
+  const totalVol=procs.length;
+  document.getElementById('modal-curva-sub').textContent=
+    `Risco total projetado: ${fSh(totalRisco)} · ${totalVol} processo${totalVol!==1?'s':''}`;
+  const fmtDate=d=>{if(!d)return'—';const dt=new Date(d);return dt.toLocaleDateString('pt-BR');};
+  const agingKey=tipo==='prov'?'aprov':'apag';
+  document.getElementById('tbl-modal-curva-body').innerHTML=procs.map((p,i)=>`<tr>
+    <td style="color:#64748b">${i+1}</td>
+    <td><span style="font-size:.63rem;padding:.15rem .4rem;border-radius:4px;background:${p.nat==='TRABALHISTA'?'rgba(167,139,250,.2)':'rgba(79,156,249,.2)'};color:${p.nat==='TRABALHISTA'?'#a78bfa':'#4f9cf9'}">${p.nat==='TRABALHISTA'?'TRAB':'CÍVEL'}</span></td>
+    <td style="text-align:left;color:#e2e8f0;font-size:.68rem">${p.tema}</td>
+    <td style="color:#94a3b8">${fmtDate(p.dataEnt)}</td>
+    <td style="color:#64748b">${p[agingKey]||'—'}d</td>
+    <td style="color:${cor};font-weight:700">${fSh(p.med)}</td>
+  </tr>`).join('');
+  // Guardar contexto para export
+  window._curvaCtx={tipo,ym,ymLabel,procs,agingKey};
+  const modal=document.getElementById('modal-curva');
+  modal.style.display='flex';
+  modal.onclick=e=>{if(e.target===modal)closeModalCurva();};
+}
+function closeModalCurva(){document.getElementById('modal-curva').style.display='none';}
+function exportCurvaExcel(){
+  if(!window._curvaCtx){return;}
+  const{tipo,ymLabel,procs,agingKey}=window._curvaCtx;
+  const label=tipo==='prov'?'Provisão Projetada':'Pagamento Projetado';
+  const rows=procs.map((p,i)=>({
+    '#': i+1,
+    'Natureza': p.nat,
+    'Tema': p.tema,
+    'Data de Entrada': p.dataEnt?new Date(p.dataEnt).toLocaleDateString('pt-BR'):'—',
+    [`Aging Projetado ${label} (dias)`]: p[agingKey]||0,
+    'Risco de Provisão - Mediana (R$)': p.med
+  }));
+  const wb=XLSX.utils.book_new();
+  const wsCurva2=XLSX.utils.json_to_sheet(rows);
+  wsCurva2['!cols']=[{wch:6},{wch:14},{wch:42},{wch:16},{wch:30},{wch:28}];
+  // Formatar valores monetários
+  const rngC=XLSX.utils.decode_range(wsCurva2['!ref']);
+  for(let R=1;R<=rngC.e.r;R++){
+    const cell=wsCurva2[XLSX.utils.encode_cell({r:R,c:5})];
+    if(cell&&typeof cell.v==='number') cell.z='"R$"\ #,##0.00';
+  }
+  XLSX.utils.book_append_sheet(wb,wsCurva2,`${label} ${ymLabel}`.slice(0,31));
+  const hoje=new Date();
+  const datStr=`${hoje.getFullYear()}${String(hoje.getMonth()+1).padStart(2,'0')}${String(hoje.getDate()).padStart(2,'0')}`;
+  XLSX.writeFile(wb,`Alloha_${tipo==='prov'?'Provisao':'Pagamento'}_${ymLabel.replace('/','_')}_${datStr}.xlsx`);
 }
 function closeModalAlerta(){document.getElementById('modal-alerta').style.display='none';}
 function exportAlertaExcel(){
@@ -2583,8 +2686,8 @@ function exportAlertaExcel(){
       'Nº Processo': tds[1].textContent.trim(),
       'Natureza': tds[2].textContent.trim(),
       'Tema': tds[3].textContent.trim(),
-      'Contingência Possível (R$)': parseFloat(tds[4].textContent.replace(/[R$\s\.Mi]/g,'').replace(',','.'))||0,
-      'Risco Provisão - Mediana (R$)': parseFloat(tds[5].textContent.replace(/[R$\s\.Mi]/g,'').replace(',','.'))||0,
+      'Contingência Possível (R$)': parseFloat(tds[4].dataset.val)||0,
+      'Risco Provisão - Mediana (R$)': parseFloat(tds[5].dataset.val)||0,
       'Fase Processual': tds[6].textContent.trim(),
       'Excesso Aging': tds[7].textContent.replace(/[🔴🟠🟡🟢]/g,'').trim()
     };
@@ -2592,24 +2695,17 @@ function exportAlertaExcel(){
   if(!rows.length){alert('Nenhum dado para exportar.');return;}
   // Criar workbook SheetJS
   const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.json_to_sheet(rows);
-  // Ajustar larguras das colunas
-  ws['!cols']=[
-    {wch:42}, // Nº Processo
-    {wch:14}, // Natureza
-    {wch:40}, // Tema
-    {wch:24}, // Contingência
-    {wch:28}, // Risco Provisão
-    {wch:28}, // Fase
-    {wch:18}, // Excesso
-  ];
-  // Estilo do header (negrito via SheetJS — limitado, mas funciona)
-  const headerRange=XLSX.utils.decode_range(ws['!ref']);
-  for(let C=headerRange.s.c;C<=headerRange.e.c;C++){
-    const cell=ws[XLSX.utils.encode_cell({r:0,c:C})];
-    if(cell) cell.s={font:{bold:true},fill:{fgColor:{rgb:'1E3A5F'}},alignment:{horizontal:'center'}};
+  const wsA=XLSX.utils.json_to_sheet(rows);
+  wsA['!cols']=[{wch:42},{wch:14},{wch:40},{wch:28},{wch:28},{wch:28},{wch:18}];
+  // Formatar colunas monetárias (índices 3 e 4)
+  const rngA=XLSX.utils.decode_range(wsA['!ref']);
+  for(let R=1;R<=rngA.e.r;R++){
+    for(const C of[3,4]){
+      const cell=wsA[XLSX.utils.encode_cell({r:R,c:C})];
+      if(cell&&typeof cell.v==='number') cell.z='"R$"\ #,##0.00';
+    }
   }
-  XLSX.utils.book_append_sheet(wb,ws,'Processos em Alerta');
+  XLSX.utils.book_append_sheet(wb,wsA,'Processos em Alerta');
   // Nome do arquivo com data
   const hoje=new Date();
   const datStr=`${hoje.getFullYear()}${String(hoje.getMonth()+1).padStart(2,'0')}${String(hoje.getDate()).padStart(2,'0')}`;
