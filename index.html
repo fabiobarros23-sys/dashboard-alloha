@@ -739,6 +739,8 @@ tbody tr:hover td{background:var(--s0)}
           <thead><tr><th style="text-align:left">Tema</th><th>Entrantes 2026</th><th>Risco Projetado</th><th>Aging → Provisão</th><th>Previsão Provisão</th><th>Aging → Pagamento</th><th>Previsão Pagamento</th></tr></thead>
           <tbody id="tbl-riscos-body"></tbody>
         </table></div>
+          <div style="font-size:.62rem;color:#475569;margin-top:.5rem">* Mediana da natureza usada como fallback (tema sem histórico suficiente de prováveis). Trabalhista: R$31.772 · Cível: R$3.021</div>
+        </div>
       </div>
       <div class="cd mb">
         <div class="cdh"><div><div class="cdt">Possíveis em Alerta — Risco de Escalada</div><div class="cds">Processos POSSÍVEIS ativos que já ultrapassaram o aging mediano de Possível→Provável · Candidatos à reclassificação</div></div></div>
@@ -2220,17 +2222,24 @@ function closeModalUF(){document.getElementById('modal-uf').style.display='none'
 // ═══════════════════════════════════════════════════════
 const MEDIANA_TEMA={"HORAS EXTRAS": 38584, "VERBAS SALARIAIS": 24983, "DIFERENÇA SALARIAL": 29375, "COMISSÃO": 30000, "DANO MORAL": 150000, "COBRANÇA INDEVIDA": 3448, "NEGATIVAÇÃO": 3000, "RESPONSABILIDADE SUBSIDIÁRIA": 31772, "ASSÉDIO MORAL": 25635, "RESCISÃO INDIRETA": 27394, "REVERSÃO DA JUSTA CAUSA": 15000, "VÍNCULO EMPREGATÍCIO": 61606, "ACÚMULO DE FUNÇÃO": 13336, "DIFERENÇAS SALARIAIS": 25000, "NULIDADE DO PEDIDO DE DEMISSÃO": 15000, "EQUIPARAÇÃO SALARIAL": 18000, "ACIDENTE DE TRÂNSITO": 13873, "FALHA NA PRESTAÇÃO DO SERVIÇO": 3021, "SUSPENSÃO INDEVIDA": 2629, "CONTRATAÇÃO FRAUDULENTA": 2221, "CUMPRIMENTO DE SENTENÇA": 76856, "ADICIONAL NOTURNO": 30785};
 const ALERTA_TEMA={"COMISSÃO": {"cnt": 6, "contig": 298788, "excesso": 174, "aging_med": 176, "top_fase": "CONHECIMENTO"}, "VERBAS SALARIAIS": {"cnt": 40, "contig": 2241018, "excesso": 49, "aging_med": 269, "top_fase": "RECURSAL"}, "HORAS EXTRAS": {"cnt": 29, "contig": 1454820, "excesso": 370, "aging_med": 305, "top_fase": "RECURSO"}, "VÍNCULO EMPREGATÍCIO": {"cnt": 22, "contig": 3078859, "excesso": 42, "aging_med": 318, "top_fase": "INICIAL"}, "RESCISÃO INDIRETA": {"cnt": 5, "contig": 81643, "excesso": 347, "aging_med": 353, "top_fase": "INSTRUÇÃO"}, "FALHA NA PRESTAÇÃO DO SERVIÇO": {"cnt": 30, "contig": 51149, "excesso": 129, "aging_med": 237, "top_fase": "POSTULATÓRIA"}, "CONTRATAÇÃO FRAUDULENTA": {"cnt": 44, "contig": 90602, "excesso": 209, "aging_med": 368, "top_fase": "POSTULATÓRIA"}, "RESPONSABILIDADE SUBSIDIÁRIA": {"cnt": 66, "contig": 2725801, "excesso": 304, "aging_med": 428, "top_fase": "RECURSAL"}};
+const MEDIANA_NAT={TRABALHISTA:31772,CIVEL:3021};
 const AGING_TEMA={"CONTRATAÇÃO FRAUDULENTA": {"prov": 178, "pag": 337}, "VERBAS SALARIAIS": {"prov": 139, "pag": null}, "RESPONSABILIDADE SUBSIDIÁRIA": {"prov": 406, "pag": 904}, "COBRANÇA INDEVIDA": {"prov": 196, "pag": 416}, "SUSPENSÃO INDEVIDA": {"prov": 152, "pag": 334}, "INTERRUPÇÃO DO SERVIÇO": {"prov": 478, "pag": null}, "FRAUDE CONTRATUAL": {"prov": 154, "pag": 248}, "FALHA NA PRESTAÇÃO DO SERVIÇO": {"prov": 154, "pag": 339}, "DANOS MORAIS": {"prov": 136, "pag": null}, "HORAS EXTRAS": {"prov": 387, "pag": 677}, "FALHA NA PRESTAÇÃO DE SERVIÇO": {"prov": 113, "pag": 325}, "FALHA DE PRESTAÇÃO DE SERVIÇO": {"prov": 84, "pag": 455}, "VÍNCULO EMPREGATÍCIO": {"prov": 233, "pag": 1035}, "PROBLEMA COM MUDANÇA DE ENDEREÇO": {"prov": 179, "pag": 353}, "VERBAS TRABALHISTAS": {"prov": 257, "pag": 294}, "RESCISÃO INDIRETA": {"prov": 129, "pag": 384}, "DIFERENÇAS SALARIAIS": {"prov": 246, "pag": 617}, "ACIDENTE DE TRÂNSITO": {"prov": 209, "pag": 350}, "SUSPENSÃO DE SERVIÇO DEVIDAMENTE QUITADO": {"prov": 147, "pag": 378}, "ILEGITIMIDADE PASSIVA": {"prov": 163, "pag": 320}, "CONTRATAÇÃO FRAUDULENTA TRABALHISTA": {"prov": 178, "pag": 337}};
 
 function bRiscos(){
   const isV=VIEW==='vol';
   const{ent}=getFD();
   // Filtra entrantes de 2026 com tema válido
+  // Fallback: se tema não tem mediana própria, usar mediana da natureza
+  const getMedTema=r=>{
+    if(MEDIANA_TEMA[r.tema]) return MEDIANA_TEMA[r.tema];
+    const natKey=r.nat==='TRABALHISTA'?'TRABALHISTA':'CIVEL';
+    return MEDIANA_NAT[natKey]||0;
+  };
   const ent2026=ent.filter(r=>r.anoMesEnt&&r.anoMesEnt>='2026-01'&&r.tema&&AGING_TEMA[r.tema]);
 
-  // Agrupar por tema
+  // Agrupar por tema — todos os entrantes 2026 com tema válido
   const porTema={};
-  ent2026.forEach(r=>{
+  ent2026all.forEach(r=>{
     if(!porTema[r.tema]) porTema[r.tema]={cnt:0,datas:[]};
     porTema[r.tema].cnt++;
     if(r.dataEnt) porTema[r.tema].datas.push(new Date(r.dataEnt));
@@ -2242,10 +2251,10 @@ function bRiscos(){
   const temasComPag=Object.keys(porTema).filter(t=>AGING_TEMA[t]?.pag).length;
   const medianaGeral=Math.round(Object.values(AGING_TEMA).filter(d=>d.prov).reduce((a,d)=>a+d.prov,0)/Object.values(AGING_TEMA).filter(d=>d.prov).length);
   // Risco financeiro projetado total
+  // Risco total usando fallback por natureza para temas sem mediana própria
+  const ent2026all=ent.filter(r=>r.anoMesEnt&&r.anoMesEnt>='2026-01'&&r.tema);
   let riscoTotal=0;
-  Object.entries(porTema).forEach(([tema,d])=>{
-    if(MEDIANA_TEMA[tema]) riscoTotal+=d.cnt*MEDIANA_TEMA[tema];
-  });
+  ent2026all.forEach(r=>{ riscoTotal+=getMedTema(r); });
   document.getElementById('kpis-riscos').innerHTML=
     kpi('Entrantes 2026 Analisados',totalEnt.toLocaleString('pt-BR'),'Com tema mapeado no histórico','#4f9cf9')+
     kpi('Risco Financeiro Projetado',fSh(riscoTotal),'Mediana histórica × entrantes por tema','#f87171')+
@@ -2285,8 +2294,9 @@ function bRiscos(){
   // Acumular também risco financeiro por mês
   const provFinMes={};const pagFinMes={};
   mesesFuturos.forEach(m=>{provFinMes[m]=0;pagFinMes[m]=0;});
-  ent2026.forEach(r=>{
-    const ag=AGING_TEMA[r.tema];const med=MEDIANA_TEMA[r.tema]||0;
+  // Para financeiro: usar todos os entrantes 2026 com fallback de mediana
+  ent2026all.forEach(r=>{
+    const ag=AGING_TEMA[r.tema];const med=getMedTema(r);
     if(!ag||!r.dataEnt) return;
     const de=new Date(r.dataEnt);
     if(ag.prov){
@@ -2336,7 +2346,10 @@ function bRiscos(){
 
   document.getElementById('tbl-riscos-body').innerHTML=rows.map(r=>{
     const med=MEDIANA_TEMA[r.tema]||0;
-    const riscoProj=med>0?fSh(r.cnt*med):'—';
+    const medNat=r.nat==='TRABALHISTA'?MEDIANA_NAT.TRABALHISTA:MEDIANA_NAT.CIVEL;
+    const medUsada=med>0?med:medNat;
+    const isFallback=med===0;
+    const riscoProj=fSh(r.cnt*medUsada)+(isFallback?' *':'');
     return`<tr>
       <td style="text-align:left;font-weight:600;color:#e2e8f0">${r.tema}</td>
       <td style="color:#4f9cf9;font-weight:700">${r.cnt}</td>
