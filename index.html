@@ -382,6 +382,16 @@ tbody tr:hover td{background:var(--s0)}
         <button onclick="closeModalCurva()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;width:32px;height:32px;cursor:pointer;color:#94a3b8;flex-shrink:0">✕</button>
       </div>
     </div>
+    <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:.6rem .9rem;margin-bottom:.75rem;font-size:.68rem;color:#94a3b8;line-height:1.6">
+        <strong style="color:#e2e8f0">Legenda:</strong>&nbsp;
+        † <span style="color:#e2e8f0">*</span> Contingência provisionada &nbsp;|&nbsp;
+        <span style="color:#e2e8f0">**</span> Valor da causa &nbsp;|&nbsp;
+        <span style="color:#e2e8f0">***</span> Mediana do tema (sem dados reais)
+        &nbsp;&nbsp;·&nbsp;&nbsp;
+        ‡ Mediana histórica do tema (ou fallback por natureza) — valor usado nos gráficos de projeção
+        &nbsp;&nbsp;·&nbsp;&nbsp;
+        Ordenado por valor decrescente
+      </div>
     <div style="overflow-x:auto">
       <table class="hm-table" id="tbl-modal-curva" style="min-width:100%;font-size:.71rem">
         <thead><tr>
@@ -391,11 +401,12 @@ tbody tr:hover td{background:var(--s0)}
           <th style="text-align:left">Tema</th>
           <th>Data Entrada</th>
           <th>Aging</th>
-          <th>Valor †</th>
+          <th>Valor do Processo †</th>
+          <th>Mediana Projetada ‡</th>
         </tr></thead>
         <tbody id="tbl-modal-curva-body"></tbody>
       </table>
-      <div style="font-size:.62rem;color:#475569;margin-top:.5rem">† * Contingência provisionada  |  ** Valor da causa  |  *** Mediana do tema (sem dados reais) · Ordenado por valor decrescente</div>
+
     </div>
   </div>
 </div>
@@ -2382,14 +2393,15 @@ function bRiscos(){
     if(provPorMes[ymProv]!==undefined){
       provPorMes[ymProv]++;
       provFinMes[ymProv]+=r.valor;
-      provMesProcs[ymProv].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.valor,fonte:r.fonte,aprov,dataEnt:r.dataEnt});
+      const medR=MEDIANA_TEMA[r.tema]||(MEDIANA_NAT[getNatKey(r.nat)]||0);
+      provMesProcs[ymProv].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.valor,fonte:r.fonte,med:medR,aprov,dataEnt:r.dataEnt});
     }
     const dpPag=new Date(de.getTime()+apag*86400000);
     const ymPag=`${dpPag.getFullYear()}-${String(dpPag.getMonth()+1).padStart(2,'0')}`;
     if(pagPorMes[ymPag]!==undefined){
       pagPorMes[ymPag]++;
       pagFinMes[ymPag]+=r.valor;
-      pagMesProcs[ymPag].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.valor,fonte:r.fonte,apag,dataEnt:r.dataEnt});
+      pagMesProcs[ymPag].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.valor,fonte:r.fonte,med:medR,apag,dataEnt:r.dataEnt});
     }
   });
   // Sincronizar ent2026all com ENT2026_FULL para KPIs e tabela
@@ -2654,6 +2666,7 @@ function openModalCurva(tipo,ym,ymLabel,mesProcs,isVol){
       <td style="color:#94a3b8">${fmtDate(p.dataEnt)}</td>
       <td style="color:#64748b">${p[agingKey]||'—'}d</td>
       <td style="color:${cor};font-weight:700" data-val="${val}" title="${fonteTitle(p.fonte||3)}">${val.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} <sup style="color:#64748b;font-size:.65rem">${fl}</sup></td>
+      <td style="color:#34d399;font-weight:600">${p.med>0?p.med.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'}</td>
     </tr>`;
   }).join('');
   // Guardar contexto para export
@@ -2677,17 +2690,20 @@ function exportCurvaExcel(){
     'Tema': p.tema,
     'Data de Entrada': p.dataEnt?new Date(p.dataEnt).toLocaleDateString('pt-BR'):'—',
     [`Aging Projetado ${label} (dias)`]: p[agingKeyE]||0,
-    'Valor de Referência (R$)': p.valor||p.med||0,
-    'Fonte do Valor': fonteStrE(p.fonte||3)
+    'Valor do Processo (R$)': p.valor||p.med||0,
+    'Fonte do Valor': fonteStrE(p.fonte||3),
+    'Mediana Projetada (R$)': p.med||0
   }));
   const wb=XLSX.utils.book_new();
   const wsCurva2=XLSX.utils.json_to_sheet(rows);
-  wsCurva2['!cols']=[{wch:5},{wch:42},{wch:14},{wch:40},{wch:16},{wch:30},{wch:28},{wch:26}];
+  wsCurva2['!cols']=[{wch:5},{wch:42},{wch:14},{wch:40},{wch:16},{wch:30},{wch:28},{wch:26},{wch:26}];
   // Formatar valores monetários
   const rngC=XLSX.utils.decode_range(wsCurva2['!ref']);
   for(let R=1;R<=rngC.e.r;R++){
-    const cell=wsCurva2[XLSX.utils.encode_cell({r:R,c:6})];
-    if(cell&&typeof cell.v==='number') cell.z='"R$"\ #,##0.00';
+    const cellV=wsCurva2[XLSX.utils.encode_cell({r:R,c:6})];
+    if(cellV&&typeof cellV.v==='number') cellV.z='"R$"\ #,##0.00';
+    const cellM=wsCurva2[XLSX.utils.encode_cell({r:R,c:8})];
+    if(cellM&&typeof cellM.v==='number') cellM.z='"R$"\ #,##0.00';
   }
   XLSX.utils.book_append_sheet(wb,wsCurva2,`${label} ${ymLabel}`.slice(0,31));
   const hoje=new Date();
