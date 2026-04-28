@@ -2402,8 +2402,9 @@ function bRiscos(){
   ['c-riscos-prov','c-riscos-pag'].forEach(id=>{if(CH[id]){CH[id].destroy();delete CH[id];}});
   const mkRiscoLine=(id,label,data,color,bgColor,fmtFn,onClickCb)=>{
     const c=document.getElementById(id);if(!c)return;
+    const ctx=c.getContext('2d');if(!ctx)return;
     const n=labelsM.length;
-    CH[id]=new Chart(c.getContext('2d'),{type:'line',
+    CH[id]=new Chart(ctx,{type:'line',
       data:{labels:labelsM,datasets:[{label,data,borderColor:color,backgroundColor:bgColor,fill:true,tension:.4,pointBackgroundColor:color,pointRadius:4}]},
       options:{responsive:true,maintainAspectRatio:false,
         layout:{padding:{top:32,right:6,bottom:4,left:4}},
