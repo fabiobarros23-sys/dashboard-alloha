@@ -741,7 +741,6 @@ tbody tr:hover td{background:var(--s0)}
         </table></div>
           <div style="font-size:.62rem;color:#475569;margin-top:.5rem">* Mediana da natureza usada como fallback (tema sem histórico suficiente de prováveis). Trabalhista: R$31.772 · Cível: R$3.021</div>
         </div>
-      </div>
       <div class="cd mb">
         <div class="cdh"><div><div class="cdt">Possíveis em Alerta — Risco de Escalada</div><div class="cds">Processos POSSÍVEIS ativos que já ultrapassaram o aging mediano de Possível→Provável · Candidatos à reclassificação</div></div></div>
         <div class="kr kr4 mb2" id="kpis-alerta"></div>
@@ -2235,9 +2234,11 @@ function bRiscos(){
     const natKey=r.nat==='TRABALHISTA'?'TRABALHISTA':'CIVEL';
     return MEDIANA_NAT[natKey]||0;
   };
-  const ent2026=ent.filter(r=>r.anoMesEnt&&r.anoMesEnt>='2026-01'&&r.tema&&AGING_TEMA[r.tema]);
+  // Todos os entrantes 2026 com tema válido (declarado antes de qualquer uso)
+  const ent2026all=ent.filter(r=>r.anoMesEnt&&r.anoMesEnt>='2026-01'&&r.tema);
+  const ent2026=ent2026all.filter(r=>AGING_TEMA[r.tema]);
 
-  // Agrupar por tema — todos os entrantes 2026 com tema válido
+  // Agrupar por tema
   const porTema={};
   ent2026all.forEach(r=>{
     if(!porTema[r.tema]) porTema[r.tema]={cnt:0,datas:[]};
@@ -2246,13 +2247,11 @@ function bRiscos(){
   });
 
   // KPIs
-  const totalEnt=ent2026.length;
+  const totalEnt=ent2026all.length;
   const temasComProv=Object.keys(porTema).filter(t=>AGING_TEMA[t]?.prov).length;
   const temasComPag=Object.keys(porTema).filter(t=>AGING_TEMA[t]?.pag).length;
   const medianaGeral=Math.round(Object.values(AGING_TEMA).filter(d=>d.prov).reduce((a,d)=>a+d.prov,0)/Object.values(AGING_TEMA).filter(d=>d.prov).length);
   // Risco financeiro projetado total
-  // Risco total usando fallback por natureza para temas sem mediana própria
-  const ent2026all=ent.filter(r=>r.anoMesEnt&&r.anoMesEnt>='2026-01'&&r.tema);
   let riscoTotal=0;
   ent2026all.forEach(r=>{ riscoTotal+=getMedTema(r); });
   document.getElementById('kpis-riscos').innerHTML=
