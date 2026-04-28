@@ -1009,7 +1009,7 @@ function barV(id,labels,datasets,isVal=false,stacked=false){
 function lineC(id,labels,datasets,isVal=false,fmtFn=null){
   const n=labels.length;
   mk(id,'line',{labels,datasets},{
-    layout:{padding:{top:28,right:6,bottom:4,left:4}},
+    layout:{padding:{top:datasets&&datasets.length>1?44:28,right:6,bottom:4,left:4}},
     scales:{
       x:{...AX,grid:{color:'rgba(255,255,255,.04)'}},
       y:{...AX,grid:{color:'rgba(255,255,255,.04)'},ticks:{...AX.ticks,callback:v=>fmtFn?fmtFn(v):isVal?fSh(v):v}}
@@ -2313,11 +2313,12 @@ function bRiscos(){
         layout:{padding:{top:32,right:6,bottom:4,left:4}},
         scales:{x:{...AX,grid:{color:'rgba(255,255,255,.04)'}},y:{...AX,grid:{color:'rgba(255,255,255,.04)'},ticks:{...AX.ticks,callback:v=>fmtFn?fmtFn(v):v}}},
         plugins:{...CB.plugins,legend:{display:false},
-          datalabels:{display:n<=18,clamp:true,clip:false,
+          datalabels:{display:(ctx)=>ctx.dataset.data[ctx.dataIndex]>0,
+            clamp:true,clip:false,
             color:'rgba(255,255,255,.9)',
-            font:{family:'Outfit',size:12,weight:'700'},
+            font:{family:'Outfit',size:11,weight:'700'},
             anchor:'end',align:'top',
-            formatter:v=>v>0?(fmtFn?fmtFn(v):v.toLocaleString('pt-BR')):null}}}});
+            formatter:(v)=>v>0?(fmtFn?fmtFn(v):v.toLocaleString('pt-BR')):null}}}});
   };
   mkRiscoLine('c-riscos-prov',isV?'Processos chegando à provisão':'Valor projetado de provisão (R$)',mesesFuturos.map(m=>isV?provPorMes[m]:provFinMes[m]),'#a78bfa','rgba(167,139,250,.1)',isV?null:fSh);
   mkRiscoLine('c-riscos-pag',isV?'Processos chegando ao pagamento':'Valor projetado de pagamento (R$)',mesesFuturos.map(m=>isV?pagPorMes[m]:pagFinMes[m]),'#fb923c','rgba(251,146,60,.1)',isV?null:fSh);
