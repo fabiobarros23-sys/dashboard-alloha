@@ -377,7 +377,10 @@ tbody tr:hover td{background:var(--s0)}
         <div id="modal-alerta-title" style="font-size:1.05rem;font-weight:800;color:#f1f5f9"></div>
         <div id="modal-alerta-sub" style="font-size:.72rem;color:#64748b;margin-top:.2rem"></div>
       </div>
-      <button onclick="closeModalAlerta()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;width:32px;height:32px;cursor:pointer;color:#94a3b8;flex-shrink:0">✕</button>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <button onclick="exportAlertaExcel()" style="background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);border-radius:8px;padding:.35rem .8rem;cursor:pointer;color:#34d399;font-size:.72rem;font-family:'Outfit',sans-serif;font-weight:600">⬇ Excel</button>
+        <button onclick="closeModalAlerta()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;width:32px;height:32px;cursor:pointer;color:#94a3b8;flex-shrink:0">✕</button>
+      </div>
     </div>
     <div style="overflow-x:auto">
       <table class="hm-table" id="tbl-modal-alerta" style="min-width:100%;font-size:.71rem">
@@ -768,7 +771,7 @@ tbody tr:hover td{background:var(--s0)}
           <thead><tr><th style="text-align:left">Tema</th><th>Entrantes 2026</th><th>Risco Projetado</th><th>Aging → Provisão</th><th>Previsão Provisão</th><th>Aging → Pagamento</th><th>Previsão Pagamento</th></tr></thead>
           <tbody id="tbl-riscos-body"></tbody>
         </table></div>
-          <div style="font-size:.62rem;color:#475569;margin-top:.5rem">* Mediana da natureza usada como fallback (tema sem histórico suficiente de prováveis). Trabalhista: R$31.772 · Cível: R$3.021</div>
+          <div style="font-size:.62rem;color:#475569;margin-top:.5rem">* Mediana/Aging da natureza usado como fallback (tema sem histórico suficiente). Trabalhista: provisão 333d, pagamento 673d · Cível: provisão 236d, pagamento 359d</div>
         </div>
       <div class="cd mb">
         <div class="cdh"><div><div class="cdt">Possíveis em Alerta — Risco de Escalada</div><div class="cds">Processos POSSÍVEIS ativos que já ultrapassaram o aging mediano de Possível→Provável · Candidatos à reclassificação</div></div></div>
@@ -2377,7 +2380,13 @@ function bRiscos(){
   // Agrupar temas com < 5 entrantes como OUTROS
   const rowsRaw=Object.entries(porTema).map(([tema,d])=>{
     const ag=AGING_TEMA[tema];
-    return{tema,cnt:d.cnt,prov:ag?.prov,pag:ag?.pag,nat:d.datas.length>0?'':''};
+    // Inferir natureza predominante dos entrantes deste tema
+    const natSample=ent2026all.filter(r=>r.tema===tema)[0]?.nat||'TRABALHISTA';
+    const natKey=getNatKey(natSample);
+    const provVal=ag?.prov||(AGING_NAT_PROV[natKey]||333);
+    const pagVal=ag?.pag||(AGING_NAT_PAG[natKey]||673);
+    const isFallbackAging=!ag?.prov||!ag?.pag;
+    return{tema,cnt:d.cnt,prov:provVal,pag:pagVal,nat:natKey,isFallbackAging};
   }).sort((a,b)=>b.cnt-a.cnt);
   const rowsMain=rowsRaw.filter(r=>r.cnt>=5);
   const rowsOther=rowsRaw.filter(r=>r.cnt<5);
@@ -2405,9 +2414,9 @@ function bRiscos(){
       <td style="text-align:left;font-weight:600;color:#e2e8f0">${r.tema}</td>
       <td style="color:#4f9cf9;font-weight:700">${r.cnt}</td>
       <td style="color:#f87171;font-weight:600">${riscoProj}</td>
-      <td>${r.prov?r.prov+'d ('+Math.round(r.prov/30)+' meses)':'—'}</td>
+      <td>${r.prov+'d ('+Math.round(r.prov/30)+' meses)'+(r.isFallbackAging?' *':'')}</td>
       <td style="color:#a78bfa">${addMeses(r.prov)}</td>
-      <td>${r.pag?r.pag+'d ('+Math.round(r.pag/30)+' meses)':'—'}</td>
+      <td>${r.pag+'d ('+Math.round(r.pag/30)+' meses)'+(r.isFallbackAging?' *':'')}</td>
       <td style="color:#fb923c">${addMeses(r.pag)}</td>
     </tr>`;}).join('');
 
@@ -2565,6 +2574,48 @@ function openModalAlerta(filtro){
   modal.onclick=e=>{if(e.target===modal)closeModalAlerta();};
 }
 function closeModalAlerta(){document.getElementById('modal-alerta').style.display='none';}
+function exportAlertaExcel(){
+  // Pegar dados da tabela atual
+  const rows=Array.from(document.querySelectorAll('#tbl-modal-alerta-body tr')).map(tr=>{
+    const tds=tr.querySelectorAll('td');
+    if(tds.length<8) return null;
+    return{
+      'Nº Processo': tds[1].textContent.trim(),
+      'Natureza': tds[2].textContent.trim(),
+      'Tema': tds[3].textContent.trim(),
+      'Contingência Possível (R$)': parseFloat(tds[4].textContent.replace(/[R$\s\.Mi]/g,'').replace(',','.'))||0,
+      'Risco Provisão - Mediana (R$)': parseFloat(tds[5].textContent.replace(/[R$\s\.Mi]/g,'').replace(',','.'))||0,
+      'Fase Processual': tds[6].textContent.trim(),
+      'Excesso Aging': tds[7].textContent.replace(/[🔴🟠🟡🟢]/g,'').trim()
+    };
+  }).filter(Boolean);
+  if(!rows.length){alert('Nenhum dado para exportar.');return;}
+  // Criar workbook SheetJS
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.json_to_sheet(rows);
+  // Ajustar larguras das colunas
+  ws['!cols']=[
+    {wch:42}, // Nº Processo
+    {wch:14}, // Natureza
+    {wch:40}, // Tema
+    {wch:24}, // Contingência
+    {wch:28}, // Risco Provisão
+    {wch:28}, // Fase
+    {wch:18}, // Excesso
+  ];
+  // Estilo do header (negrito via SheetJS — limitado, mas funciona)
+  const headerRange=XLSX.utils.decode_range(ws['!ref']);
+  for(let C=headerRange.s.c;C<=headerRange.e.c;C++){
+    const cell=ws[XLSX.utils.encode_cell({r:0,c:C})];
+    if(cell) cell.s={font:{bold:true},fill:{fgColor:{rgb:'1E3A5F'}},alignment:{horizontal:'center'}};
+  }
+  XLSX.utils.book_append_sheet(wb,ws,'Processos em Alerta');
+  // Nome do arquivo com data
+  const hoje=new Date();
+  const datStr=`${hoje.getFullYear()}${String(hoje.getMonth()+1).padStart(2,'0')}${String(hoje.getDate()).padStart(2,'0')}`;
+  const titulo=document.getElementById('modal-alerta-title').textContent.slice(0,40).replace(/[^a-zA-Z0-9À-ú ]/g,'').trim();
+  XLSX.writeFile(wb,`Alloha_Alerta_${datStr}_${titulo}.xlsx`);
+}
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModalUF();closeModalTema();if(typeof closeModalHM==='function')closeModalHM();closeModalTTema();closeModalTUF();}})
 function openModalTemaTemas(tema){
