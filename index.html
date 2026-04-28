@@ -963,7 +963,8 @@ function mk(id,type,data,opts={}){
 function donut(id,labels,vals,colors,legId){
   mk(id,'doughnut',{labels,datasets:[{data:vals,backgroundColor:colors,borderWidth:0,hoverOffset:8}]},{
     layout:{padding:{top:8,right:8,bottom:8,left:8}},
-    cutout:'68%'
+    cutout:'68%',
+    plugins:{datalabels:{display:false}}
   });
   if(legId){const tot=vals.reduce((a,b)=>a+b,0);document.getElementById(legId).innerHTML=labels.map((l,i)=>`<div class="dli"><div class="dll"><div class="dld" style="background:${colors[i]}"></div><span class="dln">${l}</span></div><div><span class="dlv">${vals[i].toLocaleString('pt-BR')}</span><span class="dlp">${pct(vals[i],tot)}%</span></div></div>`).join('');}
 }
@@ -997,7 +998,7 @@ function barH(id,entries,isVal,color='rgba(79,156,249,.65)'){
 function barV(id,labels,datasets,isVal=false,stacked=false){
   const n=labels.length;
   mk(id,'bar',{labels,datasets},{
-    layout:{padding:{top:28,right:6,bottom:4,left:4}},
+    layout:{padding:{top:stacked?44:28,right:6,bottom:4,left:4}},
     scales:{
       x:{stacked,...AX,grid:{color:'rgba(255,255,255,.04)'},ticks:{...AX.ticks,font:{size:n>8?9:11}}},
       y:{stacked,...AX,grid:{color:'rgba(255,255,255,.04)'},ticks:{...AX.ticks,callback:v=>isVal?fSh(v):v.toLocaleString('pt-BR')}}
@@ -1013,7 +1014,7 @@ function lineC(id,labels,datasets,isVal=false,fmtFn=null){
       x:{...AX,grid:{color:'rgba(255,255,255,.04)'}},
       y:{...AX,grid:{color:'rgba(255,255,255,.04)'},ticks:{...AX.ticks,callback:v=>fmtFn?fmtFn(v):isVal?fSh(v):v}}
     },
-    plugins:{...CB.plugins,datalabels:{...dlCfg(n,isVal,false),align:'top'},legend:{display:datasets.length>1,labels:{color:'#64748b',font:{size:11,family:'Outfit'}}},tooltip:{...CB.plugins.tooltip,callbacks:{label:ctx=>isVal?fBRL(ctx.raw):ctx.raw.toLocaleString('pt-BR')}}}
+    plugins:{...CB.plugins,datalabels:{...dlCfg(n,isVal,false),align:'top',font:{family:'Outfit',size:n>6?7:9,weight:'600'}},legend:{display:datasets.length>1,labels:{color:'#64748b',font:{size:10,family:'Outfit'},boxWidth:12,padding:6}},tooltip:{...CB.plugins.tooltip,callbacks:{label:ctx=>isVal?fBRL(ctx.raw):ctx.raw.toLocaleString('pt-BR')}}}
   });
 }
 
