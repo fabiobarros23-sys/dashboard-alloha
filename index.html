@@ -2380,10 +2380,10 @@ function bRiscos(){
     const de=new Date(r.dataEnt);
     const dpProv=new Date(de.getTime()+aprov*86400000);
     const ymProv=`${dpProv.getFullYear()}-${String(dpProv.getMonth()+1).padStart(2,'0')}`;
+    const medR=MEDIANA_TEMA[r.tema]||(MEDIANA_NAT[getNatKey(r.nat)]||0);
     if(provPorMes[ymProv]!==undefined){
       provPorMes[ymProv]++;
       provFinMes[ymProv]+=r.valor;
-      const medR=MEDIANA_TEMA[r.tema]||(MEDIANA_NAT[getNatKey(r.nat)]||0);
       provMesProcs[ymProv].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.valor,fonte:r.fonte,med:medR,aprov,dataEnt:r.dataEnt});
     }
     const dpPag=new Date(de.getTime()+apag*86400000);
