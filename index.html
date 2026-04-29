@@ -799,12 +799,27 @@ tbody tr:hover td{background:var(--s0)}
     <div id="pg-riscos" class="pg">
       <div class="sh"><div class="sn">Projeção</div><div class="st">Riscos Futuros</div><div class="sd">Projeção de impacto dos entrantes de 2026 na provisão e nos pagamentos, baseada no aging histórico por tema (mediana, excluindo outliers &lt;50 dias).</div></div>
       <div class="kr kr4 mb2" id="kpis-riscos"></div>
+      <!-- Filtro de origem das curvas -->
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap">
+        <span style="font-size:.72rem;color:#64748b;font-weight:600;letter-spacing:.04em">CURVAS — ORIGEM:</span>
+        <button id="btn-curva-2026" onclick="toggleCurvaFiltro('ent2026')"
+          style="padding:.3rem .85rem;border-radius:20px;border:1.5px solid #a78bfa;background:rgba(167,139,250,.15);color:#a78bfa;font-size:.72rem;font-family:Outfit;font-weight:600;cursor:pointer;transition:all .2s"
+          title="Entrantes 2026">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#a78bfa;margin-right:.35rem"></span>Entrantes 2026
+        </button>
+        <button id="btn-curva-poss" onclick="toggleCurvaFiltro('poss')"
+          style="padding:.3rem .85rem;border-radius:20px;border:1.5px solid #fbbf24;background:rgba(251,191,36,.12);color:#fbbf24;font-size:.72rem;font-family:Outfit;font-weight:600;cursor:pointer;transition:all .2s"
+          title="Possíveis no Prazo">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#fbbf24;margin-right:.35rem"></span>Possíveis no Prazo
+        </button>
+        <span id="curva-filtro-label" style="font-size:.68rem;color:#475569;margin-left:.3rem">Total consolidado</span>
+      </div>
       <div class="cd mb2">
-        <div class="cdh"><div><div class="cdt">Curva de Provisão Projetada — Entrantes 2026</div><div class="cds">Fluxo mensal por mês — Entrantes 2026 (roxo) e Possíveis no Prazo (âmbar) · não acumulados</div></div></div>
+        <div class="cdh"><div><div class="cdt">Curva de Provisão Projetada</div><div class="cds" id="sub-curva-prov">Fluxo mensal consolidado — valores por mês, não acumulados · clique em um mês para ver os processos</div></div></div>
         <div class="cdb npt"><div class="cw" style="height:240px"><canvas id="c-riscos-prov"></canvas></div></div>
       </div>
       <div class="cd mb2">
-        <div class="cdh"><div><div class="cdt">Curva de Pagamento Projetado — Entrantes 2026</div><div class="cds">Fluxo mensal por mês — Entrantes 2026 (laranja) e Possíveis no Prazo (âmbar) · não acumulados</div></div></div>
+        <div class="cdh"><div><div class="cdt">Curva de Pagamento Projetado</div><div class="cds" id="sub-curva-pag">Fluxo mensal consolidado — valores por mês, não acumulados · clique em um mês para ver os processos</div></div></div>
         <div class="cdb npt"><div class="cw" style="height:240px"><canvas id="c-riscos-pag"></canvas></div></div>
       </div>
       <div class="cd mb">
@@ -982,6 +997,7 @@ const AGING_TEMA={"CONTRATAÇÃO FRAUDULENTA": {"prov": 178, "pag": 337}, "VERBA
 // GLOBALS
 // ═══════════════════════════════════════════════════════
 let D=null, CH={}, GF={nat:[],st:[],tp:[],rk:[],comp:[]}, VIEW='vol', PRES=false;
+let GF_CURVA={ent2026:false,poss:false}; // false=não filtrado (mostra tudo consolidado)
 const SK='alloha_v6';
 const MONTHS_PT={janeiro:'01',fevereiro:'02',março:'03',abril:'04',maio:'05',junho:'06',julho:'07',agosto:'08',setembro:'09',outubro:'10',novembro:'11',dezembro:'12'};
 
@@ -1443,6 +1459,7 @@ function resetGF(){
   const defaultLabels={nat:'Natureza: Todas',st:'Status: Todos',tp:'Tipo: Todos',rk:'Risco: Todos',comp:'Competência ✱'};
   ['nat','st','tp','rk','comp'].forEach(id=>updateMSDBtnLabel(id,defaultLabels[id]));
   GF={nat:[],st:[],tp:[],rk:[],comp:[]};
+  GF_CURVA={ent2026:false,poss:false};
   rebuildAll();
 }
 function setView(v){VIEW=v;document.getElementById('vt-v').classList.toggle('ac',v==='vol');document.getElementById('vt-f').classList.toggle('ac',v==='fin');rebuildAll();}
@@ -2321,6 +2338,29 @@ function getAgingPag(r){
   return AGING_NAT_PAG[getNatKey(r.nat)]||673;
 }
 
+function toggleCurvaFiltro(tipo){
+  GF_CURVA[tipo]=!GF_CURVA[tipo];
+  // Estilo dos botões
+  const cfg={
+    ent2026:{id:'btn-curva-2026',cor:'#a78bfa',bg:'rgba(167,139,250,.15)',bgOff:'rgba(167,139,250,.04)'},
+    poss:   {id:'btn-curva-poss',cor:'#fbbf24',bg:'rgba(251,191,36,.12)', bgOff:'rgba(251,191,36,.03)'}
+  };
+  Object.entries(cfg).forEach(([k,c])=>{
+    const btn=document.getElementById(c.id);if(!btn)return;
+    const ativo=GF_CURVA[k];
+    btn.style.background=ativo?c.bg:c.bgOff;
+    btn.style.opacity=ativo?'1':'.5';
+    btn.style.borderStyle=ativo?'solid':'dashed';
+  });
+  // Label
+  const lbl=document.getElementById('curva-filtro-label');
+  if(lbl){
+    const a=GF_CURVA.ent2026, b=GF_CURVA.poss;
+    lbl.textContent=(!a&&!b)?'Total consolidado':a&&b?'Total consolidado':(a?'Somente Entrantes 2026':'Somente Possíveis no Prazo');
+  }
+  bRiscos();
+}
+
 function bRiscos(){
   if(!document.getElementById('kpis-riscos')) return;
   const isV=VIEW==='vol';
@@ -2491,49 +2531,81 @@ function bRiscos(){
   const elRisco=document.getElementById('kpis-riscos');
   if(elRisco){const kpis=elRisco.querySelectorAll('.kv');if(kpis[1])kpis[1].textContent=fSh(riscoTotal);}
 
-  // ── Gráficos com 2 datasets ───────────────────────────────────────────────
+  // ── Gráficos consolidados com filtro GF_CURVA ────────────────────────────
   ['c-riscos-prov','c-riscos-pag'].forEach(id=>{if(CH[id]){CH[id].destroy();delete CH[id];}});
 
-  const mkRiscoLine2=(id,datasets,fmtFn,onClickCb)=>{
+  // Determinar quais origens incluir
+  const mostra2026 = !GF_CURVA.ent2026 && !GF_CURVA.poss ? true : GF_CURVA.ent2026;
+  const mostraPoss = !GF_CURVA.ent2026 && !GF_CURVA.poss ? true : GF_CURVA.poss;
+
+  // Cor da linha depende do filtro ativo
+  const corProv = mostra2026 && !mostraPoss ? '#a78bfa' : mostraPoss && !mostra2026 ? '#fbbf24' : '#34d399';
+  const corPag  = mostra2026 && !mostraPoss ? '#fb923c' : mostraPoss && !mostra2026 ? '#fbbf24' : '#34d399';
+
+  // Subtítulos dinâmicos
+  const modoLabel = mostra2026 && mostraPoss ? 'Total consolidado (Entrantes 2026 + Possíveis no Prazo)'
+    : mostra2026 ? 'Somente Entrantes 2026'
+    : 'Somente Possíveis no Prazo';
+  const subSufixo = ' · valores por mês, não acumulados · clique em um mês para detalhes';
+  const elSubProv = document.getElementById('sub-curva-prov');
+  const elSubPag  = document.getElementById('sub-curva-pag');
+  if(elSubProv) elSubProv.textContent = modoLabel + subSufixo;
+  if(elSubPag)  elSubPag.textContent  = modoLabel + subSufixo;
+
+  // Dados consolidados mês a mês
+  const dadosProv = mesesFuturos.map(m=>{
+    const v2026 = mostra2026 ? (isV ? provPorMes[m] : provFinMes[m]) : 0;
+    const vPoss = mostraPoss ? (isV ? provPorMesPoss[m] : provFinMesPoss[m]) : 0;
+    return v2026 + vPoss;
+  });
+  const dadosPag = mesesFuturos.map(m=>{
+    const v2026 = mostra2026 ? (isV ? pagPorMes[m] : pagFinMes[m]) : 0;
+    const vPoss = mostraPoss ? (isV ? pagPorMesPoss[m] : pagFinMesPoss[m]) : 0;
+    return v2026 + vPoss;
+  });
+
+  // Drill-down consolidado: combina processos das origens ativas, marcando a origem
+  const buildMesProcsConsolidado=(mesProcs2026, mesProcsPoss)=>({
+    getProcs:(ym)=>{
+      const p2026=(mostra2026?(mesProcs2026[ym]||[]):[]).map(p=>({...p,origem:'ent2026'}));
+      const pPoss=(mostraPoss?(mesProcsPoss[ym]||[]):[]).map(p=>({...p,origem:'poss'}));
+      return [...p2026,...pPoss].sort((a,b)=>(b.valor||b.med||0)-(a.valor||a.med||0));
+    }
+  });
+  const consolProv=buildMesProcsConsolidado(provMesProcs,provMesProcsPoss);
+  const consolPag =buildMesProcsConsolidado(pagMesProcs,pagMesProcsPoss);
+
+  const mkRiscoLine1=(id,data,cor,fmtFn,onClickCb)=>{
     const c=document.getElementById(id);if(!c)return;
     const ctx=c.getContext('2d');if(!ctx)return;
+    const bg=cor.replace(')',', .09)').replace('rgb(','rgba(').replace('#',null);
+    const bgAlpha=cor+'18';
     CH[id]=new Chart(ctx,{type:'line',
-      data:{labels:labelsM,datasets},
+      data:{labels:labelsM,datasets:[{
+        label:modoLabel,data,
+        borderColor:cor,backgroundColor:bgAlpha,
+        fill:true,tension:.4,pointBackgroundColor:cor,pointRadius:4,borderWidth:2
+      }]},
       options:{responsive:true,maintainAspectRatio:false,
-        layout:{padding:{top:36,right:6,bottom:4,left:4}},
+        layout:{padding:{top:32,right:6,bottom:4,left:4}},
         scales:{x:{...AX,grid:{color:'rgba(255,255,255,.04)'}},y:{...AX,grid:{color:'rgba(255,255,255,.04)'},ticks:{...AX.ticks,callback:v=>fmtFn?fmtFn(v):v}}},
         plugins:{
           tooltip:{backgroundColor:'rgba(5,12,36,.97)',borderColor:'rgba(65,239,105,.18)',borderWidth:1,titleColor:'#f1f5f9',bodyColor:'#94a3b8',padding:11,cornerRadius:8,callbacks:{label:ctx=>fmtFn?fmtFn(ctx.raw):ctx.raw.toLocaleString('pt-BR')}},
-          legend:{display:true,position:'top',labels:{color:'rgba(255,255,255,.7)',font:{family:'Outfit',size:11},boxWidth:12,padding:16}},
+          legend:{display:false},
           datalabels:{display:(ctx)=>ctx.dataset.data[ctx.dataIndex]>0,
             clamp:true,clip:false,
-            color:(ctx)=>ctx.datasetIndex===0?'rgba(200,170,255,.95)':'rgba(255,220,100,.95)',
-            font:{family:'Outfit',size:10,weight:'700'},
+            color:'rgba(255,255,255,.9)',
+            font:{family:'Outfit',size:11,weight:'700'},
             anchor:'end',align:'top',
             formatter:(v)=>v>0?(fmtFn?fmtFn(v):v.toLocaleString('pt-BR')):null}},
-        onClick:(evt,els)=>{if(els.length&&onClickCb)onClickCb(els[0].index,els[0].datasetIndex);},
+        onClick:(evt,els)=>{if(els.length&&onClickCb)onClickCb(els[0].index);},
         onHover:(evt,els)=>{evt.native.target.style.cursor=els.length?'pointer':'default';}}});
   };
 
-  mkRiscoLine2('c-riscos-prov',[
-    {label:'Entrantes 2026',data:mesesFuturos.map(m=>isV?provPorMes[m]:provFinMes[m]),
-     borderColor:'#a78bfa',backgroundColor:'rgba(167,139,250,.08)',fill:true,tension:.4,pointBackgroundColor:'#a78bfa',pointRadius:3},
-    {label:'Possíveis no Prazo',data:mesesFuturos.map(m=>isV?provPorMesPoss[m]:provFinMesPoss[m]),
-     borderColor:'#fbbf24',backgroundColor:'rgba(251,191,36,.06)',fill:true,tension:.4,pointBackgroundColor:'#fbbf24',pointRadius:3,borderDash:[5,3]}
-  ],isV?null:fSh,(idx,ds)=>{
-    if(ds===0) openModalCurva('prov',mesesFuturos[idx],labelsM[idx],provMesProcs,isV);
-    else openModalCurvaPoss('prov',mesesFuturos[idx],labelsM[idx],provMesProcsPoss,isV);
-  });
-
-  mkRiscoLine2('c-riscos-pag',[
-    {label:'Entrantes 2026',data:mesesFuturos.map(m=>isV?pagPorMes[m]:pagFinMes[m]),
-     borderColor:'#fb923c',backgroundColor:'rgba(251,146,60,.08)',fill:true,tension:.4,pointBackgroundColor:'#fb923c',pointRadius:3},
-    {label:'Possíveis no Prazo',data:mesesFuturos.map(m=>isV?pagPorMesPoss[m]:pagFinMesPoss[m]),
-     borderColor:'#fbbf24',backgroundColor:'rgba(251,191,36,.06)',fill:true,tension:.4,pointBackgroundColor:'#fbbf24',pointRadius:3,borderDash:[5,3]}
-  ],isV?null:fSh,(idx,ds)=>{
-    if(ds===0) openModalCurva('pag',mesesFuturos[idx],labelsM[idx],pagMesProcs,isV);
-    else openModalCurvaPoss('pag',mesesFuturos[idx],labelsM[idx],pagMesProcsPoss,isV);
-  });
+  mkRiscoLine1('c-riscos-prov',dadosProv,corProv,isV?null:fSh,
+    (idx)=>openModalCurvaConsolidado('prov',mesesFuturos[idx],labelsM[idx],consolProv.getProcs(mesesFuturos[idx]),isV));
+  mkRiscoLine1('c-riscos-pag',dadosPag,corPag,isV?null:fSh,
+    (idx)=>openModalCurvaConsolidado('pag',mesesFuturos[idx],labelsM[idx],consolPag.getProcs(mesesFuturos[idx]),isV));
 
   // Tabela por tema
   // Agrupar temas com < 5 entrantes como OUTROS
@@ -2776,6 +2848,63 @@ function openModalCurva(tipo,ym,ymLabel,mesProcs,isVol){
   modal.onclick=e=>{if(e.target===modal)closeModalCurva();};
 }
 function closeModalCurva(){document.getElementById('modal-curva').style.display='none';}
+
+// Modal drill-down: consolidado (Entrantes 2026 + Possíveis no Prazo)
+function openModalCurvaConsolidado(tipo,ym,ymLabel,procs,isVol){
+  if(!procs||!procs.length){
+    // nada neste mês
+    document.getElementById('modal-curva-tipo-label').textContent='SEM PROCESSOS NESTE MÊS';
+    document.getElementById('modal-curva-tipo-label').style.color='#64748b';
+    document.getElementById('modal-curva-title').textContent=ymLabel;
+    document.getElementById('modal-curva-sub').textContent='Nenhum processo projetado para este mês.';
+    document.getElementById('tbl-modal-curva-body').innerHTML='';
+    const modal=document.getElementById('modal-curva');
+    modal.style.display='flex';
+    modal.onclick=e=>{if(e.target===modal)closeModalCurva();};
+    return;
+  }
+  const label=tipo==='prov'?'Provisão Projetada':'Pagamento Projetado';
+  const cor=tipo==='prov'?'#a78bfa':'#fb923c';
+  document.getElementById('modal-curva-tipo-label').textContent=`CURVA DE ${label.toUpperCase()} — CONSOLIDADO`;
+  document.getElementById('modal-curva-tipo-label').style.color=cor;
+  document.getElementById('modal-curva-title').textContent=`${ymLabel} — ${procs.length} processos projetados`;
+  const totalRisco=procs.reduce((s,p)=>s+(p.valor||p.med||0),0);
+  const qtd2026=procs.filter(p=>p.origem==='ent2026').length;
+  const qtdPoss=procs.filter(p=>p.origem==='poss').length;
+  document.getElementById('modal-curva-sub').textContent=
+    `Risco total: ${fSh(totalRisco)} · ${qtd2026>0?qtd2026+' Entr.2026':''}${qtd2026>0&&qtdPoss>0?' + ':''}${qtdPoss>0?qtdPoss+' Possíveis no Prazo':''}`;
+  const fmtDate=d=>{if(!d)return'—';const dt=new Date(d);return dt.toLocaleDateString('pt-BR');};
+  const agingKey=tipo==='prov'?'aprov':'apag';
+  const fonteLabel=f=>f===1?'*':f===2?'**':'***';
+  const fonteTitle=f=>f===1?'* Contingência':f===2?'** Valor da causa':'*** Mediana (fallback)';
+  document.getElementById('tbl-modal-curva-body').innerHTML=procs.map((p,i)=>{
+    const isEnt=p.origem==='ent2026';
+    const origemBg=isEnt?'rgba(52,211,153,.15)':'rgba(251,191,36,.15)';
+    const origemCor=isEnt?'#34d399':'#fbbf24';
+    const origemLabel=isEnt?'Entr. 2026':'Poss. Prazo';
+    const val=p.valor||p.med||0;
+    const medVal=p.med||0;
+    // Coluna de aging: para ent2026 mostra aging do tema; para poss mostra aging atual/limiar
+    const agingCol=isEnt
+      ? (p[agingKey]||'—')+'d'
+      : (p.agingAtual!==undefined?p.agingAtual+'d / '+p.limiar+'d':'—');
+    const fl=isEnt?fonteLabel(p.fonte||3):'';
+    return`<tr>
+      <td style="color:#64748b">${i+1}</td>
+      <td><span style="font-size:.62rem;padding:.15rem .45rem;border-radius:4px;background:${origemBg};color:${origemCor};font-weight:700;white-space:nowrap">${origemLabel}</span></td>
+      <td style="font-family:monospace;font-size:.64rem;color:#94a3b8" title="${p.proc||''}">${p.proc?p.proc.slice(0,24)+'…':p.proc||'—'}</td>
+      <td><span style="font-size:.63rem;padding:.15rem .4rem;border-radius:4px;background:${p.nat==='TRABALHISTA'?'rgba(167,139,250,.2)':'rgba(79,156,249,.2)'};color:${p.nat==='TRABALHISTA'?'#a78bfa':'#4f9cf9'}">${p.nat==='TRABALHISTA'?'TRAB':'CÍVEL'}</span></td>
+      <td style="text-align:left;color:#e2e8f0;font-size:.68rem">${p.tema||'—'}</td>
+      <td style="color:#64748b;font-size:.67rem">${agingCol}</td>
+      <td style="color:${cor};font-weight:700" title="${isEnt?fonteTitle(p.fonte||3):''}">${val.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}${fl?` <sup style="color:#64748b;font-size:.65rem">${fl}</sup>`:''}</td>
+      <td style="color:#34d399;font-weight:600">${medVal>0?medVal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'}</td>
+    </tr>`;
+  }).join('');
+  window._curvaCtx={tipo,ym,ymLabel,procs,agingKey,isConsolidado:true};
+  const modal=document.getElementById('modal-curva');
+  modal.style.display='flex';
+  modal.onclick=e=>{if(e.target===modal)closeModalCurva();};
+}
 
 // Modal drill-down: Possíveis no Prazo
 function openModalCurvaPoss(tipo,ym,ymLabel,mesProcs,isVol){
