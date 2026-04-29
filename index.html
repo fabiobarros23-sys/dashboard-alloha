@@ -797,7 +797,7 @@ tbody tr:hover td{background:var(--s0)}
     <!-- ██ HISTÓRICO ██ -->
     <!-- ██ RISCOS FUTUROS ██ -->
     <div id="pg-riscos" class="pg">
-      <div class="sh"><div class="sn">Projeção</div><div class="st">Riscos Futuros</div><div class="sd">Projeção de impacto dos entrantes de 2026 na provisão e nos pagamentos, baseada no aging histórico por tema (mediana, excluindo outliers &lt;50 dias).</div></div>
+      <div class="sh"><div class="sn">Projeção</div><div class="st">Riscos Futuros</div><div class="sd">Projeção de impacto dos processos distribuídos em 2026 e anos anteriores na provisão e pagamentos, baseada no aging histórico por tema (mediana) · Base dinâmica</div></div>
       <div class="kr kr4 mb2" id="kpis-riscos"></div>
       <!-- Filtro de origem das curvas -->
       <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap">
@@ -805,7 +805,7 @@ tbody tr:hover td{background:var(--s0)}
         <button id="btn-curva-2026" onclick="toggleCurvaFiltro('ent2026')"
           style="padding:.3rem .85rem;border-radius:20px;border:1.5px solid #a78bfa;background:rgba(167,139,250,.15);color:#a78bfa;font-size:.72rem;font-family:Outfit;font-weight:600;cursor:pointer;transition:all .2s"
           title="Entrantes 2026">
-          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#a78bfa;margin-right:.35rem"></span>Entrantes 2026
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#a78bfa;margin-right:.35rem"></span>Distribuídos 2026
         </button>
         <button id="btn-curva-poss" onclick="toggleCurvaFiltro('poss')"
           style="padding:.3rem .85rem;border-radius:20px;border:1.5px solid #fbbf24;background:rgba(251,191,36,.12);color:#fbbf24;font-size:.72rem;font-family:Outfit;font-weight:600;cursor:pointer;transition:all .2s"
@@ -825,10 +825,10 @@ tbody tr:hover td{background:var(--s0)}
       <div class="cd mb">
         <div class="cdh"><div><div class="cdt">Tabela de Aging por Tema</div><div class="cds">Entrantes 2026 · Mediana de dias até provisão e até pagamento · Dados históricos</div></div></div>
         <div class="cdb" style="overflow-x:auto"><table class="hm-table" id="tbl-riscos" style="min-width:100%;font-size:.72rem">
-          <thead><tr><th style="text-align:left">Tema</th><th>Entrantes 2026</th><th>Risco Projetado</th><th>Aging → Provisão</th><th>Previsão Provisão</th><th>Aging → Pagamento</th><th>Previsão Pagamento</th></tr></thead>
+          <thead><tr><th style="text-align:left">Tema</th><th>Distribuídos 2026</th><th>Risco Projetado</th><th>Aging → Provisão</th><th>Previsão Provisão</th><th>Aging → Pagamento</th><th>Previsão Pagamento</th></tr></thead>
           <tbody id="tbl-riscos-body"></tbody>
         </table></div>
-          <div style="font-size:.62rem;color:#475569;margin-top:.5rem">* Mediana/Aging da natureza usado como fallback (tema sem histórico suficiente). Trabalhista: provisão 333d, pagamento 673d · Cível: provisão 236d, pagamento 359d</div>
+          <div style="font-size:.62rem;color:#475569;margin-top:.5rem">* Mediana/Aging da natureza usado como fallback (tema sem histórico suficiente) · Base dinâmica da planilha atual</div>
         </div>
       <div class="cd mb">
         <div class="cdh"><div><div class="cdt">Possíveis em Alerta — Risco de Escalada</div><div class="cds">Processos POSSÍVEIS ativos que já ultrapassaram o aging mediano de Possível→Provável · Candidatos à reclassificação</div></div></div>
@@ -2356,7 +2356,7 @@ function toggleCurvaFiltro(tipo){
   const lbl=document.getElementById('curva-filtro-label');
   if(lbl){
     const a=GF_CURVA.ent2026, b=GF_CURVA.poss;
-    lbl.textContent=(!a&&!b)?'Total consolidado':a&&b?'Total consolidado':(a?'Somente Entrantes 2026':'Somente Possíveis no Prazo');
+    lbl.textContent=(!a&&!b)?'Total consolidado':a&&b?'Total consolidado':(a?'Somente Distribuídos 2026':'Somente Anos Anteriores');
   }
   bRiscos();
 }
@@ -2366,40 +2366,21 @@ function bRiscos(){
   const isV=VIEW==='vol';
   try{
 
-  // ── Entrantes 2026 (com filtros globais) ──────────────────────────────────
-  let ent2026all=ENT2026_FULL;
-  if(GF.nat.length) ent2026all=ent2026all.filter(r=>GF.nat.includes(r.nat));
-  if(GF.tp.length)  ent2026all=ent2026all.filter(r=>GF.tp.includes(r.terc));
-
-  // Agrupar por tema (entrantes 2026)
-  const porTema={};
-  ent2026all.forEach(r=>{
-    if(!porTema[r.tema]) porTema[r.tema]={cnt:0,datas:[]};
-    porTema[r.tema].cnt++;
-    if(r.dataEnt) porTema[r.tema].datas.push(new Date(r.dataEnt));
-  });
-
-  // ── Calcular medianas de aging de provisão a partir dos Prováveis Ativos ──
-  // Fonte: BASE_GERAL → prováveis ativos com dataDist e dataAtual preenchidas
-  // Aging = dataAtual (data de mudança de risco) − dataDist
+  // ── Base_geral dinâmica — fonte única de dados ───────────────────────────
   const {base} = getFD();
+  const hoje=new Date();
   const alertaProcsSet = new Set(ALERTA_PROCS.map(p=>p.proc));
 
-  // Calcular medianas por tema+nat a partir dos prováveis
+  // ── Calcular medianas de aging provisão a partir dos Prováveis Ativos ─────
   const agingPorTema={};
-  base.filter(r=>r.st==='ATIVO'&&r.risco==='PROVÁVEL'&&r.dataDist&&r.dataAtual).forEach(r=>{
-    const dias=Math.round((r.dataAtual-r.dataDist)/86400000);
-    if(dias<10||dias>3650) return; // excluir outliers extremos
-    const chave=r.tema+'||'+getNatKey(r.nat);
-    if(!agingPorTema[chave]) agingPorTema[chave]=[];
-    agingPorTema[chave].push(dias);
-  });
-  // Medianas por natureza (fallback nível 2)
   const agingPorNat={TRABALHISTA:[],CÍVEL:[]};
   base.filter(r=>r.st==='ATIVO'&&r.risco==='PROVÁVEL'&&r.dataDist&&r.dataAtual).forEach(r=>{
     const dias=Math.round((r.dataAtual-r.dataDist)/86400000);
     if(dias<10||dias>3650) return;
     const nk=getNatKey(r.nat);
+    const chave=r.tema+'||'+nk;
+    if(!agingPorTema[chave]) agingPorTema[chave]=[];
+    agingPorTema[chave].push(dias);
     if(agingPorNat[nk]) agingPorNat[nk].push(dias);
   });
   const medArr=arr=>{if(!arr||!arr.length)return null;const s=[...arr].sort((a,b)=>a-b);const m=Math.floor(s.length/2);return s.length%2?s[m]:Math.round((s[m-1]+s[m])/2);};
@@ -2408,37 +2389,41 @@ function bRiscos(){
     'CÍVEL':     medArr(agingPorNat['CÍVEL'])||AGING_NAT_PROV['CÍVEL']||236
   };
   const medGeralProv=medArr([...agingPorNat.TRABALHISTA,...agingPorNat['CÍVEL']])||280;
-
-  // Helper: aging de provisão para um processo possível
   const getAgingProvCalc=r=>{
     const nk=getNatKey(r.nat);
-    const chave=r.tema+'||'+nk;
-    return medArr(agingPorTema[chave])||medNatProv[nk]||medGeralProv;
+    return medArr(agingPorTema[r.tema+'||'+nk])||medNatProv[nk]||medGeralProv;
   };
 
-  // ── Identificar Possíveis no Prazo ────────────────────────────────────────
-  // Possíveis ativos, excluindo os que já estão em alerta (ALERTA_PROCS)
-  const hoje=new Date();
-  const possiveis=base.filter(r=>
-    r.st==='ATIVO' &&
-    r.risco==='POSSÍVEL' &&
-    r.dataDist &&
-    !alertaProcsSet.has(r.numero)
+  // ── Grupo 1: Distribuídos em 2026 — Possíveis (provisão) + Prováveis/Possíveis (pagamento) ──
+  // Provisão: apenas POSSÍVEL (Prováveis já estão provisionados)
+  // Pagamento: POSSÍVEL + PROVÁVEL (ambos podem gerar pagamento futuro)
+  // Excluir alerta e exigir dataDist preenchida e anoDist===2026
+  let dist2026base = base.filter(r=>
+    r.st==='ATIVO' && r.dataDist && r.anoDist===2026 && !alertaProcsSet.has(r.numero)
   );
-  // Aplicar filtros globais de natureza e tipo
-  let possiveisFilt=possiveis;
-  if(GF.nat.length) possiveisFilt=possiveisFilt.filter(r=>GF.nat.includes(getNatKey(r.nat)==='TRABALHISTA'?'TRABALHISTA':'CÍVEL'));
-  if(GF.tp.length)  possiveisFilt=possiveisFilt.filter(r=>GF.tp.includes(r.tipo));
+  if(GF.nat.length) dist2026base=dist2026base.filter(r=>GF.nat.includes(getNatKey(r.nat)==='TRABALHISTA'?'TRABALHISTA':'CÍVEL'));
+  if(GF.tp.length)  dist2026base=dist2026base.filter(r=>GF.tp.includes(r.tipo));
+
+  const dist2026prov = dist2026base.filter(r=>r.risco==='POSSÍVEL');
+  const dist2026pag  = dist2026base.filter(r=>r.risco==='POSSÍVEL'||r.risco==='PROVÁVEL');
+
+  // ── Grupo 2: Anos anteriores — Possíveis no prazo (ainda dentro do aging) ─
+  // Provisão: POSSÍVEL, anos < 2026, aging não estourado
+  // Pagamento: POSSÍVEL + PROVÁVEL, anos < 2026
+  let baseAntBase = base.filter(r=>
+    r.st==='ATIVO' && r.dataDist && r.anoDist<2026 && !alertaProcsSet.has(r.numero)
+  );
+  if(GF.nat.length) baseAntBase=baseAntBase.filter(r=>GF.nat.includes(getNatKey(r.nat)==='TRABALHISTA'?'TRABALHISTA':'CÍVEL'));
+  if(GF.tp.length)  baseAntBase=baseAntBase.filter(r=>GF.tp.includes(r.tipo));
 
   const possNoPrazo=[];
-  possiveisFilt.forEach(r=>{
+  baseAntBase.filter(r=>r.risco==='POSSÍVEL').forEach(r=>{
     const agingAtual=Math.round((hoje-r.dataDist)/86400000);
     const limiar=getAgingProvCalc(r);
     if(agingAtual<limiar){
       const diasRestantes=limiar-agingAtual;
       const dpProv=new Date(r.dataDist.getTime()+limiar*86400000);
       const ymProv=`${dpProv.getFullYear()}-${String(dpProv.getMonth()+1).padStart(2,'0')}`;
-      // Aging de pagamento: AGING_TEMA[tema].pag (Opção A)
       const apag=AGING_TEMA[r.tema]?.pag||(AGING_NAT_PAG[getNatKey(r.nat)]||673);
       const dpPag=new Date(r.dataDist.getTime()+apag*86400000);
       const ymPag=`${dpPag.getFullYear()}-${String(dpPag.getMonth()+1).padStart(2,'0')}`;
@@ -2451,22 +2436,43 @@ function bRiscos(){
       });
     }
   });
+  // Anos anteriores — pagamento: POSSÍVEL no prazo + PROVÁVEL (projetado pelo aging pag)
+  const possAntPag=[];
+  baseAntBase.forEach(r=>{
+    const apag=AGING_TEMA[r.tema]?.pag||(AGING_NAT_PAG[getNatKey(r.nat)]||673);
+    const dpPag=new Date(r.dataDist.getTime()+apag*86400000);
+    const ymPag=`${dpPag.getFullYear()}-${String(dpPag.getMonth()+1).padStart(2,'0')}`;
+    const agingAtual=Math.round((hoje-r.dataDist)/86400000);
+    const medR=getMedTema({tema:r.tema,nat:r.nat});
+    possAntPag.push({
+      proc:r.numero, nat:getNatKey(r.nat), tema:r.tema, tipo:r.tipo,
+      contig:r.contigPos, med:medR, fase:r.fase, risco:r.risco,
+      dataDist:r.dataDist, anoDist:r.anoDist, agingAtual, limiar:apag,
+      ymPag, apag
+    });
+  });
+
+  // Agrupar por tema (distribuídos 2026) para tabela
+  const porTema={};
+  dist2026prov.forEach(r=>{
+    if(!porTema[r.tema]) porTema[r.tema]={cnt:0};
+    porTema[r.tema].cnt++;
+  });
 
   // KPIs
-  const totalEnt=ent2026all.length;
-  const temasComProv=Object.keys(porTema).filter(t=>AGING_TEMA[t]?.prov).length;
-  const medianaGeral=Math.round(Object.values(AGING_TEMA).filter(d=>d.prov).reduce((a,d)=>a+d.prov,0)/Object.values(AGING_TEMA).filter(d=>d.prov).length);
+  const totalDist2026=dist2026pag.length; // total único (prov+prov/poss)
   const totalPossNoPrazo=possNoPrazo.length;
+  const riscoDist2026=dist2026prov.reduce((s,r)=>s+getMedTema({tema:r.tema,nat:r.nat}),0);
   const riscoPossNoPrazo=possNoPrazo.reduce((s,r)=>s+r.med,0);
+  const medianaGeral=Math.round(Object.values(AGING_TEMA).filter(d=>d.prov).reduce((a,d)=>a+d.prov,0)/Object.values(AGING_TEMA).filter(d=>d.prov).length);
 
   document.getElementById('kpis-riscos').innerHTML=
-    kpi('Entrantes 2026 Analisados',totalEnt.toLocaleString('pt-BR'),'Processos novos de 2026 projetados','#4f9cf9')+
-    kpi('Risco Financeiro Projetado','—','Entrantes 2026 + Possíveis no prazo (acumulado)','#f87171')+
-    kpi('Possíveis no Prazo',totalPossNoPrazo.toLocaleString('pt-BR'),`${fSh(riscoPossNoPrazo)} · risco mediano projetado`,'#fbbf24',null,false)+
-    kpi('Mediana Geral → Provisão',medianaGeral+'d','Mediana histórica dos temas (entrantes 2026)','#34d399');
+    kpi('Distribuídos 2026',dist2026prov.length.toLocaleString('pt-BR'),'Possíveis ativos distribuídos em 2026 · base dinâmica','#4f9cf9')+
+    kpi('Risco Financeiro Projetado','—','Distr. 2026 + Anos anteriores no prazo (acumulado)','#f87171')+
+    kpi('Anos Anteriores no Prazo',totalPossNoPrazo.toLocaleString('pt-BR'),`${fSh(riscoPossNoPrazo)} · risco mediano projetado`,'#fbbf24',null,false)+
+    kpi('Mediana Geral → Provisão',medianaGeral+'d','Mediana histórica dos temas analisados','#34d399');
 
   // ── Construir curvas mensais ───────────────────────────────────────────────
-  // Janela: 36 meses a partir de hoje (para capturar possíveis com aging longo)
   const mesesFuturos=[];
   for(let m=0;m<36;m++){
     const d=new Date(hoje.getFullYear(),hoje.getMonth()+m,1);
@@ -2475,58 +2481,64 @@ function bRiscos(){
   const fmtM=ym=>{const[y,m]=ym.split('-');const ns=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];return ns[+m]+'/'+y.slice(2);};
   const labelsM=mesesFuturos.map(fmtM);
 
-  // Mapas entrantes 2026
+  // Mapas Distribuídos 2026
   const provPorMes={};const pagPorMes={};
   const provFinMes={};const pagFinMes={};
   const provMesProcs={};const pagMesProcs={};
   mesesFuturos.forEach(m=>{provPorMes[m]=0;pagPorMes[m]=0;provFinMes[m]=0;pagFinMes[m]=0;provMesProcs[m]=[];pagMesProcs[m]=[];});
 
-  // Mapas possíveis no prazo
+  // Mapas anos anteriores
   const provPorMesPoss={};const pagPorMesPoss={};
   const provFinMesPoss={};const pagFinMesPoss={};
   const provMesProcsPoss={};const pagMesProcsPoss={};
   mesesFuturos.forEach(m=>{provPorMesPoss[m]=0;pagPorMesPoss[m]=0;provFinMesPoss[m]=0;pagFinMesPoss[m]=0;provMesProcsPoss[m]=[];pagMesProcsPoss[m]=[];});
 
-  // Loop entrantes 2026
-  ent2026all.forEach(r=>{
-    if(!r.dataEnt) return;
-    const aprov=AGING_TEMA[r.tema]?.prov||(AGING_NAT_PROV[getNatKey(r.nat)]||333);
-    const apag =AGING_TEMA[r.tema]?.pag ||(AGING_NAT_PAG [getNatKey(r.nat)]||673);
-    const de=new Date(r.dataEnt);
-    const dpProv=new Date(de.getTime()+aprov*86400000);
+  // Loop Distribuídos 2026 — PROVISÃO (somente Possíveis)
+  dist2026prov.forEach(r=>{
+    const agingAtual=Math.round((hoje-r.dataDist)/86400000);
+    const limiar=getAgingProvCalc(r);
+    const diasRestantes=Math.max(0,limiar-agingAtual);
+    const dpProv=new Date(r.dataDist.getTime()+limiar*86400000);
     const ymProv=`${dpProv.getFullYear()}-${String(dpProv.getMonth()+1).padStart(2,'0')}`;
-    const medR=MEDIANA_TEMA[r.tema]||(MEDIANA_NAT[getNatKey(r.nat)]||0);
+    const medR=getMedTema({tema:r.tema,nat:r.nat});
     if(provPorMes[ymProv]!==undefined){
       provPorMes[ymProv]++;
-      provFinMes[ymProv]+=r.valor;
-      const agingEnt2026Prov=r.dataEnt?Math.round((hoje-new Date(r.dataEnt))/86400000):null;
-      provMesProcs[ymProv].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.valor,fonte:r.fonte,med:medR,aprov,dataEnt:r.dataEnt,agingAtual:agingEnt2026Prov,limiar:aprov});
+      provFinMes[ymProv]+=medR;
+      provMesProcs[ymProv].push({proc:r.numero,tema:r.tema,nat:getNatKey(r.nat),valor:r.contigPos,med:medR,fase:r.fase,anoDist:r.anoDist,agingAtual,limiar});
     }
-    const dpPag=new Date(de.getTime()+apag*86400000);
+  });
+  // Loop Distribuídos 2026 — PAGAMENTO (Possíveis + Prováveis)
+  dist2026pag.forEach(r=>{
+    const agingAtual=Math.round((hoje-r.dataDist)/86400000);
+    const apag=AGING_TEMA[r.tema]?.pag||(AGING_NAT_PAG[getNatKey(r.nat)]||673);
+    const dpPag=new Date(r.dataDist.getTime()+apag*86400000);
     const ymPag=`${dpPag.getFullYear()}-${String(dpPag.getMonth()+1).padStart(2,'0')}`;
+    const medR=getMedTema({tema:r.tema,nat:r.nat});
     if(pagPorMes[ymPag]!==undefined){
       pagPorMes[ymPag]++;
-      pagFinMes[ymPag]+=r.valor;
-      const agingEnt2026Pag=r.dataEnt?Math.round((hoje-new Date(r.dataEnt))/86400000):null;
-      pagMesProcs[ymPag].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.valor,fonte:r.fonte,med:medR,apag,dataEnt:r.dataEnt,agingAtual:agingEnt2026Pag,limiar:apag});
+      pagFinMes[ymPag]+=medR;
+      pagMesProcs[ymPag].push({proc:r.numero,tema:r.tema,nat:getNatKey(r.nat),valor:r.contigPos,med:medR,fase:r.fase,risco:r.risco,anoDist:r.anoDist,agingAtual,limiar:apag});
     }
   });
 
-  // Loop possíveis no prazo
+  // Loop anos anteriores — PROVISÃO (Possíveis no prazo)
   possNoPrazo.forEach(r=>{
     if(provPorMesPoss[r.ymProv]!==undefined){
       provPorMesPoss[r.ymProv]++;
       provFinMesPoss[r.ymProv]+=r.med;
       provMesProcsPoss[r.ymProv].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.contig,med:r.med,fase:r.fase,diasRestantes:r.diasRestantes,limiar:r.limiar,agingAtual:r.agingAtual,anoDist:r.anoDist});
     }
+  });
+  // Loop anos anteriores — PAGAMENTO (Possíveis + Prováveis)
+  possAntPag.forEach(r=>{
     if(pagPorMesPoss[r.ymPag]!==undefined){
       pagPorMesPoss[r.ymPag]++;
       pagFinMesPoss[r.ymPag]+=r.med;
-      pagMesProcsPoss[r.ymPag].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.contig,med:r.med,fase:r.fase,diasRestantes:r.diasRestantes,limiar:r.limiar,agingAtual:r.agingAtual,anoDist:r.anoDist});
+      pagMesProcsPoss[r.ymPag].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.contig,med:r.med,fase:r.fase,risco:r.risco,agingAtual:r.agingAtual,limiar:r.limiar,anoDist:r.anoDist});
     }
   });
 
-  // Risco financeiro total = soma curva provisão (entrantes 2026 + possíveis no prazo)
+  // Risco financeiro total = soma curva provisão (Distr.2026 + anos anteriores)
   const riscoTotal2026=Object.values(provFinMes).reduce((a,v)=>a+v,0);
   const riscoPoss=Object.values(provFinMesPoss).reduce((a,v)=>a+v,0);
   const riscoTotal=riscoTotal2026+riscoPoss;
@@ -2545,9 +2557,9 @@ function bRiscos(){
   const corPag  = mostra2026 && !mostraPoss ? '#fb923c' : mostraPoss && !mostra2026 ? '#fbbf24' : '#34d399';
 
   // Subtítulos dinâmicos
-  const modoLabel = mostra2026 && mostraPoss ? 'Total consolidado (Entrantes 2026 + Possíveis no Prazo)'
-    : mostra2026 ? 'Somente Entrantes 2026'
-    : 'Somente Possíveis no Prazo';
+  const modoLabel = mostra2026 && mostraPoss ? 'Total consolidado (Distribuídos 2026 + Anos Anteriores)'
+    : mostra2026 ? 'Somente Distribuídos 2026'
+    : 'Somente Anos Anteriores';
   const subSufixo = ' · valores por mês, não acumulados · clique em um mês para detalhes';
   const elSubProv = document.getElementById('sub-curva-prov');
   const elSubPag  = document.getElementById('sub-curva-pag');
@@ -2903,7 +2915,7 @@ function openModalCurvaConsolidado(tipo,ym,ymLabel,procs,isVol){
   const qtd2026=procs.filter(p=>p.origem==='ent2026').length;
   const qtdPoss=procs.filter(p=>p.origem==='poss').length;
   document.getElementById('modal-curva-sub').textContent=
-    `Risco total: ${fSh(totalRisco)} · ${qtd2026>0?qtd2026+' Entr.2026':''}${qtd2026>0&&qtdPoss>0?' + ':''}${qtdPoss>0?qtdPoss+' Possíveis no Prazo':''}`;
+    `Risco total: ${fSh(totalRisco)} · ${qtd2026>0?qtd2026+' Distr.2026':''}${qtd2026>0&&qtdPoss>0?' + ':''}${qtdPoss>0?qtdPoss+' Anos Anteriores':''}`;
   const fmtDate=d=>{if(!d)return'—';const dt=new Date(d);return dt.toLocaleDateString('pt-BR');};
   const agingKey=tipo==='prov'?'aprov':'apag';
   const fonteLabel=f=>f===1?'*':f===2?'**':'***';
@@ -2912,11 +2924,12 @@ function openModalCurvaConsolidado(tipo,ym,ymLabel,procs,isVol){
     const isEnt=p.origem==='ent2026';
     let origemLabel, origemBg, origemCor;
     if(isEnt){
-      origemLabel='Entr. 2026'; origemBg='rgba(52,211,153,.15)'; origemCor='#34d399';
+      origemLabel='Distr. 2026'; origemBg='rgba(52,211,153,.15)'; origemCor='#34d399';
     } else {
-      // Usar anoDist passado diretamente no objeto — sem regex
-      const anoLabel=p.anoDist||'Poss.';
-      origemLabel='Entr. '+anoLabel;
+      // Possíveis no Prazo: mostrar "Poss. AAAA" com o ano de distribuição
+      // Nunca usar "Entr." para evitar confusão com os 556 entrantes do ENT2026_FULL
+      const anoLabel=p.anoDist||'';
+      origemLabel='Distr. '+anoLabel;
       origemBg='rgba(251,191,36,.15)'; origemCor='#fbbf24';
     }
     const val=p.valor||p.med||0;
