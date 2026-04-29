@@ -384,7 +384,7 @@ tbody tr:hover td{background:var(--s0)}
     </div>
     <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:.6rem .9rem;margin-bottom:.75rem;font-size:.68rem;color:#94a3b8;line-height:1.6">
         <strong style="color:#e2e8f0">Legenda:</strong>&nbsp;
-        <span style="color:#e2e8f0">†</span> Contingência real da planilha (valor da causa possível ou provisionado)
+        <span style="color:#e2e8f0">†</span> Contingência Possível (campo CONTINGENCIAR PÓS CLOSING) &nbsp;|&nbsp; <span style="color:#e2e8f0">††</span> Valor da causa (fallback quando contingência não preenchida)
         &nbsp;·&nbsp;
         <span style="color:#e2e8f0">‡</span> Mediana histórica do tema — valor usado nos gráficos de projeção
         &nbsp;·&nbsp;
@@ -837,7 +837,7 @@ tbody tr:hover td{background:var(--s0)}
       <div class="cd mb">
         <div class="cdh"><div><div class="cdt">Tabela de Aging por Tema</div><div class="cds">Possíveis ativos (Distr. 2026 + anos anteriores no prazo) · Mediana de dias até provisão e pagamento</div></div></div>
         <div class="cdb" style="overflow-x:auto"><table class="hm-table" id="tbl-riscos" style="min-width:100%;font-size:.72rem">
-          <thead><tr><th style="text-align:left">Tema</th><th>Distribuídos 2026</th><th>Risco Projetado</th><th>Aging → Provisão</th><th>Previsão Provisão</th><th>Aging → Pagamento</th><th>Previsão Pagamento</th></tr></thead>
+          <thead><tr><th style="text-align:left">Tema</th><th>Processos no Prazo</th><th>Risco Projetado</th><th>Aging → Provisão</th><th>Previsão Provisão</th><th>Aging → Pagamento</th><th>Previsão Pagamento</th></tr></thead>
           <tbody id="tbl-riscos-body"></tbody>
         </table></div>
           <div style="font-size:.62rem;color:#475569;margin-top:.5rem">* Mediana/Aging da natureza usado como fallback (tema sem histórico suficiente) · Inclui Distr.2026 (Possíveis) + anos anteriores dentro do prazo de aging</div>
@@ -2440,9 +2440,10 @@ function bRiscos(){
       const dpPag=new Date(r.dataDist.getTime()+apag*86400000);
       const ymPag=`${dpPag.getFullYear()}-${String(dpPag.getMonth()+1).padStart(2,'0')}`;
       const medR=getMedTema({tema:r.tema,nat:r.nat});
+      const contigPoss=r.contigPos>0?r.contigPos:(r.causa||0);
       possNoPrazo.push({
         proc:r.numero, nat:getNatKey(r.nat), tema:r.tema, tipo:r.tipo,
-        contig:r.contigPos, med:medR, fase:r.fase,
+        contig:contigPoss, usouCausa:r.contigPos<=0&&r.causa>0, med:medR, fase:r.fase,
         dataDist:r.dataDist, anoDist:r.anoDist, agingAtual, limiar, diasRestantes,
         ymProv, ymPag, dpProv, dpPag
       });
@@ -2517,7 +2518,8 @@ function bRiscos(){
     if(provPorMes[ymProv]!==undefined){
       provPorMes[ymProv]++;
       provFinMes[ymProv]+=medR;
-      provMesProcs[ymProv].push({proc:r.numero,tema:r.tema,nat:getNatKey(r.nat),valor:r.contigPos,med:medR,fase:r.fase,anoDist:r.anoDist,agingAtual,limiar});
+      const vProv=r.contigPos>0?r.contigPos:(r.causa||0);const usouCausaProv=r.contigPos<=0&&r.causa>0;
+      provMesProcs[ymProv].push({proc:r.numero,tema:r.tema,nat:getNatKey(r.nat),valor:vProv,usouCausa:usouCausaProv,med:medR,fase:r.fase,anoDist:r.anoDist,agingAtual,limiar});
     }
   });
   // Loop Distribuídos 2026 — PAGAMENTO (Possíveis + Prováveis)
@@ -2530,7 +2532,8 @@ function bRiscos(){
     if(pagPorMes[ymPag]!==undefined){
       pagPorMes[ymPag]++;
       pagFinMes[ymPag]+=medR;
-      pagMesProcs[ymPag].push({proc:r.numero,tema:r.tema,nat:getNatKey(r.nat),valor:r.contigPos,med:medR,fase:r.fase,risco:r.risco,anoDist:r.anoDist,agingAtual,limiar:apag});
+      const vPag=r.contigPos>0?r.contigPos:(r.causa||0);const usouCausaPag=r.contigPos<=0&&r.causa>0;
+      pagMesProcs[ymPag].push({proc:r.numero,tema:r.tema,nat:getNatKey(r.nat),valor:vPag,usouCausa:usouCausaPag,med:medR,fase:r.fase,risco:r.risco,anoDist:r.anoDist,agingAtual,limiar:apag});
     }
   });
 
@@ -2539,7 +2542,7 @@ function bRiscos(){
     if(provPorMesPoss[r.ymProv]!==undefined){
       provPorMesPoss[r.ymProv]++;
       provFinMesPoss[r.ymProv]+=r.med;
-      provMesProcsPoss[r.ymProv].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.contig,med:r.med,fase:r.fase,diasRestantes:r.diasRestantes,limiar:r.limiar,agingAtual:r.agingAtual,anoDist:r.anoDist});
+      provMesProcsPoss[r.ymProv].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.contig,usouCausa:false,med:r.med,fase:r.fase,diasRestantes:r.diasRestantes,limiar:r.limiar,agingAtual:r.agingAtual,anoDist:r.anoDist});
     }
   });
   // Loop anos anteriores — PAGAMENTO (Possíveis + Prováveis)
@@ -2547,7 +2550,7 @@ function bRiscos(){
     if(pagPorMesPoss[r.ymPag]!==undefined){
       pagPorMesPoss[r.ymPag]++;
       pagFinMesPoss[r.ymPag]+=r.med;
-      pagMesProcsPoss[r.ymPag].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.contig,med:r.med,fase:r.fase,risco:r.risco,agingAtual:r.agingAtual,limiar:r.limiar,anoDist:r.anoDist});
+      pagMesProcsPoss[r.ymPag].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.contig,usouCausa:false,med:r.med,fase:r.fase,risco:r.risco,agingAtual:r.agingAtual,limiar:r.limiar,anoDist:r.anoDist});
     }
   });
 
@@ -2980,6 +2983,9 @@ function openModalCurvaConsolidado(tipo,ym,ymLabel,procs,isVol){
 
     // Contingência real + badge de risco (para pagamento que inclui prováveis)
     const contig=p.valor||0;
+    // † = contigPos real | †† = valor da causa (fallback quando contigPos=0)
+    const contigSup=p.usouCausa?'††':'†';
+    const contigTitle=p.usouCausa?'†† Valor da causa (contingência possível não preenchida)':'† Contingência Possível (CONTINGENCIAR PÓS CLOSING)';
     const riscoBadge=!isProv&&p.risco
       ? `<span style="font-size:.58rem;padding:.1rem .3rem;border-radius:3px;margin-left:.3rem;background:${p.risco==='PROVÁVEL'?'rgba(167,139,250,.2)':'rgba(251,191,36,.15)'};color:${p.risco==='PROVÁVEL'?'#a78bfa':'#fbbf24'}">${p.risco==='PROVÁVEL'?'PROV':'POSS'}</span>`
       : '';
@@ -2996,7 +3002,7 @@ function openModalCurvaConsolidado(tipo,ym,ymLabel,procs,isVol){
       <td style="text-align:center"><span style="font-size:.61rem;padding:.12rem .35rem;border-radius:4px;background:${natBg};color:${natCor}">${natLabel}</span></td>
       <td style="text-align:left;color:#e2e8f0;font-size:.67rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${temaLabel}">${temaLabel}</td>
       <td style="color:#64748b;font-size:.66rem;white-space:nowrap">${agingCol}</td>
-      <td style="color:${cor};font-weight:700">${contig>0?contig.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' <sup style="color:#64748b;font-size:.6rem">†</sup>':'—'}${riscoBadge}</td>
+      <td style="color:${cor};font-weight:700" title="${contigTitle}">${contig>0?contig.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' <sup style="color:#64748b;font-size:.6rem">'+contigSup+'</sup>':'—'}${riscoBadge}</td>
       <td style="color:#34d399;font-weight:600" title="${medTitleStr}">${medVal>0?medVal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' <sup style="color:#64748b;font-size:.6rem">'+medSup+'</sup>':'—'}</td>
     </tr>`;
   }).join('');
