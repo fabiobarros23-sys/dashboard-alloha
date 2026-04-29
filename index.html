@@ -800,11 +800,11 @@ tbody tr:hover td{background:var(--s0)}
       <div class="sh"><div class="sn">Projeção</div><div class="st">Riscos Futuros</div><div class="sd">Projeção de impacto dos entrantes de 2026 na provisão e nos pagamentos, baseada no aging histórico por tema (mediana, excluindo outliers &lt;50 dias).</div></div>
       <div class="kr kr4 mb2" id="kpis-riscos"></div>
       <div class="cd mb2">
-        <div class="cdh"><div><div class="cdt">Curva de Provisão Projetada — Entrantes 2026</div><div class="cds">Estimativa de quando cada processo entrante deve impactar a provisão (por mês)</div></div></div>
+        <div class="cdh"><div><div class="cdt">Curva de Provisão Projetada — Entrantes 2026</div><div class="cds">Fluxo mensal estimado de provisão — valores por mês, não acumulados</div></div></div>
         <div class="cdb npt"><div class="cw" style="height:240px"><canvas id="c-riscos-prov"></canvas></div></div>
       </div>
       <div class="cd mb2">
-        <div class="cdh"><div><div class="cdt">Curva de Pagamento Projetado — Entrantes 2026</div><div class="cds">Estimativa de quando cada processo entrante pode gerar pagamento (por mês)</div></div></div>
+        <div class="cdh"><div><div class="cdt">Curva de Pagamento Projetado — Entrantes 2026</div><div class="cds">Fluxo mensal estimado de pagamento — valores por mês, não acumulados</div></div></div>
         <div class="cdb npt"><div class="cw" style="height:240px"><canvas id="c-riscos-pag"></canvas></div></div>
       </div>
       <div class="cd mb">
@@ -2348,7 +2348,7 @@ function bRiscos(){
   ent2026all.forEach(r=>{ riscoTotal+=getMedTema(r); });
   document.getElementById('kpis-riscos').innerHTML=
     kpi('Entrantes 2026 Analisados',totalEnt.toLocaleString('pt-BR'),'Com tema mapeado no histórico','#4f9cf9')+
-    kpi('Risco Financeiro Projetado',fSh(riscoTotal),'Mediana histórica × entrantes por tema','#f87171')+
+    kpi('Risco Financeiro Projetado',fSh(riscoTotal),'Total acumulado de provisão esperada (2026–2028)','#f87171')+
     kpi('Temas com Aging de Provisão',temasComProv,'Temas com dados históricos suficientes','#a78bfa')+
     kpi('Mediana Geral → Provisão',medianaGeral+'d','Mediana de todos os temas analisados','#34d399');
 
