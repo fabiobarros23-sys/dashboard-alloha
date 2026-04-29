@@ -2343,12 +2343,10 @@ function bRiscos(){
   const temasComProv=Object.keys(porTema).filter(t=>AGING_TEMA[t]?.prov).length;
   const temasComPag=Object.keys(porTema).filter(t=>AGING_TEMA[t]?.pag).length;
   const medianaGeral=Math.round(Object.values(AGING_TEMA).filter(d=>d.prov).reduce((a,d)=>a+d.prov,0)/Object.values(AGING_TEMA).filter(d=>d.prov).length);
-  // Risco financeiro projetado total
-  let riscoTotal=0;
-  ent2026all.forEach(r=>{ riscoTotal+=getMedTema(r); });
+  // KPIs iniciais (riscoTotal será atualizado após o loop das curvas)
   document.getElementById('kpis-riscos').innerHTML=
     kpi('Entrantes 2026 Analisados',totalEnt.toLocaleString('pt-BR'),'Com tema mapeado no histórico','#4f9cf9')+
-    kpi('Risco Financeiro Projetado',fSh(riscoTotal),'Total acumulado de provisão esperada (2026–2028)','#f87171')+
+    kpi('Risco Financeiro Projetado','—','Total acumulado de provisão esperada (2026–2028)','#f87171')+
     kpi('Temas com Aging de Provisão',temasComProv,'Temas com dados históricos suficientes','#a78bfa')+
     kpi('Mediana Geral → Provisão',medianaGeral+'d','Mediana de todos os temas analisados','#34d399');
 
@@ -2395,6 +2393,14 @@ function bRiscos(){
       pagMesProcs[ymPag].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.valor,fonte:r.fonte,med:medR,apag,dataEnt:r.dataEnt});
     }
   });
+  // Risco financeiro total = soma de todos os meses da curva de provisão (acumulado real 2026–2028)
+  const riscoTotal=Object.values(provFinMes).reduce((a,v)=>a+v,0);
+  // Atualizar card com valor real calculado após o loop
+  const elRisco=document.getElementById('kpis-riscos');
+  if(elRisco){
+    const kpis=elRisco.querySelectorAll('.kv');
+    if(kpis[1]) kpis[1].textContent=fSh(riscoTotal);
+  }
   // Sincronizar ent2026all com ENT2026_FULL para KPIs e tabela
   // (ent2026all já foi construído do parse JS — manter para tabela de aging)
 
