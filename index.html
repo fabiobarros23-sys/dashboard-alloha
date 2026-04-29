@@ -2362,7 +2362,7 @@ function bRiscos(){
     const nk=getNatKey(r.nat);
     if(agingPorNat[nk]) agingPorNat[nk].push(dias);
   });
-  const medArr=arr=>{if(!arr.length)return null;const s=[...arr].sort((a,b)=>a-b);const m=Math.floor(s.length/2);return s.length%2?s[m]:Math.round((s[m-1]+s[m])/2);};
+  const medArr=arr=>{if(!arr||!arr.length)return null;const s=[...arr].sort((a,b)=>a-b);const m=Math.floor(s.length/2);return s.length%2?s[m]:Math.round((s[m-1]+s[m])/2);};
   const medNatProv={
     TRABALHISTA: medArr(agingPorNat.TRABALHISTA)||AGING_NAT_PROV.TRABALHISTA||333,
     'CÍVEL':     medArr(agingPorNat['CÍVEL'])||AGING_NAT_PROV['CÍVEL']||236
@@ -2615,7 +2615,7 @@ function bRiscos(){
       <td>${urgLabel(d.excesso)}</td>
     </tr>`;}).join('');
 
-  }catch(e){console.error('[bRiscos]',e);}
+  }catch(e){console.error('[bRiscos]',e);const el=document.getElementById('kpis-riscos');if(el)el.innerHTML='<div style="color:#f87171;padding:1rem;grid-column:1/-1;font-size:.8rem"><strong>Erro bRiscos:</strong> '+e.message+'<br><pre style="font-size:.65rem;opacity:.7">'+e.stack+'</pre></div>';}
 }
 
 // PAGE: HISTÓRICO
