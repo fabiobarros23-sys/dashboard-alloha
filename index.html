@@ -2443,7 +2443,7 @@ function bRiscos(){
       const contigPoss=r.contigPos>0?r.contigPos:(r.causa||0);
       possNoPrazo.push({
         proc:r.numero, nat:getNatKey(r.nat), tema:r.tema, tipo:r.tipo,
-        contig:contigPoss, usouCausa:r.contigPos<=0&&r.causa>0, med:medR, fase:r.fase,
+        contig:contigPoss, usouCausa:!(r.contigPos>0)&&r.causa>0, med:medR, fase:r.fase,
         dataDist:r.dataDist, anoDist:r.anoDist, agingAtual, limiar, diasRestantes,
         ymProv, ymPag, dpProv, dpPag
       });
@@ -2518,7 +2518,7 @@ function bRiscos(){
     if(provPorMes[ymProv]!==undefined){
       provPorMes[ymProv]++;
       provFinMes[ymProv]+=medR;
-      const vProv=r.contigPos>0?r.contigPos:(r.causa||0);const usouCausaProv=r.contigPos<=0&&r.causa>0;
+      const vProv=r.contigPos>0?r.contigPos:(r.causa>0?r.causa:0);const usouCausaProv=!(r.contigPos>0)&&r.causa>0;
       provMesProcs[ymProv].push({proc:r.numero,tema:r.tema,nat:getNatKey(r.nat),valor:vProv,usouCausa:usouCausaProv,med:medR,fase:r.fase,anoDist:r.anoDist,agingAtual,limiar});
     }
   });
@@ -2532,7 +2532,7 @@ function bRiscos(){
     if(pagPorMes[ymPag]!==undefined){
       pagPorMes[ymPag]++;
       pagFinMes[ymPag]+=medR;
-      const vPag=r.contigPos>0?r.contigPos:(r.causa||0);const usouCausaPag=r.contigPos<=0&&r.causa>0;
+      const vPag=r.contigPos>0?r.contigPos:(r.causa>0?r.causa:0);const usouCausaPag=!(r.contigPos>0)&&r.causa>0;
       pagMesProcs[ymPag].push({proc:r.numero,tema:r.tema,nat:getNatKey(r.nat),valor:vPag,usouCausa:usouCausaPag,med:medR,fase:r.fase,risco:r.risco,anoDist:r.anoDist,agingAtual,limiar:apag});
     }
   });
@@ -2542,7 +2542,7 @@ function bRiscos(){
     if(provPorMesPoss[r.ymProv]!==undefined){
       provPorMesPoss[r.ymProv]++;
       provFinMesPoss[r.ymProv]+=r.med;
-      provMesProcsPoss[r.ymProv].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.contig,usouCausa:false,med:r.med,fase:r.fase,diasRestantes:r.diasRestantes,limiar:r.limiar,agingAtual:r.agingAtual,anoDist:r.anoDist});
+      provMesProcsPoss[r.ymProv].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.contig,usouCausa:r.usouCausa||false,med:r.med,fase:r.fase,diasRestantes:r.diasRestantes,limiar:r.limiar,agingAtual:r.agingAtual,anoDist:r.anoDist});
     }
   });
   // Loop anos anteriores — PAGAMENTO (Possíveis + Prováveis)
@@ -2550,7 +2550,7 @@ function bRiscos(){
     if(pagPorMesPoss[r.ymPag]!==undefined){
       pagPorMesPoss[r.ymPag]++;
       pagFinMesPoss[r.ymPag]+=r.med;
-      pagMesProcsPoss[r.ymPag].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.contig,usouCausa:false,med:r.med,fase:r.fase,risco:r.risco,agingAtual:r.agingAtual,limiar:r.limiar,anoDist:r.anoDist});
+      pagMesProcsPoss[r.ymPag].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.contig,usouCausa:r.usouCausa||false,med:r.med,fase:r.fase,risco:r.risco,agingAtual:r.agingAtual,limiar:r.limiar,anoDist:r.anoDist});
     }
   });
 
