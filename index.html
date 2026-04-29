@@ -384,13 +384,15 @@ tbody tr:hover td{background:var(--s0)}
     </div>
     <div style="background:rgba(255,255,255,.04);border-radius:8px;padding:.6rem .9rem;margin-bottom:.75rem;font-size:.68rem;color:#94a3b8;line-height:1.6">
         <strong style="color:#e2e8f0">Legenda:</strong>&nbsp;
-        † <span style="color:#e2e8f0">*</span> Contingência provisionada &nbsp;|&nbsp;
-        <span style="color:#e2e8f0">**</span> Valor da causa &nbsp;|&nbsp;
-        <span style="color:#e2e8f0">***</span> Mediana do tema (sem dados reais)
+        <span style="color:#e2e8f0">†</span> Contingência real da planilha (valor da causa possível ou provisionado)
+        &nbsp;·&nbsp;
+        <span style="color:#e2e8f0">‡</span> Mediana histórica do tema — valor usado nos gráficos de projeção
+        &nbsp;·&nbsp;
+        <span style="color:#e2e8f0">‡‡</span> Fallback por natureza (tema sem dados históricos suficientes)
+        &nbsp;·&nbsp;
+        Badge <span style="color:#a78bfa">PROV</span> / <span style="color:#fbbf24">POSS</span> indica o risco do processo (somente curva de pagamento)
         &nbsp;&nbsp;·&nbsp;&nbsp;
-        ‡ Mediana histórica do tema (ou fallback por natureza) — valor usado nos gráficos de projeção
-        &nbsp;&nbsp;·&nbsp;&nbsp;
-        Ordenado por valor decrescente
+        Ordenado por mediana projetada decrescente
       </div>
     <div style="overflow-x:auto">
       <table class="hm-table" id="tbl-modal-curva" style="width:100%;font-size:.69rem;table-layout:fixed">
@@ -833,12 +835,12 @@ tbody tr:hover td{background:var(--s0)}
         <div class="cdb npt"><div class="cw" style="height:280px"><canvas id="c-riscos-pag"></canvas></div></div>
       </div>
       <div class="cd mb">
-        <div class="cdh"><div><div class="cdt">Tabela de Aging por Tema</div><div class="cds">Entrantes 2026 · Mediana de dias até provisão e até pagamento · Dados históricos</div></div></div>
+        <div class="cdh"><div><div class="cdt">Tabela de Aging por Tema</div><div class="cds">Possíveis ativos (Distr. 2026 + anos anteriores no prazo) · Mediana de dias até provisão e pagamento</div></div></div>
         <div class="cdb" style="overflow-x:auto"><table class="hm-table" id="tbl-riscos" style="min-width:100%;font-size:.72rem">
           <thead><tr><th style="text-align:left">Tema</th><th>Distribuídos 2026</th><th>Risco Projetado</th><th>Aging → Provisão</th><th>Previsão Provisão</th><th>Aging → Pagamento</th><th>Previsão Pagamento</th></tr></thead>
           <tbody id="tbl-riscos-body"></tbody>
         </table></div>
-          <div style="font-size:.62rem;color:#475569;margin-top:.5rem">* Mediana/Aging da natureza usado como fallback (tema sem histórico suficiente) · Base dinâmica da planilha atual</div>
+          <div style="font-size:.62rem;color:#475569;margin-top:.5rem">* Mediana/Aging da natureza usado como fallback (tema sem histórico suficiente) · Inclui Distr.2026 (Possíveis) + anos anteriores dentro do prazo de aging</div>
         </div>
       <div class="cd mb">
         <div class="cdh"><div><div class="cdt">Possíveis em Alerta — Risco de Escalada</div><div class="cds">Processos POSSÍVEIS ativos que já ultrapassaram o aging mediano de Possível→Provável · Candidatos à reclassificação</div></div></div>
@@ -2462,11 +2464,12 @@ function bRiscos(){
     });
   });
 
-  // Agrupar por tema (distribuídos 2026) para tabela
+  // Agrupar por tema: Distr.2026 (possíveis) + anos anteriores no prazo
   const porTema={};
-  dist2026prov.forEach(r=>{
-    if(!porTema[r.tema]) porTema[r.tema]={cnt:0};
-    porTema[r.tema].cnt++;
+  [...dist2026prov,...possNoPrazo].forEach(r=>{
+    const t=r.tema||r.tema||'';if(!t)return;
+    if(!porTema[t]) porTema[t]={cnt:0};
+    porTema[t].cnt++;
   });
 
   // KPIs
@@ -2915,52 +2918,76 @@ function openModalCurvaConsolidado(tipo,ym,ymLabel,procs,isVol){
     modal.onclick=e=>{if(e.target===modal)closeModalCurva();};
     return;
   }
-  const label=tipo==='prov'?'Provisão Projetada':'Pagamento Projetado';
-  const cor=tipo==='prov'?'#a78bfa':'#fb923c';
+  const isProv=tipo==='prov';
+  const label=isProv?'Provisão Projetada':'Pagamento Projetado';
+  const cor=isProv?'#a78bfa':'#fb923c';
   document.getElementById('modal-curva-tipo-label').textContent=`CURVA DE ${label.toUpperCase()} — CONSOLIDADO`;
   document.getElementById('modal-curva-tipo-label').style.color=cor;
   document.getElementById('modal-curva-title').textContent=`${ymLabel} — ${procs.length} processos projetados`;
 
   // Risco total = soma das medianas projetadas (valor usado nos gráficos)
   const totalRisco=procs.reduce((s,p)=>s+(p.med||0),0);
-  const qtd2026=procs.filter(p=>p.origem==='ent2026').length;
-  const qtdAnt=procs.filter(p=>p.origem==='poss').length;
+  const qtd2026=procs.filter(p=>p.anoDist===2026).length;
+  const qtdAnt=procs.filter(p=>p.anoDist!==2026).length;
   document.getElementById('modal-curva-sub').textContent=
     `Mediana projetada total: ${fSh(totalRisco)} · `+
     (qtd2026>0?qtd2026+' Distr.2026':'')+
     (qtd2026>0&&qtdAnt>0?' + ':'')+
     (qtdAnt>0?qtdAnt+' processo'+(qtdAnt>1?'s':'')+' de anos anteriores':'');
 
-  const agingKey=tipo==='prov'?'aprov':'apag';
+  // Cabeçalho da coluna contingência varia por curva
+  // Provisão: só Possíveis → "Contingência Possível"
+  // Pagamento: Possíveis + Prováveis → "Contingência" com badge de risco
+  const colContigHeader=isProv?'Contingência Possível †':'Contingência †';
+
+  // Atualizar cabeçalho dinamicamente
+  const thead=document.querySelector('#tbl-modal-curva thead tr');
+  if(thead){
+    const ths=thead.querySelectorAll('th');
+    if(ths[6]) ths[6].textContent=colContigHeader;
+  }
+
+  // Legenda asteriscos
+  // Contingência: † = valor real da planilha
+  // Mediana: ‡ = mediana histórica do tema; ‡‡ = fallback por natureza
+  const medLegend=r=>{
+    const hasMed=MEDIANA_TEMA[r.tema]>0;
+    return hasMed?'‡':'‡‡';
+  };
+  const medTitle=r=>{
+    const hasMed=MEDIANA_TEMA[r.tema]>0;
+    return hasMed?'‡ Mediana histórica do tema':'‡‡ Fallback por natureza (sem dados do tema)';
+  };
 
   document.getElementById('tbl-modal-curva-body').innerHTML=procs.map((p,i)=>{
-    // Origem: baseada em anoDist — Distr. 2026 verde, demais âmbar
+    // Origem badge: verde Distr.2026, âmbar anos anteriores
     const ano2026=p.anoDist===2026;
     const origemBg=ano2026?'rgba(52,211,153,.15)':'rgba(251,191,36,.15)';
     const origemCor=ano2026?'#34d399':'#fbbf24';
     const origemLabel='Distr. '+(p.anoDist||'?');
 
-    // Número do processo completo (sem truncar na célula — usa title para ver completo)
     const procNum=p.proc||'—';
 
-    // Natureza
     const natBg=p.nat==='TRABALHISTA'?'rgba(167,139,250,.2)':'rgba(79,156,249,.2)';
     const natCor=p.nat==='TRABALHISTA'?'#a78bfa':'#4f9cf9';
     const natLabel=p.nat==='TRABALHISTA'?'TRAB':'CÍVEL';
 
-    // Tema
     const temaLabel=p.tema||'—';
 
-    // Aging
     const agingCol=p.agingAtual!==undefined&&p.limiar!==undefined
       ? p.agingAtual+'d · '+p.limiar+'d'
       : '—';
 
-    // Contingência Possível = valor real do processo (p.valor = contigPos)
+    // Contingência real + badge de risco (para pagamento que inclui prováveis)
     const contig=p.valor||0;
+    const riscoBadge=!isProv&&p.risco
+      ? `<span style="font-size:.58rem;padding:.1rem .3rem;border-radius:3px;margin-left:.3rem;background:${p.risco==='PROVÁVEL'?'rgba(167,139,250,.2)':'rgba(251,191,36,.15)'};color:${p.risco==='PROVÁVEL'?'#a78bfa':'#fbbf24'}">${p.risco==='PROVÁVEL'?'PROV':'POSS'}</span>`
+      : '';
 
-    // Mediana projetada
+    // Mediana com asterisco correto
     const medVal=p.med||0;
+    const medSup=medLegend(p);
+    const medTitleStr=medTitle(p);
 
     return`<tr>
       <td style="color:#64748b;text-align:center">${i+1}</td>
@@ -2969,11 +2996,11 @@ function openModalCurvaConsolidado(tipo,ym,ymLabel,procs,isVol){
       <td style="text-align:center"><span style="font-size:.61rem;padding:.12rem .35rem;border-radius:4px;background:${natBg};color:${natCor}">${natLabel}</span></td>
       <td style="text-align:left;color:#e2e8f0;font-size:.67rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${temaLabel}">${temaLabel}</td>
       <td style="color:#64748b;font-size:.66rem;white-space:nowrap">${agingCol}</td>
-      <td style="color:${cor};font-weight:700">${contig>0?contig.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'}</td>
-      <td style="color:#34d399;font-weight:600">${medVal>0?medVal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'}</td>
+      <td style="color:${cor};font-weight:700">${contig>0?contig.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' <sup style="color:#64748b;font-size:.6rem">†</sup>':'—'}${riscoBadge}</td>
+      <td style="color:#34d399;font-weight:600" title="${medTitleStr}">${medVal>0?medVal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' <sup style="color:#64748b;font-size:.6rem">'+medSup+'</sup>':'—'}</td>
     </tr>`;
   }).join('');
-  window._curvaCtx={tipo,ym,ymLabel,procs,agingKey,isConsolidado:true};
+  window._curvaCtx={tipo,ym,ymLabel,procs,agingKey:isProv?'aprov':'apag',isConsolidado:true};
   const modal=document.getElementById('modal-curva');
   modal.style.display='flex';
   modal.onclick=e=>{if(e.target===modal)closeModalCurva();};
