@@ -393,15 +393,25 @@ tbody tr:hover td{background:var(--s0)}
         Ordenado por valor decrescente
       </div>
     <div style="overflow-x:auto">
-      <table class="hm-table" id="tbl-modal-curva" style="min-width:100%;font-size:.71rem">
+      <table class="hm-table" id="tbl-modal-curva" style="width:100%;font-size:.69rem;table-layout:fixed">
+        <colgroup>
+          <col style="width:2.2rem">
+          <col style="width:6rem">
+          <col style="width:13rem">
+          <col style="width:3rem">
+          <col style="width:8rem">
+          <col style="width:9rem">
+          <col style="width:7rem">
+          <col style="width:7rem">
+        </colgroup>
         <thead><tr>
           <th>#</th>
+          <th style="text-align:left">Origem</th>
           <th style="text-align:left">Nº Processo</th>
           <th>Nat.</th>
           <th style="text-align:left">Tema</th>
-          <th>Data Entrada</th>
-          <th>Aging</th>
-          <th>Valor do Processo †</th>
+          <th>Aging (atual · limiar)</th>
+          <th>Contingência Possível</th>
           <th>Mediana Projetada ‡</th>
         </tr></thead>
         <tbody id="tbl-modal-curva-body"></tbody>
@@ -2895,7 +2905,6 @@ function closeModalCurva(){document.getElementById('modal-curva').style.display=
 // Modal drill-down: consolidado (Entrantes 2026 + Possíveis no Prazo)
 function openModalCurvaConsolidado(tipo,ym,ymLabel,procs,isVol){
   if(!procs||!procs.length){
-    // nada neste mês
     document.getElementById('modal-curva-tipo-label').textContent='SEM PROCESSOS NESTE MÊS';
     document.getElementById('modal-curva-tipo-label').style.color='#64748b';
     document.getElementById('modal-curva-title').textContent=ymLabel;
@@ -2911,43 +2920,56 @@ function openModalCurvaConsolidado(tipo,ym,ymLabel,procs,isVol){
   document.getElementById('modal-curva-tipo-label').textContent=`CURVA DE ${label.toUpperCase()} — CONSOLIDADO`;
   document.getElementById('modal-curva-tipo-label').style.color=cor;
   document.getElementById('modal-curva-title').textContent=`${ymLabel} — ${procs.length} processos projetados`;
-  const totalRisco=procs.reduce((s,p)=>s+(p.valor||p.med||0),0);
+
+  // Risco total = soma das medianas projetadas (valor usado nos gráficos)
+  const totalRisco=procs.reduce((s,p)=>s+(p.med||0),0);
   const qtd2026=procs.filter(p=>p.origem==='ent2026').length;
-  const qtdPoss=procs.filter(p=>p.origem==='poss').length;
+  const qtdAnt=procs.filter(p=>p.origem==='poss').length;
   document.getElementById('modal-curva-sub').textContent=
-    `Risco total: ${fSh(totalRisco)} · ${qtd2026>0?qtd2026+' Distr.2026':''}${qtd2026>0&&qtdPoss>0?' + ':''}${qtdPoss>0?qtdPoss+' Anos Anteriores':''}`;
-  const fmtDate=d=>{if(!d)return'—';const dt=new Date(d);return dt.toLocaleDateString('pt-BR');};
+    `Mediana projetada total: ${fSh(totalRisco)} · `+
+    (qtd2026>0?qtd2026+' Distr.2026':'')+
+    (qtd2026>0&&qtdAnt>0?' + ':'')+
+    (qtdAnt>0?qtdAnt+' processo'+(qtdAnt>1?'s':'')+' de anos anteriores':'');
+
   const agingKey=tipo==='prov'?'aprov':'apag';
-  const fonteLabel=f=>f===1?'*':f===2?'**':'***';
-  const fonteTitle=f=>f===1?'* Contingência':f===2?'** Valor da causa':'*** Mediana (fallback)';
+
   document.getElementById('tbl-modal-curva-body').innerHTML=procs.map((p,i)=>{
-    const isEnt=p.origem==='ent2026';
-    let origemLabel, origemBg, origemCor;
-    if(isEnt){
-      origemLabel='Distr. 2026'; origemBg='rgba(52,211,153,.15)'; origemCor='#34d399';
-    } else {
-      // Possíveis no Prazo: mostrar "Poss. AAAA" com o ano de distribuição
-      // Nunca usar "Entr." para evitar confusão com os 556 entrantes do ENT2026_FULL
-      const anoLabel=p.anoDist||'';
-      origemLabel='Distr. '+anoLabel;
-      origemBg='rgba(251,191,36,.15)'; origemCor='#fbbf24';
-    }
-    const val=p.valor||p.med||0;
-    const medVal=p.med||0;
-    // Coluna de aging: para ent2026 mostra aging do tema; para poss mostra aging atual/limiar
-    // Aging unificado: aging atual vs limiar para todos os processos
+    // Origem: baseada em anoDist — Distr. 2026 verde, demais âmbar
+    const ano2026=p.anoDist===2026;
+    const origemBg=ano2026?'rgba(52,211,153,.15)':'rgba(251,191,36,.15)';
+    const origemCor=ano2026?'#34d399':'#fbbf24';
+    const origemLabel='Distr. '+(p.anoDist||'?');
+
+    // Número do processo completo (sem truncar na célula — usa title para ver completo)
+    const procNum=p.proc||'—';
+
+    // Natureza
+    const natBg=p.nat==='TRABALHISTA'?'rgba(167,139,250,.2)':'rgba(79,156,249,.2)';
+    const natCor=p.nat==='TRABALHISTA'?'#a78bfa':'#4f9cf9';
+    const natLabel=p.nat==='TRABALHISTA'?'TRAB':'CÍVEL';
+
+    // Tema
+    const temaLabel=p.tema||'—';
+
+    // Aging
     const agingCol=p.agingAtual!==undefined&&p.limiar!==undefined
-      ? p.agingAtual+'d atual · '+p.limiar+'d limiar'
-      : (p[agingKey]||'—')+'d';
-    const fl=isEnt?fonteLabel(p.fonte||3):'';
+      ? p.agingAtual+'d · '+p.limiar+'d'
+      : '—';
+
+    // Contingência Possível = valor real do processo (p.valor = contigPos)
+    const contig=p.valor||0;
+
+    // Mediana projetada
+    const medVal=p.med||0;
+
     return`<tr>
-      <td style="color:#64748b">${i+1}</td>
-      <td><span style="font-size:.62rem;padding:.15rem .45rem;border-radius:4px;background:${origemBg};color:${origemCor};font-weight:700;white-space:nowrap">${origemLabel}</span></td>
-      <td style="font-family:monospace;font-size:.64rem;color:#94a3b8" title="${p.proc||''}">${p.proc?p.proc.slice(0,24)+'…':p.proc||'—'}</td>
-      <td><span style="font-size:.63rem;padding:.15rem .4rem;border-radius:4px;background:${p.nat==='TRABALHISTA'?'rgba(167,139,250,.2)':'rgba(79,156,249,.2)'};color:${p.nat==='TRABALHISTA'?'#a78bfa':'#4f9cf9'}">${p.nat==='TRABALHISTA'?'TRAB':'CÍVEL'}</span></td>
-      <td style="text-align:left;color:#e2e8f0;font-size:.68rem">${p.tema||'—'}</td>
-      <td style="color:#64748b;font-size:.67rem">${agingCol}</td>
-      <td style="color:${cor};font-weight:700" title="${isEnt?fonteTitle(p.fonte||3):''}">${val.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}${fl?` <sup style="color:#64748b;font-size:.65rem">${fl}</sup>`:''}</td>
+      <td style="color:#64748b;text-align:center">${i+1}</td>
+      <td><span style="font-size:.61rem;padding:.12rem .4rem;border-radius:4px;background:${origemBg};color:${origemCor};font-weight:700;white-space:nowrap">${origemLabel}</span></td>
+      <td style="font-family:monospace;font-size:.63rem;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${procNum}">${procNum}</td>
+      <td style="text-align:center"><span style="font-size:.61rem;padding:.12rem .35rem;border-radius:4px;background:${natBg};color:${natCor}">${natLabel}</span></td>
+      <td style="text-align:left;color:#e2e8f0;font-size:.67rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${temaLabel}">${temaLabel}</td>
+      <td style="color:#64748b;font-size:.66rem;white-space:nowrap">${agingCol}</td>
+      <td style="color:${cor};font-weight:700">${contig>0?contig.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'}</td>
       <td style="color:#34d399;font-weight:600">${medVal>0?medVal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'}</td>
     </tr>`;
   }).join('');
