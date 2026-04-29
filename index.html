@@ -2552,13 +2552,33 @@ function bRiscos(){
   if(elSubProv) elSubProv.textContent = modoLabel + subSufixo;
   if(elSubPag)  elSubPag.textContent  = modoLabel + subSufixo;
 
-  // Dados consolidados mês a mês
-  const dadosProv = mesesFuturos.map(m=>{
+  // Dados consolidados mês a mês (todos os 36 meses)
+  const dadosProvAll = mesesFuturos.map(m=>{
     const v2026 = mostra2026 ? (isV ? provPorMes[m] : provFinMes[m]) : 0;
     const vPoss = mostraPoss ? (isV ? provPorMesPoss[m] : provFinMesPoss[m]) : 0;
     return v2026 + vPoss;
   });
-  const dadosPag = mesesFuturos.map(m=>{
+  const dadosPagAll = mesesFuturos.map(m=>{
+    const v2026 = mostra2026 ? (isV ? pagPorMes[m] : pagFinMes[m]) : 0;
+    const vPoss = mostraPoss ? (isV ? pagPorMesPoss[m] : pagFinMesPoss[m]) : 0;
+    return v2026 + vPoss;
+  });
+
+  // Filtrar apenas meses que têm dados em pelo menos uma das curvas
+  // Remove meses vazios no início/fim preservando os do meio (ex: fevereiro entre dois picos)
+  const mesesComDados = mesesFuturos.filter((m,i)=>dadosProvAll[i]>0||dadosPagAll[i]>0);
+  // Encontrar índice do primeiro e último mês com dado
+  const primeiroIdx = mesesFuturos.findIndex((m,i)=>dadosProvAll[i]>0||dadosPagAll[i]>0);
+  const ultimoIdx   = mesesFuturos.reduce((last,m,i)=>dadosProvAll[i]>0||dadosPagAll[i]>0?i:last,-1);
+  // Usar janela do primeiro ao último (preserva meses zero no meio)
+  const mesesJanela = primeiroIdx>=0 ? mesesFuturos.slice(primeiroIdx, ultimoIdx+1) : mesesFuturos.slice(0,12);
+  const labelsJanela = mesesJanela.map(fmtM);
+  const dadosProv = mesesJanela.map(m=>{
+    const v2026 = mostra2026 ? (isV ? provPorMes[m] : provFinMes[m]) : 0;
+    const vPoss = mostraPoss ? (isV ? provPorMesPoss[m] : provFinMesPoss[m]) : 0;
+    return v2026 + vPoss;
+  });
+  const dadosPag = mesesJanela.map(m=>{
     const v2026 = mostra2026 ? (isV ? pagPorMes[m] : pagFinMes[m]) : 0;
     const vPoss = mostraPoss ? (isV ? pagPorMesPoss[m] : pagFinMesPoss[m]) : 0;
     return v2026 + vPoss;
@@ -2575,45 +2595,46 @@ function bRiscos(){
   const consolProv=buildMesProcsConsolidado(provMesProcs,provMesProcsPoss);
   const consolPag =buildMesProcsConsolidado(pagMesProcs,pagMesProcsPoss);
 
-  const mkRiscoLine1=(id,data,cor,fmtFn,onClickCb)=>{
+  const mkRiscoLine1=(id,data,labels,mesesRef,cor,fmtFn,onClickCb)=>{
     const c=document.getElementById(id);if(!c)return;
     const ctx=c.getContext('2d');if(!ctx)return;
     const bgAlpha=cor+'18';
-    // Threshold para exibir label: apenas valores ≥ 5% do máximo da série
-    // Garante que só picos relevantes recebem rótulo, evitando sobreposição
-    const maxVal=Math.max(...data.filter(v=>v>0));
-    const threshold=maxVal*0.05;
+    const maxVal=Math.max(...data.filter(v=>v>0),1);
+    const threshold=maxVal*0.08; // mostrar label apenas se ≥ 8% do pico
     CH[id]=new Chart(ctx,{type:'line',
-      data:{labels:labelsM,datasets:[{
+      data:{labels,datasets:[{
         label:modoLabel,data,
         borderColor:cor,backgroundColor:bgAlpha,
         fill:true,tension:.4,pointBackgroundColor:cor,
-        pointRadius:(ctx)=>data[ctx.dataIndex]>0?3:0,
+        pointRadius:(ctx)=>data[ctx.dataIndex]>0?3.5:0,
         pointHoverRadius:6,borderWidth:2
       }]},
       options:{responsive:true,maintainAspectRatio:false,
-        layout:{padding:{top:38,right:8,bottom:4,left:4}},
-        scales:{x:{...AX,grid:{color:'rgba(255,255,255,.04)'}},y:{...AX,grid:{color:'rgba(255,255,255,.04)'},ticks:{...AX.ticks,callback:v=>fmtFn?fmtFn(v):v}}},
+        layout:{padding:{top:40,right:10,bottom:4,left:4}},
+        scales:{
+          x:{...AX,grid:{color:'rgba(255,255,255,.04)'},
+            ticks:{...AX.ticks,maxRotation:45,autoSkip:true,maxTicksLimit:18}},
+          y:{...AX,grid:{color:'rgba(255,255,255,.04)'},ticks:{...AX.ticks,callback:v=>fmtFn?fmtFn(v):v}}},
         plugins:{
           tooltip:{backgroundColor:'rgba(5,12,36,.97)',borderColor:'rgba(65,239,105,.18)',borderWidth:1,titleColor:'#f1f5f9',bodyColor:'#94a3b8',padding:11,cornerRadius:8,
-            callbacks:{title:ctx=>labelsM[ctx[0].dataIndex],label:ctx=>fmtFn?fmtFn(ctx.raw):ctx.raw.toLocaleString('pt-BR')}},
+            callbacks:{title:ctx=>labels[ctx[0].dataIndex],label:ctx=>fmtFn?fmtFn(ctx.raw):ctx.raw.toLocaleString('pt-BR')}},
           legend:{display:false},
           datalabels:{
             display:(ctx)=>ctx.dataset.data[ctx.dataIndex]>=threshold,
             clamp:true,clip:false,
-            color:'rgba(255,255,255,.88)',
+            color:'rgba(255,255,255,.9)',
             font:{family:'Outfit',size:9,weight:'700'},
             anchor:'end',align:'top',
-            padding:{bottom:2},
+            padding:{bottom:1},
             formatter:(v)=>v>0?(fmtFn?fmtFn(v):v.toLocaleString('pt-BR')):null}},
         onClick:(evt,els)=>{if(els.length&&onClickCb)onClickCb(els[0].index);},
         onHover:(evt,els)=>{evt.native.target.style.cursor=els.length?'pointer':'default';}}});
   };
 
-  mkRiscoLine1('c-riscos-prov',dadosProv,corProv,isV?null:fSh,
-    (idx)=>openModalCurvaConsolidado('prov',mesesFuturos[idx],labelsM[idx],consolProv.getProcs(mesesFuturos[idx]),isV));
-  mkRiscoLine1('c-riscos-pag',dadosPag,corPag,isV?null:fSh,
-    (idx)=>openModalCurvaConsolidado('pag',mesesFuturos[idx],labelsM[idx],consolPag.getProcs(mesesFuturos[idx]),isV));
+  mkRiscoLine1('c-riscos-prov',dadosProv,labelsJanela,mesesJanela,corProv,isV?null:fSh,
+    (idx)=>openModalCurvaConsolidado('prov',mesesJanela[idx],labelsJanela[idx],consolProv.getProcs(mesesJanela[idx]),isV));
+  mkRiscoLine1('c-riscos-pag',dadosPag,labelsJanela,mesesJanela,corPag,isV?null:fSh,
+    (idx)=>openModalCurvaConsolidado('pag',mesesJanela[idx],labelsJanela[idx],consolPag.getProcs(mesesJanela[idx]),isV));
 
   // Tabela por tema
   // Agrupar temas com < 5 entrantes como OUTROS
@@ -2887,15 +2908,23 @@ function openModalCurvaConsolidado(tipo,ym,ymLabel,procs,isVol){
   const fonteTitle=f=>f===1?'* Contingência':f===2?'** Valor da causa':'*** Mediana (fallback)';
   document.getElementById('tbl-modal-curva-body').innerHTML=procs.map((p,i)=>{
     const isEnt=p.origem==='ent2026';
-    const origemBg=isEnt?'rgba(52,211,153,.15)':'rgba(251,191,36,.15)';
-    const origemCor=isEnt?'#34d399':'#fbbf24';
-    const origemLabel=isEnt?'Entr. 2026':'Poss. Prazo';
+    // Para possíveis no prazo: mostrar ano de distribuição ("Entr. 2024", "Entr. 2025" etc.)
+    let origemLabel, origemBg, origemCor;
+    if(isEnt){
+      origemLabel='Entr. 2026'; origemBg='rgba(52,211,153,.15)'; origemCor='#34d399';
+    } else {
+      // Extrair ano de distribuição do número do processo ou de dataDist
+      const anoProc=p.proc?p.proc.match(/[\.\-](\d{4})[\.\-]/)?.[1]:null;
+      const anoLabel=anoProc||'Poss.';
+      origemLabel='Entr. '+anoLabel;
+      origemBg='rgba(251,191,36,.15)'; origemCor='#fbbf24';
+    }
     const val=p.valor||p.med||0;
     const medVal=p.med||0;
     // Coluna de aging: para ent2026 mostra aging do tema; para poss mostra aging atual/limiar
     const agingCol=isEnt
       ? (p[agingKey]||'—')+'d'
-      : (p.agingAtual!==undefined?p.agingAtual+'d / '+p.limiar+'d':'—');
+      : (p.agingAtual!==undefined?p.agingAtual+'d atual · '+p.limiar+'d limiar':'—');
     const fl=isEnt?fonteLabel(p.fonte||3):'';
     return`<tr>
       <td style="color:#64748b">${i+1}</td>
