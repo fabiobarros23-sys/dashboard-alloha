@@ -370,6 +370,49 @@ tbody tr:hover td{background:var(--s0)}
 </div>
 
 <!-- MODAL CURVA DRILL-DOWN -->
+<div id="modal-reclassif" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.78);backdrop-filter:blur(4px);align-items:flex-start;justify-content:center;overflow-y:auto;padding:2rem 1rem">
+  <div style="background:#111c38;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:1.5rem;width:100%;max-width:1100px;margin:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <div>
+        <div style="font-size:.58rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#fbbf24;margin-bottom:.2rem">RECLASSIFICAÇÃO IMINENTE</div>
+        <div id="modal-reclassif-title" style="font-size:1.05rem;font-weight:800;color:#f1f5f9"></div>
+        <div id="modal-reclassif-sub" style="font-size:.72rem;color:#64748b;margin-top:.2rem"></div>
+      </div>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <button onclick="exportReclassifExcel()" style="background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);border-radius:8px;padding:.35rem .8rem;cursor:pointer;color:#34d399;font-size:.72rem;font-family:'Outfit',sans-serif;font-weight:600">⬇ Excel</button>
+        <button onclick="closeModalReclassif()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;width:32px;height:32px;cursor:pointer;color:#94a3b8;flex-shrink:0">✕</button>
+      </div>
+    </div>
+    <!-- Tabs -->
+    <div style="display:flex;gap:.4rem;margin-bottom:1rem;border-bottom:1px solid rgba(255,255,255,.08);padding-bottom:.5rem">
+      <button id="tab-procs" onclick="switchTabReclassif('procs')" style="font-size:.71rem;padding:.3rem .8rem;border-radius:8px 8px 0 0;border:none;background:rgba(251,191,36,.15);color:#fbbf24;cursor:pointer;font-family:Outfit;font-weight:600">Processos</button>
+      <button id="tab-areas" onclick="switchTabReclassif('areas')" style="font-size:.71rem;padding:.3rem .8rem;border-radius:8px 8px 0 0;border:none;background:transparent;color:#64748b;cursor:pointer;font-family:Outfit;font-weight:600">Por Área Ofensora</button>
+    </div>
+    <!-- Tab processos -->
+    <div id="tab-content-procs">
+      <div style="overflow-x:auto">
+        <table class="hm-table" id="tbl-reclassif" style="width:100%;font-size:.68rem;table-layout:fixed">
+          <colgroup>
+            <col style="width:2rem"><col style="width:5.5rem"><col style="width:13rem">
+            <col style="width:3rem"><col style="width:8rem"><col style="width:5rem">
+            <col style="width:8rem"><col style="width:7rem"><col style="width:7rem">
+          </colgroup>
+          <thead><tr>
+            <th>#</th><th style="text-align:left">Urgência</th><th style="text-align:left">Nº Processo</th>
+            <th>Nat.</th><th style="text-align:left">Tema</th><th>Fase</th>
+            <th>Aging (atual · limiar)</th><th>Contingência Possível</th><th>Projeção Cenário</th>
+          </tr></thead>
+          <tbody id="tbl-reclassif-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Tab áreas -->
+    <div id="tab-content-areas" style="display:none">
+      <div id="reclassif-areas-content"></div>
+    </div>
+  </div>
+</div>
+
 <div id="modal-curva" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);align-items:flex-start;justify-content:center;overflow-y:auto;padding:2rem 1rem">
   <div style="background:#111c38;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:1.5rem;width:100%;max-width:1200px;margin:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
@@ -2536,6 +2579,7 @@ function gerarInsights(){
   if(em90d.length>0){
     const nivel4=em30d.length>10?'CRITICO':em90d.length>30?'ALTO':'MEDIO';
     insights.push({
+      _isReclassif: true,
       nivel: nivel4,
       titulo: `${em90d.length} processos próximos de reclassificação`,
       texto: `<strong>${em90d.length} processos Possíveis</strong> devem atingir o aging médio de provisão nos próximos 90 dias, com impacto potencial de <strong>${fBRL(riscoEm90d)}</strong> na provisão. ${em30d.length>0?`Destes, <strong>${em30d.length}</strong> devem ser reclassificados em até 30 dias.`:''}`,
@@ -2565,7 +2609,11 @@ function gerarInsights(){
     `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:.7rem;width:100%">`+
     insights.map(ins=>{
       const cfg=nivelCfg[ins.nivel]||nivelCfg.INFO;
-      return`<div style="background:${cfg.bg};border:1px solid ${cfg.borda};border-radius:10px;padding:.85rem 1rem;display:flex;flex-direction:column;gap:.35rem">
+      const isReclassif=ins._isReclassif===true;
+      const extraStyle=isReclassif?'cursor:pointer;':'';
+      const onclick=isReclassif?'onclick="openModalReclassif()"':'';
+      const hint=isReclassif?`<div style="font-size:.6rem;color:#94a3b8;margin-top:.25rem">🔍 Clique para ver os processos</div>`:'';
+      return`<div style="background:${cfg.bg};border:1px solid ${cfg.borda};border-radius:10px;padding:.85rem 1rem;display:flex;flex-direction:column;gap:.35rem;${extraStyle}" ${onclick}>
         <div style="display:flex;align-items:center;gap:.4rem">
           <span>${cfg.icone}</span>
           <span style="font-size:.71rem;font-weight:700;color:${cfg.cor};letter-spacing:.02em;text-transform:uppercase">${ins.titulo}</span>
@@ -2574,9 +2622,129 @@ function gerarInsights(){
         <div style="font-size:.66rem;color:#64748b;border-top:1px solid rgba(255,255,255,.06);padding-top:.35rem;margin-top:.1rem">
           <span style="color:#94a3b8;font-weight:600">↳ </span>${ins.acao}
         </div>
+        ${hint}
       </div>`;
     }).join('')+
     `</div><div style="font-size:.6rem;color:#334155;margin-top:.4rem;text-align:right">Atualizado em ${new Date().toLocaleString('pt-BR')}</div>`;
+}
+
+// ── Mapa tema → área ofensora ────────────────────────────────────────────────
+const AREA_MAP={
+  'HORAS EXTRAS':                {area:'RH',          cor:'#4f9cf9'},
+  'JORNADA DE TRABALHO':         {area:'RH',          cor:'#4f9cf9'},
+  'RESPONSABILIDADE SUBSIDIÁRIA':{area:'Compras/Jurídico', cor:'#a78bfa'},
+  'VÍNCULO EMPREGATÍCIO':        {area:'RH/Jurídico', cor:'#34d399'},
+  'RESCISÃO INDIRETA':           {area:'Gestão de Pessoas', cor:'#fb923c'},
+  'VERBAS SALARIAIS':            {area:'RH/Folha',    cor:'#4f9cf9'},
+  'FGTS':                        {area:'RH/Folha',    cor:'#4f9cf9'},
+  'FALHA NA PRESTAÇÃO DO SERVIÇO':{area:'Operações/Qualidade', cor:'#fbbf24'},
+  'CONTRATAÇÃO FRAUDULENTA':     {area:'Compliance/Jurídico', cor:'#f87171'},
+  'DANO MATERIAL':               {area:'Jurídico/Operações', cor:'#fb923c'},
+  'COMISSÃO':                    {area:'Comercial/RH', cor:'#34d399'},
+  'PERICULOSIDADE':              {area:'SESMT/RH',    cor:'#fbbf24'},
+  'DIFERENÇAS DE PRODUÇÃO':      {area:'RH/Operações', cor:'#4f9cf9'},
+};
+function getAreaInfo(tema){
+  const k=Object.keys(AREA_MAP).find(t=>tema&&tema.toUpperCase().includes(t));
+  return k?AREA_MAP[k]:{area:'Jurídico',cor:'#94a3b8'};
+}
+
+// ── Modal: Processos próximos de reclassificação ──────────────────────────────
+function openModalReclassif(){
+  if(!_insightsCtx||!_insightsCtx.possNoPrazo) return;
+  const procs=[..._insightsCtx.possNoPrazo].sort((a,b)=>a.diasRestantes-b.diasRestantes);
+  const em30=procs.filter(r=>r.diasRestantes<=30).length;
+  const em90=procs.filter(r=>r.diasRestantes<=90).length;
+  const total=procs.length;
+  const riscoTotal=procs.reduce((s,r)=>s+(r.med||0),0);
+  const fBRL=v=>'R$'+( v>=1e6?(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:2})+'Mi':(v/1e3).toLocaleString('pt-BR',{maximumFractionDigits:1})+'K');
+
+  document.getElementById('modal-reclassif-title').textContent=
+    `${total} processos Possíveis — reclassificação iminente`;
+  document.getElementById('modal-reclassif-sub').textContent=
+    `Projeção de impacto: ${fBRL(riscoTotal)} · ${em30} em até 30d · ${em90} em até 90d · ordenado por urgência`;
+
+  // Tab processos
+  const urgLabel=d=>d<=30?'🔴 ≤30d':d<=60?'🟠 ≤60d':d<=90?'🟡 ≤90d':'🟢 >90d';
+  const urgCor  =d=>d<=30?'#f87171':d<=60?'#fb923c':d<=90?'#fbbf24':'#34d399';
+  document.getElementById('tbl-reclassif-body').innerHTML=procs.map((p,i)=>{
+    const ai=getAreaInfo(p.tema);
+    const natBg=p.nat==='TRABALHISTA'?'rgba(167,139,250,.2)':'rgba(79,156,249,.2)';
+    const natCor=p.nat==='TRABALHISTA'?'#a78bfa':'#4f9cf9';
+    return`<tr>
+      <td style="color:#64748b;text-align:center">${i+1}</td>
+      <td style="white-space:nowrap"><span style="font-size:.62rem;font-weight:700;color:${urgCor(p.diasRestantes)}">${urgLabel(p.diasRestantes)}</span></td>
+      <td style="font-family:monospace;font-size:.63rem;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.proc||''}">${p.proc||'—'}</td>
+      <td style="text-align:center"><span style="font-size:.61rem;padding:.1rem .3rem;border-radius:4px;background:${natBg};color:${natCor}">${p.nat==='TRABALHISTA'?'TRAB':'CÍVEL'}</span></td>
+      <td style="text-align:left;color:#e2e8f0;font-size:.67rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.tema||''}">${p.tema||'—'}</td>
+      <td style="color:#94a3b8;font-size:.66rem">${p.fase||'—'}</td>
+      <td style="color:#64748b;font-size:.66rem;white-space:nowrap">${p.agingAtual}d · ${p.limiar}d</td>
+      <td style="color:#fbbf24;font-weight:600">${p.contig>0?p.contig.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'}</td>
+      <td style="color:#34d399;font-weight:600">${(p.med||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+    </tr>`;
+  }).join('');
+
+  // Tab áreas ofensoras
+  const areaRisco={};const areaCnt={};const areaProcs={};
+  procs.forEach(p=>{
+    const ai=getAreaInfo(p.tema);
+    const a=ai.area;
+    areaRisco[a]=(areaRisco[a]||0)+(p.med||0);
+    areaCnt[a]=(areaCnt[a]||0)+1;
+    if(!areaProcs[a]) areaProcs[a]=[];
+    areaProcs[a].push(p);
+  });
+  const areasOrd=Object.entries(areaRisco).sort((a,b)=>b[1]-a[1]);
+  const totalRiscoAreas=areasOrd.reduce((s,[,v])=>s+v,0);
+  const pct=(a,b)=>b>0?Math.round(a/b*100):0;
+
+  document.getElementById('reclassif-areas-content').innerHTML=
+    `<div style="margin-bottom:.8rem;font-size:.71rem;color:#64748b">Contingência projetada pelo cenário atual por área responsável · ${areasOrd.length} áreas identificadas</div>`+
+    `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.6rem;margin-bottom:1rem">`+
+    areasOrd.map(([area,risco])=>{
+      const ai=Object.values(AREA_MAP).find(v=>v.area===area)||{cor:'#94a3b8'};
+      const pctVal=pct(risco,totalRiscoAreas);
+      const cnt=areaCnt[area]||0;
+      return`<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.8rem 1rem">
+        <div style="font-size:.72rem;font-weight:700;color:${ai.cor};margin-bottom:.3rem">${area}</div>
+        <div style="font-size:1rem;font-weight:800;color:#f1f5f9">${fBRL(risco)}</div>
+        <div style="font-size:.65rem;color:#64748b;margin-top:.2rem">${cnt} processo${cnt!==1?'s':''} · ${pctVal}% do total</div>
+        <div style="margin-top:.5rem;background:rgba(255,255,255,.06);border-radius:4px;height:5px">
+          <div style="background:${ai.cor};height:5px;border-radius:4px;width:${pctVal}%"></div>
+        </div>
+      </div>`;
+    }).join('')+`</div>`+
+    `<div style="font-size:.69rem;color:#64748b;font-style:italic">* Valores baseados no cenário de provisão selecionado (${CENARIO}). Clique em "Processos" para ver o detalhamento individual.</div>`;
+
+  switchTabReclassif('procs');
+  const modal=document.getElementById('modal-reclassif');
+  modal.style.display='flex';
+  modal.onclick=e=>{if(e.target===modal)closeModalReclassif();};
+  window._reclassifProcs=procs;
+}
+
+function switchTabReclassif(tab){
+  document.getElementById('tab-content-procs').style.display=tab==='procs'?'':'none';
+  document.getElementById('tab-content-areas').style.display=tab==='areas'?'':'none';
+  document.getElementById('tab-procs').style.background=tab==='procs'?'rgba(251,191,36,.15)':'transparent';
+  document.getElementById('tab-procs').style.color=tab==='procs'?'#fbbf24':'#64748b';
+  document.getElementById('tab-areas').style.background=tab==='areas'?'rgba(251,191,36,.15)':'transparent';
+  document.getElementById('tab-areas').style.color=tab==='areas'?'#fbbf24':'#64748b';
+}
+function closeModalReclassif(){document.getElementById('modal-reclassif').style.display='none';}
+function exportReclassifExcel(){
+  if(!window._reclassifProcs||!window._reclassifProcs.length) return;
+  const rows=window._reclassifProcs.map((p,i)=>({
+    '#':i+1,'Dias Restantes':p.diasRestantes,'Nº Processo':p.proc||'',
+    'Natureza':p.nat,'Tema':p.tema||'','Fase':p.fase||'',
+    'Área Ofensora':getAreaInfo(p.tema).area,
+    'Aging Atual (d)':p.agingAtual,'Limiar (d)':p.limiar,
+    'Contingência Possível':p.contig||0,'Projeção Cenário':p.med||0,
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,'Reclassificação',ws);
+  XLSX.writeFile(wb,`reclassificacao_iminente_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
 function setCenario(c){
