@@ -2391,156 +2391,172 @@ function setInsightsJanela(m){
   gerarInsights();
 }
 
-async function gerarInsights(){
+function gerarInsights(){
   const el=document.getElementById('insights-content');
   if(!el) return;
   if(!_insightsCtx){
     el.innerHTML='<span style="color:#475569;font-size:.75rem">Carregue os dados para gerar insights.</span>';
     return;
   }
-  el.innerHTML='<div style="display:flex;align-items:center;gap:.6rem;color:#475569;font-size:.75rem"><span style="animation:spin 1s linear infinite;display:inline-block">⟳</span> Analisando dados com IA...</div>';
 
   const ctx = _insightsCtx;
   const jan = INSIGHTS_JANELA;
-
-  // Calcular dados para o prompt
   const hoje = new Date();
   const fmtYM = d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-  const mesesJan = [];
-  for(let m=0;m<jan;m++){
-    const d=new Date(hoje.getFullYear(),hoje.getMonth()+m,1);
-    mesesJan.push(fmtYM(d));
-  }
+  const fmtM = ym=>{if(!ym)return'';const[y,mo]=ym.split('-');const ns=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];return ns[+mo]+'/'+y.slice(2);};
+  const fShi = v=>v>=1e6?(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:2})+'Mi':(v/1e3).toLocaleString('pt-BR',{maximumFractionDigits:1})+'K';
+  const fBRL = v=>'R$'+fShi(v);
+  const pct  = (a,b)=>b>0?Math.round(a/b*100):0;
 
-  // Risco nos próximos N meses (provisão)
-  const riscoJanProv = mesesJan.reduce((s,m)=>{
-    const v2026 = ctx.provFinMes[m]||0;
-    const vPoss = ctx.provFinMesPoss[m]||0;
-    return s+v2026+vPoss;
-  },0);
+  // Janela de meses
+  const mesesJan=[];
+  for(let m=0;m<jan;m++){const d=new Date(hoje.getFullYear(),hoje.getMonth()+m,1);mesesJan.push(fmtYM(d));}
 
-  // Risco pagamento nos próximos N meses
-  const riscoJanPag = mesesJan.reduce((s,m)=>{
-    const v2026 = ctx.pagFinMes[m]||0;
-    const vPoss = ctx.pagFinMesPoss[m]||0;
-    return s+v2026+vPoss;
-  },0);
+  // Risco provisão e pagamento na janela
+  const riscoProvJan=mesesJan.reduce((s,m)=>s+(ctx.provFinMes[m]||0)+(ctx.provFinMesPoss[m]||0),0);
+  const riscoPagJan =mesesJan.reduce((s,m)=>s+(ctx.pagFinMes[m]||0)+(ctx.pagFinMesPoss[m]||0),0);
 
-  // Mês de pico de provisão
+  // Pico de provisão
   let picoMes='',picoVal=0;
-  mesesJan.forEach(m=>{
-    const v=(ctx.provFinMes[m]||0)+(ctx.provFinMesPoss[m]||0);
-    if(v>picoVal){picoVal=v;picoMes=m;}
-  });
-  const fmtM=ym=>{if(!ym)return'';const[y,mo]=ym.split('-');const ns=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];return ns[+mo]+'/'+y.slice(2);};
-  const picoLabel=fmtM(picoMes);
+  mesesJan.forEach(m=>{const v=(ctx.provFinMes[m]||0)+(ctx.provFinMesPoss[m]||0);if(v>picoVal){picoVal=v;picoMes=m;}});
 
-  // Temas mais ofensores (provisão, janela N meses)
-  const temaRisco={};
+  // Temas por risco na janela (provisão)
+  const temaRisco={};const temaTipo={};const temaCnt={};
   mesesJan.forEach(m=>{
     [...(ctx.provMesProcs[m]||[]),...(ctx.provMesProcsPoss[m]||[])].forEach(p=>{
       if(!p.tema)return;
       temaRisco[p.tema]=(temaRisco[p.tema]||0)+(p.med||0);
+      temaCnt[p.tema]=(temaCnt[p.tema]||0)+1;
+      // tipo: terceiro se tipo===TERCEIRO
+      if(p.tipo==='TERCEIRO') temaTipo[p.tema]=(temaTipo[p.tema]||0)+1;
     });
   });
-  const temasOrdenados=Object.entries(temaRisco).sort((a,b)=>b[1]-a[1]);
-  const top3Temas=temasOrdenados.slice(0,3).map(([t,v])=>({tema:t,valor:v}));
+  const temasOrd=Object.entries(temaRisco).sort((a,b)=>b[1]-a[1]);
+  const top1Tema=temasOrd[0]?.[0]||'';
+  const top1Val =temasOrd[0]?.[1]||0;
+  const top2Tema=temasOrd[1]?.[0]||'';
+  const top2Val =temasOrd[1]?.[1]||0;
+  const top3Tema=temasOrd[2]?.[0]||'';
+  const totalRiscoJan=temasOrd.reduce((s,[,v])=>s+v,0);
+  const top1Pct=pct(top1Val,totalRiscoJan);
 
-  // Risco de terceiros vs próprios
-  const totalProcs=[
-    ...mesesJan.flatMap(m=>[...(ctx.provMesProcs[m]||[]),...(ctx.provMesProcsPoss[m]||[])])
-  ];
-  const totalRiscoTotal=totalProcs.reduce((s,p)=>s+(p.med||0),0);
+  // Terceiros vs próprios
+  const todosProcsJan=mesesJan.flatMap(m=>[...(ctx.provMesProcs[m]||[]),...(ctx.provMesProcsPoss[m]||[])]);
+  const riscoTerc=todosProcsJan.filter(p=>p.tipo==='TERCEIRO').reduce((s,p)=>s+(p.med||0),0);
+  const pctTerc=pct(riscoTerc,totalRiscoJan);
 
-  // Processos possíveis virando prováveis nos próximos 90 dias
-  const em90d = (ctx.possNoPrazo||[]).filter(r=>r.diasRestantes<=90);
-  const riscoEm90d = em90d.reduce((s,r)=>s+(r.med||0),0);
+  // Próximos 90 dias — reclassificação
+  const em90d=(ctx.possNoPrazo||[]).filter(r=>r.diasRestantes<=90);
+  const em30d=(ctx.possNoPrazo||[]).filter(r=>r.diasRestantes<=30);
+  const riscoEm90d=em90d.reduce((s,r)=>s+(r.med||0),0);
 
-  // Alertas (aging estourado)
-  const totalAlerta = ctx.totalAlertaProc||0;
-  const riscoAlerta = ctx.totalAlertaRisco||0;
-  const temaAlertaTop = ctx.temaAlertaTop||'';
+  // Alertas
+  const totalAlerta=ctx.totalAlertaProc||0;
+  const riscoAlerta=ctx.totalAlertaRisco||0;
+  const temaAlertaTop=ctx.temaAlertaTop||'';
 
-  // Filtros ativos
-  const filtrosAtivos = [];
-  if(GF.nat.length) filtrosAtivos.push('Natureza: '+GF.nat.join(', '));
-  if(GF.tp.length)  filtrosAtivos.push('Tipo: '+GF.tp.join(', '));
+  // Mapa: tema → área responsável e recomendação
+  const TEMA_AREA={
+    'HORAS EXTRAS':           {area:'RH',  rec:'Revisar controle de ponto, banco de horas e escala de trabalho com a área de RH.'},
+    'JORNADA DE TRABALHO':    {area:'RH',  rec:'Alinhar com RH práticas de registro e compensação de jornada.'},
+    'RESPONSABILIDADE SUBSIDIÁRIA':{area:'Compras/Jurídico', rec:'Revisar cláusulas de responsabilidade nos contratos com prestadores de serviço e intensificar fiscalização.'},
+    'VÍNCULO EMPREGATÍCIO':   {area:'RH/Jurídico', rec:'Avaliar com RH e Jurídico os critérios de contratação de prestadores para mitigar risco de vínculo.'},
+    'RESCISÃO INDIRETA':      {area:'Gestão de Pessoas', rec:'Investigar com RH e liderança as condições de trabalho que motivam pedidos de rescisão indireta.'},
+    'VERBAS SALARIAIS':       {area:'RH/Folha', rec:'Solicitar auditoria de folha de pagamento e revisão dos cálculos de verbas rescisórias.'},
+    'FGTS':                   {area:'RH/Folha', rec:'Verificar com RH a regularidade dos recolhimentos de FGTS e eventuais diferenças de base.'},
+    'FALHA NA PRESTAÇÃO DO SERVIÇO':{area:'Operações/Qualidade', rec:'Acionar área de Operações para revisão de SLA e protocolos de atendimento ao cliente.'},
+    'CONTRATAÇÃO FRAUDULENTA':{area:'Compliance/Jurídico', rec:'Reforçar controles de Compliance e due diligence na contratação de parceiros.'},
+    'DANO MATERIAL':          {area:'Jurídico/Operações', rec:'Mapear com Jurídico e Operações os principais eventos geradores de dano e implementar controles preventivos.'},
+    'COMISSÃO':               {area:'Comercial/RH', rec:'Revisar com Comercial e RH as regras de cálculo e pagamento de comissões.'},
+    'PERICULOSIDADE':         {area:'Segurança do Trabalho/RH', rec:'Avaliar com SESMT e RH os laudos de periculosidade e insalubridade vigentes.'},
+    'DIFERENÇAS DE PRODUÇÃO': {area:'RH/Operações', rec:'Revisar com RH e Operações os critérios de apuração de produção e seus reflexos salariais.'},
+  };
+  const getArea=tema=>{
+    const k=Object.keys(TEMA_AREA).find(t=>tema&&tema.toUpperCase().includes(t));
+    return k?TEMA_AREA[k]:{area:'Jurídico',rec:'Avaliar com a equipe jurídica as causas raiz e oportunidades de prevenção deste tema.'};
+  };
+  const top1Info=getArea(top1Tema);
 
-  const fBRL=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+  // ── Gerar insights ─────────────────────────────────────────────────────────
+  const insights=[];
 
-  const prompt = `Você é um especialista em gestão de risco jurídico e orçamento de contingências. 
-Analise os dados abaixo e gere de 4 a 5 insights executivos concisos para a diretoria jurídica de uma empresa de telecom.
+  // 1. Exposição na janela
+  const nivelExposicao=riscoProvJan>5e6?'CRITICO':riscoProvJan>2e6?'ALTO':riscoProvJan>500e3?'MEDIO':'INFO';
+  insights.push({
+    nivel: nivelExposicao,
+    titulo: `Exposição nos próximos ${jan} meses`,
+    texto: `O risco de provisão projetado para os próximos ${jan} meses é de <strong>${fBRL(riscoProvJan)}</strong>, com pico de concentração em <strong>${fmtM(picoMes)} (${fBRL(picoVal)})</strong>. O risco de pagamento no mesmo período alcança <strong>${fBRL(riscoPagJan)}</strong>.`,
+    acao: `Recomendar reserva orçamentária de pelo menos ${fBRL(riscoProvJan)} para o período — com atenção especial a ${fmtM(picoMes)}.`
+  });
 
-DADOS — Janela de ${jan} meses (a partir de hoje):
-- Risco de provisão projetado: ${fBRL(riscoJanProv)}
-- Risco de pagamento projetado: ${fBRL(riscoJanPag)}
-- Mês de maior concentração de risco: ${picoLabel} (${fBRL(picoVal)})
-- Top 3 temas por risco de provisão: ${top3Temas.map((t,i)=>`${i+1}. ${t.tema} (${fBRL(t.valor)})`).join(' | ')}
-- Processos possíveis que devem virar prováveis nos próximos 90 dias: ${em90d.length} processos, risco: ${fBRL(riscoEm90d)}
-- Processos em alerta (aging já estourado): ${totalAlerta} processos, risco: ${fBRL(riscoAlerta)}, tema líder: ${temaAlertaTop}
-${filtrosAtivos.length?'- Filtros ativos: '+filtrosAtivos.join(' | '):'- Sem filtros ativos (visão geral)'}
-
-CONTEXTO:
-- Horas Extras e Jornada → área responsável: RH (controle de ponto, banco de horas)
-- Responsabilidade Subsidiária → Jurídico/Compras (contratos de terceiros, SLA, fiscalização)
-- Vínculo Empregatício → RH/Jurídico Trabalhista (gestão de prestadores)
-- Rescisão Indireta → RH/Gestão de Pessoas (clima organizacional, condições de trabalho)
-- Falha na Prestação do Serviço → Operações/Qualidade (atendimento, SLA)
-- Contratação Fraudulenta → Compliance/Jurídico (due diligence, controles)
-- FGTS/Verbas Salariais → RH/Folha (revisão de cálculos, auditorias)
-
-INSTRUÇÕES:
-- Gere exatamente 4 ou 5 insights em formato JSON
-- Cada insight deve ter: "nivel" (CRITICO, ALTO, MEDIO, INFO), "titulo" (máx 6 palavras), "texto" (2-3 frases executivas, concisas, com dados numéricos), "acao" (recomendação de 1 frase sobre área ou ação)
-- Tom executivo, direto, sem jargão excessivo
-- Responda APENAS com o JSON, sem texto adicional, sem markdown, sem blocos de código
-- Formato: [{"nivel":"...","titulo":"...","texto":"...","acao":"..."},...]`;
-
-  try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        messages:[{role:'user',content:prompt}]
-      })
+  // 2. Tema mais ofensor
+  if(top1Tema){
+    const nivel2=top1Pct>40?'CRITICO':top1Pct>25?'ALTO':'MEDIO';
+    const top23txt=top2Tema?`, seguido por ${top2Tema}${top3Tema?' e '+top3Tema:''}`:'.';
+    insights.push({
+      nivel: nivel2,
+      titulo: `${top1Tema.charAt(0)+top1Tema.slice(1).toLowerCase()} lidera o risco`,
+      texto: `O tema <strong>${top1Tema}</strong> representa <strong>${top1Pct}%</strong> do risco projetado na janela (${fBRL(top1Val)})${top23txt} Atenção concentrada neste tema pode reduzir significativamente a exposição total.`,
+      acao: `${top1Info.area}: ${top1Info.rec}`
     });
-    const data = await resp.json();
-    const raw = data.content?.filter(b=>b.type==='text').map(b=>b.text).join('').trim();
-    if(!raw) throw new Error('Resposta vazia da API');
-
-    // Parse seguro — remover possíveis backticks
-    const clean = raw.replace(/```json|```/g,'').trim();
-    const insights = JSON.parse(clean);
-
-    const nivelCfg={
-      CRITICO:{cor:'#f87171',bg:'rgba(248,113,113,.08)',borda:'rgba(248,113,113,.25)',icone:'🔴'},
-      ALTO:   {cor:'#fb923c',bg:'rgba(251,146,60,.08)', borda:'rgba(251,146,60,.25)', icone:'🟠'},
-      MEDIO:  {cor:'#fbbf24',bg:'rgba(251,191,36,.08)', borda:'rgba(251,191,36,.25)', icone:'🟡'},
-      INFO:   {cor:'#34d399',bg:'rgba(52,211,153,.08)', borda:'rgba(52,211,153,.25)', icone:'🟢'},
-    };
-
-    el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.7rem;width:100%">`+
-      insights.map(ins=>{
-        const cfg=nivelCfg[ins.nivel]||nivelCfg.INFO;
-        return`<div style="background:${cfg.bg};border:1px solid ${cfg.borda};border-radius:10px;padding:.8rem 1rem;display:flex;flex-direction:column;gap:.35rem">
-          <div style="display:flex;align-items:center;gap:.4rem">
-            <span style="font-size:.75rem">${cfg.icone}</span>
-            <span style="font-size:.72rem;font-weight:700;color:${cfg.cor};letter-spacing:.02em;text-transform:uppercase">${ins.titulo}</span>
-          </div>
-          <div style="font-size:.71rem;color:#cbd5e1;line-height:1.55">${ins.texto}</div>
-          <div style="font-size:.67rem;color:#64748b;border-top:1px solid rgba(255,255,255,.06);padding-top:.3rem;margin-top:.1rem">
-            <span style="color:#94a3b8;font-weight:600">↳ </span>${ins.acao}
-          </div>
-        </div>`;
-      }).join('')+`</div>
-      <div style="font-size:.6rem;color:#334155;margin-top:.4rem;text-align:right">Gerado por Claude · Dados: ${new Date().toLocaleString('pt-BR')}</div>`;
-
-  } catch(err) {
-    el.innerHTML=`<div style="color:#f87171;font-size:.72rem;padding:.5rem">Erro ao gerar insights: ${err.message}</div>`;
-    console.error('[Insights]', err);
   }
+
+  // 3. Risco de terceiros (se relevante)
+  if(pctTerc>0){
+    const nivel3=pctTerc>50?'CRITICO':pctTerc>30?'ALTO':pctTerc>15?'MEDIO':'INFO';
+    insights.push({
+      nivel: nivel3,
+      titulo: `${pctTerc}% do risco é de terceiros`,
+      texto: `<strong>${pctTerc}%</strong> do risco projetado na janela (${fBRL(riscoTerc)}) está vinculado a processos de empresas terceirizadas. ${pctTerc>40?'Esse nível de concentração representa risco relevante de responsabilidade subsidiária.':'Monitoramento contínuo recomendado.'}`,
+      acao: `Compras/Jurídico: Revisar contratos de prestação de serviço com foco em cláusulas de responsabilidade e exigência de documentação trabalhista.`
+    });
+  }
+
+  // 4. Reclassificação iminente
+  if(em90d.length>0){
+    const nivel4=em30d.length>10?'CRITICO':em90d.length>30?'ALTO':'MEDIO';
+    insights.push({
+      nivel: nivel4,
+      titulo: `${em90d.length} processos próximos de reclassificação`,
+      texto: `<strong>${em90d.length} processos Possíveis</strong> devem atingir o aging médio de provisão nos próximos 90 dias, com impacto potencial de <strong>${fBRL(riscoEm90d)}</strong> na provisão. ${em30d.length>0?`Destes, <strong>${em30d.length}</strong> devem ser reclassificados em até 30 dias.`:''}`,
+      acao: `Jurídico: Antecipar análise desses processos para avaliar probabilidade real de cada caso e evitar adições inesperadas na provisão.`
+    });
+  }
+
+  // 5. Alertas de aging estourado
+  if(totalAlerta>0){
+    const nivel5=totalAlerta>100?'ALTO':'MEDIO';
+    insights.push({
+      nivel: nivel5,
+      titulo: `${totalAlerta} processos com aging estourado`,
+      texto: `Há <strong>${totalAlerta} processos Possíveis</strong> que já ultrapassaram o aging histórico de provisão, com risco acumulado de <strong>${fBRL(riscoAlerta)}</strong>. O tema líder em alerta é <strong>${temaAlertaTop||'—'}</strong>. Esses casos são candidatos prioritários à reclassificação para Provável.`,
+      acao: `Jurídico: Priorizar revisão desses processos na próxima reunião de contingência e avaliar reclassificação para impacto controlado.`
+    });
+  }
+
+  // ── Renderizar ─────────────────────────────────────────────────────────────
+  const nivelCfg={
+    CRITICO:{cor:'#f87171',bg:'rgba(248,113,113,.08)',borda:'rgba(248,113,113,.25)',icone:'🔴'},
+    ALTO:   {cor:'#fb923c',bg:'rgba(251,146,60,.08)', borda:'rgba(251,146,60,.25)', icone:'🟠'},
+    MEDIO:  {cor:'#fbbf24',bg:'rgba(251,191,36,.08)', borda:'rgba(251,191,36,.25)', icone:'🟡'},
+    INFO:   {cor:'#34d399',bg:'rgba(52,211,153,.08)', borda:'rgba(52,211,153,.25)', icone:'🟢'},
+  };
+  el.innerHTML=
+    `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:.7rem;width:100%">`+
+    insights.map(ins=>{
+      const cfg=nivelCfg[ins.nivel]||nivelCfg.INFO;
+      return`<div style="background:${cfg.bg};border:1px solid ${cfg.borda};border-radius:10px;padding:.85rem 1rem;display:flex;flex-direction:column;gap:.35rem">
+        <div style="display:flex;align-items:center;gap:.4rem">
+          <span>${cfg.icone}</span>
+          <span style="font-size:.71rem;font-weight:700;color:${cfg.cor};letter-spacing:.02em;text-transform:uppercase">${ins.titulo}</span>
+        </div>
+        <div style="font-size:.70rem;color:#cbd5e1;line-height:1.6">${ins.texto}</div>
+        <div style="font-size:.66rem;color:#64748b;border-top:1px solid rgba(255,255,255,.06);padding-top:.35rem;margin-top:.1rem">
+          <span style="color:#94a3b8;font-weight:600">↳ </span>${ins.acao}
+        </div>
+      </div>`;
+    }).join('')+
+    `</div><div style="font-size:.6rem;color:#334155;margin-top:.4rem;text-align:right">Atualizado em ${new Date().toLocaleString('pt-BR')}</div>`;
 }
 
 function toggleCurvaFiltro(tipo){
