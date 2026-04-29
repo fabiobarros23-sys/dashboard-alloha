@@ -2709,7 +2709,10 @@ function getAreaInfo(tema){
 // ── Modal: Processos próximos de reclassificação ──────────────────────────────
 function openModalReclassif(){
   if(!_insightsCtx||!_insightsCtx.possNoPrazo) return;
-  const procs=[..._insightsCtx.possNoPrazo].sort((a,b)=>a.diasRestantes-b.diasRestantes);
+  // Mostrar apenas os que têm reclassificação iminente (≤90 dias)
+  const procs=[..._insightsCtx.possNoPrazo]
+    .filter(r=>r.diasRestantes<=90)
+    .sort((a,b)=>a.diasRestantes-b.diasRestantes);
   const em30=procs.filter(r=>r.diasRestantes<=30).length;
   const em90=procs.filter(r=>r.diasRestantes<=90).length;
   const total=procs.length;
@@ -2755,6 +2758,28 @@ function openModalReclassif(){
   const totalRiscoAreas=areasOrd.reduce((s,[,v])=>s+v,0);
   const pct=(a,b)=>b>0?Math.round(a/b*100):0;
 
+  _renderAreasReclassif(procs);
+  switchTabReclassif('procs');
+  const modal=document.getElementById('modal-reclassif');
+  modal.style.display='flex';
+  modal.onclick=e=>{if(e.target===modal)closeModalReclassif();};
+  window._reclassifProcs=procs;
+}
+
+function _renderAreasReclassif(procs){
+  const fBRL=v=>'R$'+(v>=1e6?(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:2})+'Mi':(v/1e3).toLocaleString('pt-BR',{maximumFractionDigits:1})+'K');
+  const pct=(a,b)=>b>0?Math.round(a/b*100):0;
+  const areaRisco={};const areaCnt={};const areaProcsLocal={};
+  procs.forEach(p=>{
+    const a=getAreaInfo(p.tema).area;
+    areaRisco[a]=(areaRisco[a]||0)+(p.med||0);
+    areaCnt[a]=(areaCnt[a]||0)+1;
+    if(!areaProcsLocal[a]) areaProcsLocal[a]=[];
+    areaProcsLocal[a].push(p);
+  });
+  window._reclassifAreaProcs=areaProcsLocal;
+  const areasOrd=Object.entries(areaRisco).sort((a,b)=>b[1]-a[1]);
+  const totalRiscoAreas=areasOrd.reduce((s,[,v])=>s+v,0);
   document.getElementById('reclassif-areas-content').innerHTML=
     `<div style="margin-bottom:.8rem;font-size:.71rem;color:#64748b">Contingência projetada pelo cenário atual por área responsável · ${areasOrd.length} áreas identificadas</div>`+
     `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.6rem;margin-bottom:1rem">`+
@@ -2776,17 +2801,11 @@ function openModalReclassif(){
       </div>`;
     }).join('')+`</div>`+
     `<div style="font-size:.69rem;color:#64748b;font-style:italic">* Valores baseados no cenário de provisão selecionado (${CENARIO}). Clique em um card para ver os processos da área.</div>`;
-
-  switchTabReclassif('procs');
-  const modal=document.getElementById('modal-reclassif');
-  modal.style.display='flex';
-  modal.onclick=e=>{if(e.target===modal)closeModalReclassif();};
-  window._reclassifProcs=procs;
 }
 
 function drillAreaReclassif(areaEnc){
   const area=decodeURIComponent(areaEnc);
-  const procs=(window._reclassifProcs||[]).filter(p=>getAreaInfo(p.tema).area===area);
+  const procs=(window._reclassifAreaProcs&&window._reclassifAreaProcs[area])||[];
   const ai=Object.values(AREA_MAP).find(v=>v.area===area)||{cor:'#94a3b8'};
   const fBRL=v=>'R$'+( v>=1e6?(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:2})+'Mi':(v/1e3).toLocaleString('pt-BR',{maximumFractionDigits:1})+'K');
   const riscoTotal=procs.reduce((s,p)=>s+(p.med||0),0);
@@ -2823,8 +2842,8 @@ function drillAreaReclassif(areaEnc){
 }
 
 function switchTabReclassif(tab){
-  // Ao voltar para áreas, restaurar o conteúdo original se necessário
-  if(tab==='areas'&&window._reclassifProcs) openModalReclassif._restoreAreas&&openModalReclassif._restoreAreas();
+  // Ao voltar para áreas, re-renderizar os cards de área
+  if(tab==='areas'&&window._reclassifProcs) _renderAreasReclassif(window._reclassifProcs);
   document.getElementById('tab-content-procs').style.display=tab==='procs'?'':'none';
   document.getElementById('tab-content-areas').style.display=tab==='areas'?'':'none';
   document.getElementById('tab-procs').style.background=tab==='procs'?'rgba(251,191,36,.15)':'transparent';
@@ -2890,12 +2909,24 @@ function renderAreasCards(procs, elId, contexto){
 
 function renderAreasResultado(){
   const {mes}=getFD();
-  const adicoes=mes.filter(r=>r.sit==='Adição');
-  // Buscar processos da base_geral correspondentes às adições
-  const {base}=getFD();
-  const procSet=new Set(adicoes.map(r=>r.procNum).filter(Boolean));
-  const procsAdicoes=base.filter(r=>procSet.has(r.numero)&&r.st==='ATIVO');
-  renderAreasCards(procsAdicoes,'areas-resultado-content','resultado');
+  // Usar diretamente Base_mes — adições do mês com valor de provisão (r.valor = Total Geral)
+  const adicoes=mes.filter(r=>r.sit==='Adição'&&r.valor>0);
+  // Adaptar para renderAreasCards: mapear r.valor → r.contigPos para reuso da função
+  const adicoesMapped=adicoes.map(r=>({
+    ...r,
+    numero:r.procNum||'',
+    risco:'ADIÇÃO',
+    contigPos:r.valor,
+    st:'ATIVO',
+  }));
+  // Salvar para o drill-down
+  window._areaProcsResultadoMap={};
+  adicoesMapped.forEach(r=>{
+    const a=getAreaInfo(r.tema).area;
+    if(!window._areaProcsResultadoMap[a]) window._areaProcsResultadoMap[a]=[];
+    window._areaProcsResultadoMap[a].push(r);
+  });
+  renderAreasCards(adicoesMapped,'areas-resultado-content','resultado');
 }
 
 function renderAreasEstoque(){
@@ -2906,15 +2937,21 @@ function renderAreasEstoque(){
 
 function openModalArea(areaEnc,contexto){
   const area=decodeURIComponent(areaEnc);
-  const procs=(window._areaProcsMap&&window._areaProcsMap[area])||[];
+  // Usar mapa correto dependendo do contexto
+  const mapaCorreto = contexto==='resultado'
+    ? window._areaProcsResultadoMap
+    : window._areaProcsMap;
+  const procs=(mapaCorreto&&mapaCorreto[area])||[];
   const ai=Object.values(AREA_MAP).find(v=>v.area===area)||{cor:'#94a3b8'};
   const fBRL=v=>'R$'+( v>=1e6?(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:2})+'Mi':(v/1e3).toLocaleString('pt-BR',{maximumFractionDigits:1})+'K');
   const totalContig=procs.reduce((s,r)=>s+(r.contigPos||0),0);
   const ctxLabel=contexto==='resultado'?'Adições do Mês':'Estoque Ativo';
+  const colContigLabel=contexto==='resultado'?'Provisão (Adição)':'Contingência';
   document.getElementById('modal-area-tipo-label').textContent=`ÁREA OFENSORA — ${ctxLabel.toUpperCase()}`;
   document.getElementById('modal-area-tipo-label').style.color=ai.cor;
   document.getElementById('modal-area-title').textContent=`${area} — ${procs.length} processo${procs.length!==1?'s':''}`;
-  document.getElementById('modal-area-sub').textContent=`Contingência total: ${fBRL(totalContig)} · ordenado por contingência decrescente`;
+  const totalContigLabel=contexto==='resultado'?'Provisão total das adições':'Contingência total';
+  document.getElementById('modal-area-sub').textContent=`${totalContigLabel}: ${fBRL(totalContig)} · ${procs.length} processo${procs.length!==1?'s':''} · ordenado por valor decrescente`;
   const riscoLabel={PROVÁVEL:'🔴 Provável',POSSÍVEL:'🟡 Possível',REMOTO:'⚪ Remoto'};
   const riscoCor  ={PROVÁVEL:'#f87171',POSSÍVEL:'#fbbf24',REMOTO:'#64748b'};
   const natBg=n=>n==='TRABALHISTA'?'rgba(167,139,250,.2)':'rgba(79,156,249,.2)';
