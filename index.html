@@ -2446,7 +2446,7 @@ function bRiscos(){
       possNoPrazo.push({
         proc:r.numero, nat:getNatKey(r.nat), tema:r.tema, tipo:r.tipo,
         contig:r.contigPos, med:medR, fase:r.fase,
-        dataDist:r.dataDist, agingAtual, limiar, diasRestantes,
+        dataDist:r.dataDist, anoDist:r.anoDist, agingAtual, limiar, diasRestantes,
         ymProv, ymPag, dpProv, dpPag
       });
     }
@@ -2499,14 +2499,16 @@ function bRiscos(){
     if(provPorMes[ymProv]!==undefined){
       provPorMes[ymProv]++;
       provFinMes[ymProv]+=r.valor;
-      provMesProcs[ymProv].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.valor,fonte:r.fonte,med:medR,aprov,dataEnt:r.dataEnt});
+      const agingEnt2026Prov=r.dataEnt?Math.round((hoje-new Date(r.dataEnt))/86400000):null;
+      provMesProcs[ymProv].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.valor,fonte:r.fonte,med:medR,aprov,dataEnt:r.dataEnt,agingAtual:agingEnt2026Prov,limiar:aprov});
     }
     const dpPag=new Date(de.getTime()+apag*86400000);
     const ymPag=`${dpPag.getFullYear()}-${String(dpPag.getMonth()+1).padStart(2,'0')}`;
     if(pagPorMes[ymPag]!==undefined){
       pagPorMes[ymPag]++;
       pagFinMes[ymPag]+=r.valor;
-      pagMesProcs[ymPag].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.valor,fonte:r.fonte,med:medR,apag,dataEnt:r.dataEnt});
+      const agingEnt2026Pag=r.dataEnt?Math.round((hoje-new Date(r.dataEnt))/86400000):null;
+      pagMesProcs[ymPag].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.valor,fonte:r.fonte,med:medR,apag,dataEnt:r.dataEnt,agingAtual:agingEnt2026Pag,limiar:apag});
     }
   });
 
@@ -2515,12 +2517,12 @@ function bRiscos(){
     if(provPorMesPoss[r.ymProv]!==undefined){
       provPorMesPoss[r.ymProv]++;
       provFinMesPoss[r.ymProv]+=r.med;
-      provMesProcsPoss[r.ymProv].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.contig,med:r.med,fase:r.fase,diasRestantes:r.diasRestantes,limiar:r.limiar,agingAtual:r.agingAtual});
+      provMesProcsPoss[r.ymProv].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.contig,med:r.med,fase:r.fase,diasRestantes:r.diasRestantes,limiar:r.limiar,agingAtual:r.agingAtual,anoDist:r.anoDist});
     }
     if(pagPorMesPoss[r.ymPag]!==undefined){
       pagPorMesPoss[r.ymPag]++;
       pagFinMesPoss[r.ymPag]+=r.med;
-      pagMesProcsPoss[r.ymPag].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.contig,med:r.med,fase:r.fase});
+      pagMesProcsPoss[r.ymPag].push({proc:r.proc,tema:r.tema,nat:r.nat,valor:r.contig,med:r.med,fase:r.fase,diasRestantes:r.diasRestantes,limiar:r.limiar,agingAtual:r.agingAtual,anoDist:r.anoDist});
     }
   });
 
@@ -2908,23 +2910,22 @@ function openModalCurvaConsolidado(tipo,ym,ymLabel,procs,isVol){
   const fonteTitle=f=>f===1?'* Contingência':f===2?'** Valor da causa':'*** Mediana (fallback)';
   document.getElementById('tbl-modal-curva-body').innerHTML=procs.map((p,i)=>{
     const isEnt=p.origem==='ent2026';
-    // Para possíveis no prazo: mostrar ano de distribuição ("Entr. 2024", "Entr. 2025" etc.)
     let origemLabel, origemBg, origemCor;
     if(isEnt){
       origemLabel='Entr. 2026'; origemBg='rgba(52,211,153,.15)'; origemCor='#34d399';
     } else {
-      // Extrair ano de distribuição do número do processo ou de dataDist
-      const anoProc=p.proc?p.proc.match(/[\.\-](\d{4})[\.\-]/)?.[1]:null;
-      const anoLabel=anoProc||'Poss.';
+      // Usar anoDist passado diretamente no objeto — sem regex
+      const anoLabel=p.anoDist||'Poss.';
       origemLabel='Entr. '+anoLabel;
       origemBg='rgba(251,191,36,.15)'; origemCor='#fbbf24';
     }
     const val=p.valor||p.med||0;
     const medVal=p.med||0;
     // Coluna de aging: para ent2026 mostra aging do tema; para poss mostra aging atual/limiar
-    const agingCol=isEnt
-      ? (p[agingKey]||'—')+'d'
-      : (p.agingAtual!==undefined?p.agingAtual+'d atual · '+p.limiar+'d limiar':'—');
+    // Aging unificado: aging atual vs limiar para todos os processos
+    const agingCol=p.agingAtual!==undefined&&p.limiar!==undefined
+      ? p.agingAtual+'d atual · '+p.limiar+'d limiar'
+      : (p[agingKey]||'—')+'d';
     const fl=isEnt?fonteLabel(p.fonte||3):'';
     return`<tr>
       <td style="color:#64748b">${i+1}</td>
