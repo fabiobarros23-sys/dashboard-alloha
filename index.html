@@ -2324,6 +2324,7 @@ function getAgingPag(r){
 function bRiscos(){
   if(!document.getElementById('kpis-riscos')) return;
   const isV=VIEW==='vol';
+  try{
 
   // ── Entrantes 2026 (com filtros globais) ──────────────────────────────────
   let ent2026all=ENT2026_FULL;
@@ -2501,7 +2502,8 @@ function bRiscos(){
       options:{responsive:true,maintainAspectRatio:false,
         layout:{padding:{top:36,right:6,bottom:4,left:4}},
         scales:{x:{...AX,grid:{color:'rgba(255,255,255,.04)'}},y:{...AX,grid:{color:'rgba(255,255,255,.04)'},ticks:{...AX.ticks,callback:v=>fmtFn?fmtFn(v):v}}},
-        plugins:{...CB.plugins,
+        plugins:{
+          tooltip:{backgroundColor:'rgba(5,12,36,.97)',borderColor:'rgba(65,239,105,.18)',borderWidth:1,titleColor:'#f1f5f9',bodyColor:'#94a3b8',padding:11,cornerRadius:8,callbacks:{label:ctx=>fmtFn?fmtFn(ctx.raw):ctx.raw.toLocaleString('pt-BR')}},
           legend:{display:true,position:'top',labels:{color:'rgba(255,255,255,.7)',font:{family:'Outfit',size:11},boxWidth:12,padding:16}},
           datalabels:{display:(ctx)=>ctx.dataset.data[ctx.dataIndex]>0,
             clamp:true,clip:false,
@@ -2613,6 +2615,7 @@ function bRiscos(){
       <td>${urgLabel(d.excesso)}</td>
     </tr>`;}).join('');
 
+  }catch(e){console.error('[bRiscos]',e);}
 }
 
 // PAGE: HISTÓRICO
