@@ -370,6 +370,37 @@ tbody tr:hover td{background:var(--s0)}
 </div>
 
 <!-- MODAL CURVA DRILL-DOWN -->
+<div id="modal-area-procs" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.82);backdrop-filter:blur(4px);align-items:flex-start;justify-content:center;overflow-y:auto;padding:2rem 1rem">
+  <div style="background:#111c38;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:1.5rem;width:100%;max-width:1100px;margin:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <div>
+        <div id="modal-area-tipo-label" style="font-size:.58rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#4f9cf9;margin-bottom:.2rem">ÁREA OFENSORA</div>
+        <div id="modal-area-title" style="font-size:1.05rem;font-weight:800;color:#f1f5f9"></div>
+        <div id="modal-area-sub" style="font-size:.72rem;color:#64748b;margin-top:.2rem"></div>
+      </div>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <button onclick="exportAreaExcel()" style="background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);border-radius:8px;padding:.35rem .8rem;cursor:pointer;color:#34d399;font-size:.72rem;font-family:'Outfit',sans-serif;font-weight:600">⬇ Excel</button>
+        <button onclick="closeModalArea()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:8px;width:32px;height:32px;cursor:pointer;color:#94a3b8;flex-shrink:0">✕</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="hm-table" id="tbl-area-procs" style="width:100%;font-size:.68rem;table-layout:fixed">
+        <colgroup>
+          <col style="width:2rem"><col style="width:4.5rem"><col style="width:13rem">
+          <col style="width:3rem"><col style="width:8rem"><col style="width:5.5rem">
+          <col style="width:5rem"><col style="width:7.5rem">
+        </colgroup>
+        <thead><tr>
+          <th>#</th><th style="text-align:left">Risco</th><th style="text-align:left">Nº Processo</th>
+          <th>Nat.</th><th style="text-align:left">Tema</th><th>Fase</th>
+          <th>Tipo</th><th>Contingência</th>
+        </tr></thead>
+        <tbody id="tbl-area-procs-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <div id="modal-reclassif" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.78);backdrop-filter:blur(4px);align-items:flex-start;justify-content:center;overflow-y:auto;padding:2rem 1rem">
   <div style="background:#111c38;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:1.5rem;width:100%;max-width:1100px;margin:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
@@ -608,6 +639,11 @@ tbody tr:hover td{background:var(--s0)}
           <div class="cdb npt"><div class="cw" style="height:210px"><canvas id="c-res-op"></canvas></div></div>
         </div>
       </div>
+      <!-- Áreas Ofensoras — Resultado do Mês -->
+      <div class="cd mb">
+        <div class="cdh"><div><div class="cdt">Adições por Área Ofensora</div><div class="cds">Impacto financeiro das adições do mês por área responsável · clique em um card para ver os processos</div></div></div>
+        <div class="cdb" id="areas-resultado-content" style="padding:.75rem"></div>
+      </div>
       <div class="g2">
         <div class="cd">
           <div class="cdh"><div><div class="cdt">Adições — Próprio vs. Terceiro</div><div class="cds">Segregação de adições do mês</div></div></div>
@@ -728,6 +764,23 @@ tbody tr:hover td{background:var(--s0)}
           <div class="cdh"><div><div class="cdt">Por Empresa</div><div class="cds">Volume de processos ativos</div></div></div>
           <div class="cdb" style="padding-top:.75rem"><div id="emp-rl" class="rl"></div></div>
         </div>
+      </div>
+      <!-- Áreas Ofensoras — Estoque & Passivo -->
+      <div class="cd mb">
+        <div class="cdh">
+          <div>
+            <div class="cdt">Passivo por Área Ofensora</div>
+            <div class="cds">Contingência total do estoque ativo por área responsável · clique em um card para ver os processos</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">
+            <span style="font-size:.68rem;color:#64748b">Risco:</span>
+            <button id="btn-area-todos"   onclick="setAreaFiltro('todos')"   style="font-size:.65rem;padding:.2rem .55rem;border-radius:12px;border:1px solid #4f9cf9;background:rgba(79,156,249,.15);color:#4f9cf9;cursor:pointer;font-family:Outfit">Todos</button>
+            <button id="btn-area-provavel" onclick="setAreaFiltro('PROVÁVEL')" style="font-size:.65rem;padding:.2rem .55rem;border-radius:12px;border:1px solid #334155;background:transparent;color:#64748b;cursor:pointer;font-family:Outfit">Provável</button>
+            <button id="btn-area-possivel" onclick="setAreaFiltro('POSSÍVEL')" style="font-size:.65rem;padding:.2rem .55rem;border-radius:12px;border:1px solid #334155;background:transparent;color:#64748b;cursor:pointer;font-family:Outfit">Possível</button>
+            <button id="btn-area-remoto"   onclick="setAreaFiltro('REMOTO')"   style="font-size:.65rem;padding:.2rem .55rem;border-radius:12px;border:1px solid #334155;background:transparent;color:#64748b;cursor:pointer;font-family:Outfit">Remoto</button>
+          </div>
+        </div>
+        <div class="cdb" id="areas-estoque-content" style="padding:.75rem"></div>
       </div>
     </div>
 
@@ -1785,6 +1838,8 @@ function bPagamentos(){
   }).join('');
     const ptLabels=['Próprios','Terceiros'];const pagFiltPT=pag.filter(r=>r.terceiros==='Próprios'||r.terceiros==='Terceiros');const ptVals=ptLabels.map(t=>isV?pagFiltPT.filter(r=>r.terceiros===t).length:pagFiltPT.filter(r=>r.terceiros===t).reduce((a,r)=>a+r.pagamento,0));donut('c-pag-pt-d',ptLabels,ptVals,['#4f9cf9','#fb923c'],'lg-pag-pt');
     const empT3=pag.filter(r=>r.terceiros==='Terceiros'&&r.empTerceira&&r.empTerceira!=='-'&&r.empTerceira!=='N/A');const empT3Grp=isV?Object.entries(empT3.reduce((a,r)=>{a[r.empTerceira]=(a[r.empTerceira]||0)+1;return a},{})):Object.entries(empT3.reduce((a,r)=>{a[r.empTerceira]=(a[r.empTerceira]||0)+r.pagamento;return a},{}));barH('c-pag-emp-t3',empT3Grp.sort((a,b)=>b[1]-a[1]).slice(0,8),!isV,'rgba(251,146,60,.65)');
+  // Áreas ofensoras — Adições do mês
+  renderAreasResultado();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1842,6 +1897,8 @@ function bEstoque(){
     const empMax=empG[0]?.[1]||1;
     empEl.innerHTML=empG.map(([name,count],i)=>`<div class="ri"><div class="rn">${i+1}</div><div class="rbw"><div class="rname">${name}</div><div class="rbg"><div class="rbf" style="width:${pct(count,empMax)}%;background:${PAL[i%PAL.length]}"></div></div></div><div class="rcnt">${isV?count.toLocaleString('pt-BR'):fSh(count)}</div></div>`).join('');
   }
+  // Áreas ofensoras — Estoque ativo
+  renderAreasEstoque();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2705,8 +2762,12 @@ function openModalReclassif(){
       const ai=Object.values(AREA_MAP).find(v=>v.area===area)||{cor:'#94a3b8'};
       const pctVal=pct(risco,totalRiscoAreas);
       const cnt=areaCnt[area]||0;
-      return`<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.8rem 1rem">
-        <div style="font-size:.72rem;font-weight:700;color:${ai.cor};margin-bottom:.3rem">${area}</div>
+      const areaEnc=encodeURIComponent(area);
+      return`<div onclick="drillAreaReclassif('${areaEnc}')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.8rem 1rem;cursor:pointer;transition:border-color .2s" onmouseover="this.style.borderColor='${ai.cor}'" onmouseout="this.style.borderColor='rgba(255,255,255,.08)'">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+          <span style="font-size:.72rem;font-weight:700;color:${ai.cor}">${area}</span>
+          <span style="font-size:.6rem;color:#475569">🔍 ver processos</span>
+        </div>
         <div style="font-size:1rem;font-weight:800;color:#f1f5f9">${fBRL(risco)}</div>
         <div style="font-size:.65rem;color:#64748b;margin-top:.2rem">${cnt} processo${cnt!==1?'s':''} · ${pctVal}% do total</div>
         <div style="margin-top:.5rem;background:rgba(255,255,255,.06);border-radius:4px;height:5px">
@@ -2714,7 +2775,7 @@ function openModalReclassif(){
         </div>
       </div>`;
     }).join('')+`</div>`+
-    `<div style="font-size:.69rem;color:#64748b;font-style:italic">* Valores baseados no cenário de provisão selecionado (${CENARIO}). Clique em "Processos" para ver o detalhamento individual.</div>`;
+    `<div style="font-size:.69rem;color:#64748b;font-style:italic">* Valores baseados no cenário de provisão selecionado (${CENARIO}). Clique em um card para ver os processos da área.</div>`;
 
   switchTabReclassif('procs');
   const modal=document.getElementById('modal-reclassif');
@@ -2723,7 +2784,47 @@ function openModalReclassif(){
   window._reclassifProcs=procs;
 }
 
+function drillAreaReclassif(areaEnc){
+  const area=decodeURIComponent(areaEnc);
+  const procs=(window._reclassifProcs||[]).filter(p=>getAreaInfo(p.tema).area===area);
+  const ai=Object.values(AREA_MAP).find(v=>v.area===area)||{cor:'#94a3b8'};
+  const fBRL=v=>'R$'+( v>=1e6?(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:2})+'Mi':(v/1e3).toLocaleString('pt-BR',{maximumFractionDigits:1})+'K');
+  const riscoTotal=procs.reduce((s,p)=>s+(p.med||0),0);
+  const urgCor=d=>d<=30?'#f87171':d<=60?'#fb923c':d<=90?'#fbbf24':'#34d399';
+  const urgLabel=d=>d<=30?'🔴 ≤30d':d<=60?'🟠 ≤60d':d<=90?'🟡 ≤90d':'🟢 >90d';
+  const natBg=n=>n==='TRABALHISTA'?'rgba(167,139,250,.2)':'rgba(79,156,249,.2)';
+  const natCor=n=>n==='TRABALHISTA'?'#a78bfa':'#4f9cf9';
+
+  const el=document.getElementById('reclassif-areas-content');
+  el.innerHTML=
+    `<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem">
+      <button onclick="switchTabReclassif('areas')" style="font-size:.68rem;padding:.25rem .6rem;border-radius:6px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;font-family:Outfit">← Voltar às Áreas</button>
+      <span style="font-size:.8rem;font-weight:700;color:${ai.cor}">${area}</span>
+      <span style="font-size:.68rem;color:#64748b">${procs.length} processo${procs.length!==1?'s':''} · ${fBRL(riscoTotal)}</span>
+    </div>`+
+    `<div style="overflow-x:auto"><table class="hm-table" style="width:100%;font-size:.68rem;table-layout:fixed">
+      <colgroup><col style="width:2rem"><col style="width:5.5rem"><col style="width:13rem"><col style="width:3rem"><col style="width:8rem"><col style="width:5rem"><col style="width:8rem"><col style="width:7rem"><col style="width:7rem"></colgroup>
+      <thead><tr><th>#</th><th>Urgência</th><th style="text-align:left">Nº Processo</th><th>Nat.</th><th style="text-align:left">Tema</th><th>Fase</th><th>Aging (atual · limiar)</th><th>Contingência Possível</th><th>Projeção Cenário</th></tr></thead>
+      <tbody>`+
+    [...procs].sort((a,b)=>a.diasRestantes-b.diasRestantes).map((p,i)=>
+      `<tr>
+        <td style="color:#64748b;text-align:center">${i+1}</td>
+        <td style="white-space:nowrap"><span style="font-size:.62rem;font-weight:700;color:${urgCor(p.diasRestantes)}">${urgLabel(p.diasRestantes)}</span></td>
+        <td style="font-family:monospace;font-size:.63rem;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.proc||''}">${p.proc||'—'}</td>
+        <td style="text-align:center"><span style="font-size:.61rem;padding:.1rem .3rem;border-radius:4px;background:${natBg(p.nat)};color:${natCor(p.nat)}">${p.nat==='TRABALHISTA'?'TRAB':'CÍVEL'}</span></td>
+        <td style="text-align:left;color:#e2e8f0;font-size:.67rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.tema||''}">${p.tema||'—'}</td>
+        <td style="color:#94a3b8;font-size:.66rem">${p.fase||'—'}</td>
+        <td style="color:#64748b;font-size:.66rem;white-space:nowrap">${p.agingAtual}d · ${p.limiar}d</td>
+        <td style="color:#fbbf24;font-weight:600">${p.contig>0?p.contig.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'}</td>
+        <td style="color:#34d399;font-weight:600">${(p.med||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+      </tr>`
+    ).join('')+
+    `</tbody></table></div>`;
+}
+
 function switchTabReclassif(tab){
+  // Ao voltar para áreas, restaurar o conteúdo original se necessário
+  if(tab==='areas'&&window._reclassifProcs) openModalReclassif._restoreAreas&&openModalReclassif._restoreAreas();
   document.getElementById('tab-content-procs').style.display=tab==='procs'?'':'none';
   document.getElementById('tab-content-areas').style.display=tab==='areas'?'':'none';
   document.getElementById('tab-procs').style.background=tab==='procs'?'rgba(251,191,36,.15)':'transparent';
@@ -2732,6 +2833,117 @@ function switchTabReclassif(tab){
   document.getElementById('tab-areas').style.color=tab==='areas'?'#fbbf24':'#64748b';
 }
 function closeModalReclassif(){document.getElementById('modal-reclassif').style.display='none';}
+
+// ── Áreas Ofensoras — Resultado do Mês & Estoque ─────────────────────────────
+let _areaFiltroRisco='todos';
+
+function setAreaFiltro(risco){
+  _areaFiltroRisco=risco;
+  const btns={todos:'btn-area-todos',PROVÁVEL:'btn-area-provavel',POSSÍVEL:'btn-area-possivel',REMOTO:'btn-area-remoto'};
+  Object.entries(btns).forEach(([k,id])=>{
+    const btn=document.getElementById(id);if(!btn)return;
+    const ativo=k===risco;
+    btn.style.borderColor=ativo?'#4f9cf9':'#334155';
+    btn.style.background=ativo?'rgba(79,156,249,.15)':'transparent';
+    btn.style.color=ativo?'#4f9cf9':'#64748b';
+  });
+  renderAreasEstoque();
+}
+
+function renderAreasCards(procs, elId, contexto){
+  const el=document.getElementById(elId);if(!el)return;
+  const fBRL=v=>'R$'+( v>=1e6?(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:2})+'Mi':(v/1e3).toLocaleString('pt-BR',{maximumFractionDigits:1})+'K');
+  const pct=(a,b)=>b>0?Math.round(a/b*100):0;
+  const areaRisco={};const areaCnt={};const areaProcs={};
+  procs.forEach(r=>{
+    const ai=getAreaInfo(r.tema);
+    const a=ai.area;
+    areaRisco[a]=(areaRisco[a]||0)+r.contigPos;
+    areaCnt[a]=(areaCnt[a]||0)+1;
+    if(!areaProcs[a]) areaProcs[a]=[];
+    areaProcs[a].push(r);
+  });
+  const areasOrd=Object.entries(areaRisco).sort((a,b)=>b[1]-a[1]);
+  const totalRisco=areasOrd.reduce((s,[,v])=>s+v,0);
+  if(!areasOrd.length){el.innerHTML='<div style="color:#475569;font-size:.75rem;padding:.5rem">Nenhum processo encontrado.</div>';return;}
+  el.innerHTML=
+    `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.55rem">`+
+    areasOrd.map(([area,risco])=>{
+      const ai=Object.values(AREA_MAP).find(v=>v.area===area)||{cor:'#94a3b8'};
+      const pctVal=pct(risco,totalRisco);
+      const cnt=areaCnt[area]||0;
+      const areaEnc=encodeURIComponent(area);
+      return`<div onclick="openModalArea('${areaEnc}','${contexto}')" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:.75rem .9rem;cursor:pointer;transition:border-color .2s" onmouseover="this.style.borderColor='${ai.cor}'" onmouseout="this.style.borderColor='rgba(255,255,255,.08)'">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.25rem">
+          <span style="font-size:.69rem;font-weight:700;color:${ai.cor}">${area}</span>
+          <span style="font-size:.58rem;color:#475569">🔍</span>
+        </div>
+        <div style="font-size:.95rem;font-weight:800;color:#f1f5f9">${fBRL(risco)}</div>
+        <div style="font-size:.63rem;color:#64748b;margin-top:.2rem">${cnt} proc. · ${pctVal}%</div>
+        <div style="margin-top:.4rem;background:rgba(255,255,255,.06);border-radius:3px;height:4px">
+          <div style="background:${ai.cor};height:4px;border-radius:3px;width:${pctVal}%"></div>
+        </div>
+      </div>`;
+    }).join('')+`</div>`;
+  window._areaProcsMap=areaProcs;
+}
+
+function renderAreasResultado(){
+  const {mes}=getFD();
+  const adicoes=mes.filter(r=>r.sit==='Adição');
+  // Buscar processos da base_geral correspondentes às adições
+  const {base}=getFD();
+  const procSet=new Set(adicoes.map(r=>r.procNum).filter(Boolean));
+  const procsAdicoes=base.filter(r=>procSet.has(r.numero)&&r.st==='ATIVO');
+  renderAreasCards(procsAdicoes,'areas-resultado-content','resultado');
+}
+
+function renderAreasEstoque(){
+  const {ativos}=getFD();
+  const filtrados=_areaFiltroRisco==='todos'?ativos:ativos.filter(r=>r.risco===_areaFiltroRisco);
+  renderAreasCards(filtrados,'areas-estoque-content','estoque');
+}
+
+function openModalArea(areaEnc,contexto){
+  const area=decodeURIComponent(areaEnc);
+  const procs=(window._areaProcsMap&&window._areaProcsMap[area])||[];
+  const ai=Object.values(AREA_MAP).find(v=>v.area===area)||{cor:'#94a3b8'};
+  const fBRL=v=>'R$'+( v>=1e6?(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:2})+'Mi':(v/1e3).toLocaleString('pt-BR',{maximumFractionDigits:1})+'K');
+  const totalContig=procs.reduce((s,r)=>s+(r.contigPos||0),0);
+  const ctxLabel=contexto==='resultado'?'Adições do Mês':'Estoque Ativo';
+  document.getElementById('modal-area-tipo-label').textContent=`ÁREA OFENSORA — ${ctxLabel.toUpperCase()}`;
+  document.getElementById('modal-area-tipo-label').style.color=ai.cor;
+  document.getElementById('modal-area-title').textContent=`${area} — ${procs.length} processo${procs.length!==1?'s':''}`;
+  document.getElementById('modal-area-sub').textContent=`Contingência total: ${fBRL(totalContig)} · ordenado por contingência decrescente`;
+  const riscoLabel={PROVÁVEL:'🔴 Provável',POSSÍVEL:'🟡 Possível',REMOTO:'⚪ Remoto'};
+  const riscoCor  ={PROVÁVEL:'#f87171',POSSÍVEL:'#fbbf24',REMOTO:'#64748b'};
+  const natBg=n=>n==='TRABALHISTA'?'rgba(167,139,250,.2)':'rgba(79,156,249,.2)';
+  const natCor=n=>n==='TRABALHISTA'?'#a78bfa':'#4f9cf9';
+  const sorted=[...procs].sort((a,b)=>(b.contigPos||0)-(a.contigPos||0));
+  document.getElementById('tbl-area-procs-body').innerHTML=sorted.map((r,i)=>`<tr>
+    <td style="color:#64748b;text-align:center">${i+1}</td>
+    <td><span style="font-size:.61rem;font-weight:700;color:${riscoCor[r.risco]||'#94a3b8'}">${riscoLabel[r.risco]||r.risco||'—'}</span></td>
+    <td style="font-family:monospace;font-size:.63rem;color:#94a3b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.numero||''}">${r.numero||'—'}</td>
+    <td style="text-align:center"><span style="font-size:.61rem;padding:.1rem .3rem;border-radius:4px;background:${natBg(r.nat==='TRABALHISTA'?'TRABALHISTA':'CÍVEL')};color:${natCor(r.nat==='TRABALHISTA'?'TRABALHISTA':'CÍVEL')}">${r.nat==='TRABALHISTA'?'TRAB':'CÍVEL'}</span></td>
+    <td style="text-align:left;color:#e2e8f0;font-size:.67rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.tema||''}">${r.tema||'—'}</td>
+    <td style="color:#94a3b8;font-size:.66rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.fase||'—'}</td>
+    <td style="text-align:center"><span style="font-size:.61rem;padding:.1rem .3rem;border-radius:4px;background:${r.tipo==='TERCEIRO'?'rgba(251,146,60,.15)':'rgba(79,156,249,.1)'};color:${r.tipo==='TERCEIRO'?'#fb923c':'#4f9cf9'}">${r.tipo==='TERCEIRO'?'TERC':'PROP'}</span></td>
+    <td style="color:${ai.cor};font-weight:700">${r.contigPos>0?r.contigPos.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'}</td>
+  </tr>`).join('');
+  window._areaProcsExport={area,procs:sorted,contexto};
+  const modal=document.getElementById('modal-area-procs');
+  modal.style.display='flex';
+  modal.onclick=e=>{if(e.target===modal)closeModalArea();};
+}
+function closeModalArea(){document.getElementById('modal-area-procs').style.display='none';}
+function exportAreaExcel(){
+  const d=window._areaProcsExport;if(!d)return;
+  const rows=d.procs.map((r,i)=>({'#':i+1,'Área':d.area,'Risco':r.risco||'','Nº Processo':r.numero||'','Natureza':r.nat||'','Tema':r.tema||'','Fase':r.fase||'','Tipo':r.tipo||'','Contingência':r.contigPos||0}));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,d.area.slice(0,28),ws);
+  XLSX.writeFile(wb,`area_${d.area.replace(/[^a-z0-9]/gi,'_').slice(0,30)}_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
 function exportReclassifExcel(){
   if(!window._reclassifProcs||!window._reclassifProcs.length) return;
   const rows=window._reclassifProcs.map((p,i)=>({
