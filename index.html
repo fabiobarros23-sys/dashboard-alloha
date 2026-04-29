@@ -2655,7 +2655,7 @@ function bRiscos(){
   const rowsRaw=Object.entries(porTema).map(([tema,d])=>{
     const ag=AGING_TEMA[tema];
     // Inferir natureza predominante dos entrantes deste tema
-    const natSample=ent2026all.filter(r=>r.tema===tema)[0]?.nat||'TRABALHISTA';
+    const natSample=dist2026prov.filter(r=>r.tema===tema)[0]?.nat||'TRABALHISTA';
     const natKey=getNatKey(natSample);
     const provVal=ag?.prov||(AGING_NAT_PROV[natKey]||333);
     const pagVal=ag?.pag||(AGING_NAT_PAG[natKey]||673);
