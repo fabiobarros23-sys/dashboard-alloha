@@ -833,12 +833,12 @@ tbody tr:hover td{background:var(--s0)}
       </div>
 
       <div class="kr kr4 mb2" id="kpis-riscos"></div>
-      <!-- Filtro de origem das curvas -->
-      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap">
+      <!-- Filtro de origem das curvas + Seletor de Cenário -->
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem;flex-wrap:wrap">
         <span style="font-size:.72rem;color:#64748b;font-weight:600;letter-spacing:.04em">CURVAS — ORIGEM:</span>
         <button id="btn-curva-2026" onclick="toggleCurvaFiltro('ent2026')"
           style="padding:.3rem .85rem;border-radius:20px;border:1.5px solid #a78bfa;background:rgba(167,139,250,.15);color:#a78bfa;font-size:.72rem;font-family:Outfit;font-weight:600;cursor:pointer;transition:all .2s"
-          title="Entrantes 2026">
+          title="Distribuídos 2026">
           <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#a78bfa;margin-right:.35rem"></span>Distribuídos 2026
         </button>
         <button id="btn-curva-poss" onclick="toggleCurvaFiltro('poss')"
@@ -847,6 +847,25 @@ tbody tr:hover td{background:var(--s0)}
           <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#fbbf24;margin-right:.35rem"></span>Possíveis no Prazo
         </button>
         <span id="curva-filtro-label" style="font-size:.68rem;color:#475569;margin-left:.3rem">Total consolidado</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
+        <span style="font-size:.72rem;color:#64748b;font-weight:600;letter-spacing:.04em">CENÁRIO DE PROVISÃO:</span>
+        <button id="btn-cen-base" onclick="setCenario('base')"
+          style="padding:.3rem .85rem;border-radius:20px;border:1.5px solid #4f9cf9;background:rgba(79,156,249,.15);color:#4f9cf9;font-size:.72rem;font-family:Outfit;font-weight:600;cursor:pointer;transition:all .2s"
+          title="Mediana histórica por tema — estimativa central">
+          🔵 Base (Mediana)
+        </button>
+        <button id="btn-cen-conservador" onclick="setCenario('conservador')"
+          style="padding:.3rem .85rem;border-radius:20px;border:1.5px solid #334155;background:transparent;color:#64748b;font-size:.72rem;font-family:Outfit;font-weight:600;cursor:pointer;transition:all .2s"
+          title="Percentil 75 dos prováveis históricos — visão conservadora">
+          🟡 Conservador (P75)
+        </button>
+        <button id="btn-cen-estressado" onclick="setCenario('estressado')"
+          style="padding:.3rem .85rem;border-radius:20px;border:1.5px solid #334155;background:transparent;color:#64748b;font-size:.72rem;font-family:Outfit;font-weight:600;cursor:pointer;transition:all .2s"
+          title="Média aparada dos prováveis históricos — visão estressada">
+          🔴 Estressado (Média Aparada)
+        </button>
+        <span id="cenario-label" style="font-size:.67rem;color:#475569;margin-left:.2rem;font-style:italic">Estimativa central baseada na mediana histórica por tema</span>
       </div>
       <div class="cd mb2">
         <div class="cdh"><div><div class="cdt">Curva de Provisão Projetada</div><div class="cds" id="sub-curva-prov">Fluxo mensal consolidado — valores por mês, não acumulados · clique em um mês para ver os processos</div></div></div>
@@ -1032,6 +1051,7 @@ const AGING_TEMA={"CONTRATAÇÃO FRAUDULENTA": {"prov": 178, "pag": 337}, "VERBA
 // ═══════════════════════════════════════════════════════
 let D=null, CH={}, GF={nat:[],st:[],tp:[],rk:[],comp:[]}, VIEW='vol', PRES=false;
 let GF_CURVA={ent2026:false,poss:false}; // false=não filtrado (mostra tudo consolidado)
+let CENARIO='base'; // 'base' | 'conservador' | 'estressado'
 const SK='alloha_v6';
 const MONTHS_PT={janeiro:'01',fevereiro:'02',março:'03',abril:'04',maio:'05',junho:'06',julho:'07',agosto:'08',setembro:'09',outubro:'10',novembro:'11',dezembro:'12'};
 
@@ -2559,6 +2579,25 @@ function gerarInsights(){
     `</div><div style="font-size:.6rem;color:#334155;margin-top:.4rem;text-align:right">Atualizado em ${new Date().toLocaleString('pt-BR')}</div>`;
 }
 
+function setCenario(c){
+  CENARIO=c;
+  const cfgs={
+    base:        {id:'btn-cen-base',        cor:'#4f9cf9', bg:'rgba(79,156,249,.15)',  label:'Estimativa central baseada na mediana histórica por tema'},
+    conservador: {id:'btn-cen-conservador', cor:'#fbbf24', bg:'rgba(251,191,36,.12)', label:'Visão conservadora — Percentil 75 dos prováveis históricos'},
+    estressado:  {id:'btn-cen-estressado',  cor:'#f87171', bg:'rgba(248,113,113,.1)', label:'Visão estressada — Média aparada dos prováveis históricos (sem outliers extremos)'},
+  };
+  Object.entries(cfgs).forEach(([k,cfg])=>{
+    const btn=document.getElementById(cfg.id);if(!btn)return;
+    const ativo=k===c;
+    btn.style.borderColor=ativo?cfg.cor:'#334155';
+    btn.style.background=ativo?cfg.bg:'transparent';
+    btn.style.color=ativo?cfg.cor:'#64748b';
+  });
+  const lbl=document.getElementById('cenario-label');
+  if(lbl) lbl.textContent=cfgs[c]?.label||'';
+  bRiscos();
+}
+
 function toggleCurvaFiltro(tipo){
   GF_CURVA[tipo]=!GF_CURVA[tipo];
   // Estilo dos botões
@@ -2615,6 +2654,62 @@ function bRiscos(){
     return medArr(agingPorTema[r.tema+'||'+nk])||medNatProv[nk]||medGeralProv;
   };
 
+  // ── Calcular estimadores por cenário (P75 e Média Aparada) ────────────────
+  // Fonte: prováveis ativos com contigPos > 0, agrupados por tema e natureza
+  const estPorTema={};  // {tema||nat: {vals:[], p75:0, mediaAparada:0}}
+  const estPorNat={TRABALHISTA:{vals:[]},CÍVEL:{vals:[]}};
+  base.filter(r=>r.st==='ATIVO'&&r.risco==='PROVÁVEL'&&r.contigPos>0).forEach(r=>{
+    const nk=getNatKey(r.nat);
+    const chave=r.tema+'||'+nk;
+    if(!estPorTema[chave]) estPorTema[chave]={vals:[]};
+    estPorTema[chave].vals.push(r.contigPos);
+    if(estPorNat[nk]) estPorNat[nk].vals.push(r.contigPos);
+  });
+  const calcP75=arr=>{
+    if(!arr||!arr.length) return null;
+    const s=[...arr].sort((a,b)=>a-b);
+    const idx=Math.ceil(s.length*0.75)-1;
+    return s[Math.max(0,idx)];
+  };
+  const calcMediaAparada=arr=>{
+    if(!arr||!arr.length) return null;
+    const s=[...arr].sort((a,b)=>a-b);
+    // Remover 10% superiores (outliers extremos), manter os 90% inferiores
+    const corte=Math.floor(s.length*0.9);
+    const trimmed=s.slice(0,Math.max(1,corte));
+    return Math.round(trimmed.reduce((a,v)=>a+v,0)/trimmed.length);
+  };
+  // Pre-calcular para todos os temas
+  Object.keys(estPorTema).forEach(k=>{
+    const vals=estPorTema[k].vals;
+    estPorTema[k].p75=calcP75(vals)||0;
+    estPorTema[k].mediaAparada=calcMediaAparada(vals)||0;
+  });
+  Object.keys(estPorNat).forEach(nk=>{
+    const vals=estPorNat[nk].vals;
+    estPorNat[nk].p75=calcP75(vals)||0;
+    estPorNat[nk].mediaAparada=calcMediaAparada(vals)||0;
+  });
+  // Fallback geral
+  const allVals=[...estPorNat.TRABALHISTA.vals,...estPorNat['CÍVEL'].vals];
+  const estGeral={p75:calcP75(allVals)||0,mediaAparada:calcMediaAparada(allVals)||0};
+
+  // Helper: retorna o estimador correto pelo cenário atual
+  const getEstimador=r=>{
+    const nk=getNatKey(r.nat);
+    const chave=(r.tema||r.tema||'')+'||'+nk;
+    const est=estPorTema[chave];
+    const estNat=estPorNat[nk];
+    if(CENARIO==='conservador'){
+      return est?.p75||estNat?.p75||estGeral.p75||getMedTema({tema:r.tema||r.tema,nat:r.nat||r.nat});
+    }
+    if(CENARIO==='estressado'){
+      return est?.mediaAparada||estNat?.mediaAparada||estGeral.mediaAparada||getMedTema({tema:r.tema||r.tema,nat:r.nat||r.nat});
+    }
+    // base: mediana (padrão)
+    return getMedTema({tema:r.tema||r.tema,nat:r.nat||r.nat});
+  };
+
   // ── Grupo 1: Distribuídos em 2026 — Possíveis (provisão) + Prováveis/Possíveis (pagamento) ──
   // Provisão: apenas POSSÍVEL (Prováveis já estão provisionados)
   // Pagamento: POSSÍVEL + PROVÁVEL (ambos podem gerar pagamento futuro)
@@ -2648,7 +2743,7 @@ function bRiscos(){
       const apag=AGING_TEMA[r.tema]?.pag||(AGING_NAT_PAG[getNatKey(r.nat)]||673);
       const dpPag=new Date(r.dataDist.getTime()+apag*86400000);
       const ymPag=`${dpPag.getFullYear()}-${String(dpPag.getMonth()+1).padStart(2,'0')}`;
-      const medR=getMedTema({tema:r.tema,nat:r.nat});
+      const medR=getEstimador({tema:r.tema,nat:r.nat});
       const contigPoss=r.contigPos>0?r.contigPos:(r.causa||0);
       possNoPrazo.push({
         proc:r.numero, nat:getNatKey(r.nat), tema:r.tema, tipo:r.tipo,
@@ -2665,10 +2760,11 @@ function bRiscos(){
     const dpPag=new Date(r.dataDist.getTime()+apag*86400000);
     const ymPag=`${dpPag.getFullYear()}-${String(dpPag.getMonth()+1).padStart(2,'0')}`;
     const agingAtual=Math.round((hoje-r.dataDist)/86400000);
-    const medR=getMedTema({tema:r.tema,nat:r.nat});
+    const medR=getEstimador({tema:r.tema,nat:r.nat});
     possAntPag.push({
       proc:r.numero, nat:getNatKey(r.nat), tema:r.tema, tipo:r.tipo,
-      contig:r.contigPos, med:medR, fase:r.fase, risco:r.risco,
+      contig:r.contigPos>0?r.contigPos:(r.causa>0?r.causa:0), usouCausa:!(r.contigPos>0)&&r.causa>0,
+      med:medR, fase:r.fase, risco:r.risco,
       dataDist:r.dataDist, anoDist:r.anoDist, agingAtual, limiar:apag,
       ymPag, apag
     });
@@ -2685,7 +2781,7 @@ function bRiscos(){
   // KPIs
   const totalDist2026=dist2026pag.length; // total único (prov+prov/poss)
   const totalPossNoPrazo=possNoPrazo.length;
-  const riscoDist2026=dist2026prov.reduce((s,r)=>s+getMedTema({tema:r.tema,nat:r.nat}),0);
+  const riscoDist2026=dist2026prov.reduce((s,r)=>s+getEstimador({tema:r.tema,nat:r.nat}),0);
   const riscoPossNoPrazo=possNoPrazo.reduce((s,r)=>s+r.med,0);
   const medianaGeral=Math.round(Object.values(AGING_TEMA).filter(d=>d.prov).reduce((a,d)=>a+d.prov,0)/Object.values(AGING_TEMA).filter(d=>d.prov).length);
 
@@ -2723,7 +2819,7 @@ function bRiscos(){
     const diasRestantes=Math.max(0,limiar-agingAtual);
     const dpProv=new Date(r.dataDist.getTime()+limiar*86400000);
     const ymProv=`${dpProv.getFullYear()}-${String(dpProv.getMonth()+1).padStart(2,'0')}`;
-    const medR=getMedTema({tema:r.tema,nat:r.nat});
+    const medR=getEstimador(r);
     if(provPorMes[ymProv]!==undefined){
       provPorMes[ymProv]++;
       provFinMes[ymProv]+=medR;
@@ -2737,7 +2833,7 @@ function bRiscos(){
     const apag=AGING_TEMA[r.tema]?.pag||(AGING_NAT_PAG[getNatKey(r.nat)]||673);
     const dpPag=new Date(r.dataDist.getTime()+apag*86400000);
     const ymPag=`${dpPag.getFullYear()}-${String(dpPag.getMonth()+1).padStart(2,'0')}`;
-    const medR=getMedTema({tema:r.tema,nat:r.nat});
+    const medR=getEstimador(r);
     if(pagPorMes[ymPag]!==undefined){
       pagPorMes[ymPag]++;
       pagFinMes[ymPag]+=medR;
