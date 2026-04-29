@@ -816,11 +816,11 @@ tbody tr:hover td{background:var(--s0)}
       </div>
       <div class="cd mb2">
         <div class="cdh"><div><div class="cdt">Curva de Provisão Projetada</div><div class="cds" id="sub-curva-prov">Fluxo mensal consolidado — valores por mês, não acumulados · clique em um mês para ver os processos</div></div></div>
-        <div class="cdb npt"><div class="cw" style="height:240px"><canvas id="c-riscos-prov"></canvas></div></div>
+        <div class="cdb npt"><div class="cw" style="height:280px"><canvas id="c-riscos-prov"></canvas></div></div>
       </div>
       <div class="cd mb2">
         <div class="cdh"><div><div class="cdt">Curva de Pagamento Projetado</div><div class="cds" id="sub-curva-pag">Fluxo mensal consolidado — valores por mês, não acumulados · clique em um mês para ver os processos</div></div></div>
-        <div class="cdb npt"><div class="cw" style="height:240px"><canvas id="c-riscos-pag"></canvas></div></div>
+        <div class="cdb npt"><div class="cw" style="height:280px"><canvas id="c-riscos-pag"></canvas></div></div>
       </div>
       <div class="cd mb">
         <div class="cdh"><div><div class="cdt">Tabela de Aging por Tema</div><div class="cds">Entrantes 2026 · Mediana de dias até provisão e até pagamento · Dados históricos</div></div></div>
@@ -2578,25 +2578,33 @@ function bRiscos(){
   const mkRiscoLine1=(id,data,cor,fmtFn,onClickCb)=>{
     const c=document.getElementById(id);if(!c)return;
     const ctx=c.getContext('2d');if(!ctx)return;
-    const bg=cor.replace(')',', .09)').replace('rgb(','rgba(').replace('#',null);
     const bgAlpha=cor+'18';
+    // Threshold para exibir label: apenas valores ≥ 5% do máximo da série
+    // Garante que só picos relevantes recebem rótulo, evitando sobreposição
+    const maxVal=Math.max(...data.filter(v=>v>0));
+    const threshold=maxVal*0.05;
     CH[id]=new Chart(ctx,{type:'line',
       data:{labels:labelsM,datasets:[{
         label:modoLabel,data,
         borderColor:cor,backgroundColor:bgAlpha,
-        fill:true,tension:.4,pointBackgroundColor:cor,pointRadius:4,borderWidth:2
+        fill:true,tension:.4,pointBackgroundColor:cor,
+        pointRadius:(ctx)=>data[ctx.dataIndex]>0?3:0,
+        pointHoverRadius:6,borderWidth:2
       }]},
       options:{responsive:true,maintainAspectRatio:false,
-        layout:{padding:{top:32,right:6,bottom:4,left:4}},
+        layout:{padding:{top:38,right:8,bottom:4,left:4}},
         scales:{x:{...AX,grid:{color:'rgba(255,255,255,.04)'}},y:{...AX,grid:{color:'rgba(255,255,255,.04)'},ticks:{...AX.ticks,callback:v=>fmtFn?fmtFn(v):v}}},
         plugins:{
-          tooltip:{backgroundColor:'rgba(5,12,36,.97)',borderColor:'rgba(65,239,105,.18)',borderWidth:1,titleColor:'#f1f5f9',bodyColor:'#94a3b8',padding:11,cornerRadius:8,callbacks:{label:ctx=>fmtFn?fmtFn(ctx.raw):ctx.raw.toLocaleString('pt-BR')}},
+          tooltip:{backgroundColor:'rgba(5,12,36,.97)',borderColor:'rgba(65,239,105,.18)',borderWidth:1,titleColor:'#f1f5f9',bodyColor:'#94a3b8',padding:11,cornerRadius:8,
+            callbacks:{title:ctx=>labelsM[ctx[0].dataIndex],label:ctx=>fmtFn?fmtFn(ctx.raw):ctx.raw.toLocaleString('pt-BR')}},
           legend:{display:false},
-          datalabels:{display:(ctx)=>ctx.dataset.data[ctx.dataIndex]>0,
+          datalabels:{
+            display:(ctx)=>ctx.dataset.data[ctx.dataIndex]>=threshold,
             clamp:true,clip:false,
-            color:'rgba(255,255,255,.9)',
-            font:{family:'Outfit',size:11,weight:'700'},
+            color:'rgba(255,255,255,.88)',
+            font:{family:'Outfit',size:9,weight:'700'},
             anchor:'end',align:'top',
+            padding:{bottom:2},
             formatter:(v)=>v>0?(fmtFn?fmtFn(v):v.toLocaleString('pt-BR')):null}},
         onClick:(evt,els)=>{if(els.length&&onClickCb)onClickCb(els[0].index);},
         onHover:(evt,els)=>{evt.native.target.style.cursor=els.length?'pointer':'default';}}});
