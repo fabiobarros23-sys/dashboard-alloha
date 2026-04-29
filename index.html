@@ -163,6 +163,7 @@ body.pres-mode #mn{margin-left:0!important}
 body.pres-mode .gfb{display:none}
 body.pres-mode .tb-brand-stripe{height:4px}
 body.pres-mode .kpi{border-color:rgba(65,239,105,.25)}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 body.pres-mode .ins{border-width:1.5px}
 /* Local filter bar for Indenizações */
 .pag-fbar{display:flex;align-items:center;gap:.5rem;margin-bottom:1rem;padding:.5rem .85rem;background:rgba(65,239,105,.04);border:1px solid rgba(65,239,105,.15);border-radius:var(--r);flex-wrap:wrap}
@@ -810,6 +811,27 @@ tbody tr:hover td{background:var(--s0)}
     <!-- ██ RISCOS FUTUROS ██ -->
     <div id="pg-riscos" class="pg">
       <div class="sh"><div class="sn">Projeção</div><div class="st">Riscos Futuros</div><div class="sd">Projeção de impacto dos processos distribuídos em 2026 e anos anteriores na provisão e pagamentos, baseada no aging histórico por tema (mediana) · Base dinâmica</div></div>
+
+      <!-- Painel de Insights IA -->
+      <div id="insights-panel" style="margin-bottom:1.2rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;flex-wrap:wrap;gap:.5rem">
+          <div style="display:flex;align-items:center;gap:.6rem">
+            <span style="font-size:.72rem;color:#64748b;font-weight:600;letter-spacing:.04em">✦ INSIGHTS IA — RISCOS FUTUROS</span>
+            <span id="insights-janela-label" style="font-size:.65rem;color:#475569;background:rgba(255,255,255,.06);padding:.15rem .5rem;border-radius:10px">Próximos 6 meses</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:.4rem">
+            <span style="font-size:.65rem;color:#64748b">Janela:</span>
+            <button onclick="setInsightsJanela(3)"  id="btn-ins-3"  style="font-size:.65rem;padding:.2rem .55rem;border-radius:12px;border:1px solid #334155;background:transparent;color:#64748b;cursor:pointer;font-family:Outfit">3m</button>
+            <button onclick="setInsightsJanela(6)"  id="btn-ins-6"  style="font-size:.65rem;padding:.2rem .55rem;border-radius:12px;border:1px solid #4f9cf9;background:rgba(79,156,249,.15);color:#4f9cf9;cursor:pointer;font-family:Outfit">6m</button>
+            <button onclick="setInsightsJanela(12)" id="btn-ins-12" style="font-size:.65rem;padding:.2rem .55rem;border-radius:12px;border:1px solid #334155;background:transparent;color:#64748b;cursor:pointer;font-family:Outfit">12m</button>
+            <button onclick="gerarInsights()" id="btn-ins-refresh" style="font-size:.65rem;padding:.2rem .6rem;border-radius:12px;border:1px solid #34d399;background:rgba(52,211,153,.1);color:#34d399;cursor:pointer;font-family:Outfit">↺ Atualizar</button>
+          </div>
+        </div>
+        <div id="insights-content" style="min-height:80px;display:flex;align-items:center;justify-content:center">
+          <span style="color:#475569;font-size:.75rem">Carregando insights...</span>
+        </div>
+      </div>
+
       <div class="kr kr4 mb2" id="kpis-riscos"></div>
       <!-- Filtro de origem das curvas -->
       <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap">
@@ -2350,6 +2372,177 @@ function getAgingPag(r){
   return AGING_NAT_PAG[getNatKey(r.nat)]||673;
 }
 
+// ── Insights IA ─────────────────────────────────────────────────────────────
+let INSIGHTS_JANELA = 6; // meses padrão
+let _insightsCtx = null; // dados calculados pelo último bRiscos()
+
+function setInsightsJanela(m){
+  INSIGHTS_JANELA = m;
+  ['3','6','12'].forEach(v=>{
+    const btn=document.getElementById('btn-ins-'+v);
+    if(!btn)return;
+    const ativo=String(m)===v;
+    btn.style.borderColor=ativo?'#4f9cf9':'#334155';
+    btn.style.background=ativo?'rgba(79,156,249,.15)':'transparent';
+    btn.style.color=ativo?'#4f9cf9':'#64748b';
+  });
+  const lbl=document.getElementById('insights-janela-label');
+  if(lbl) lbl.textContent=`Próximos ${m} meses`;
+  gerarInsights();
+}
+
+async function gerarInsights(){
+  const el=document.getElementById('insights-content');
+  if(!el) return;
+  if(!_insightsCtx){
+    el.innerHTML='<span style="color:#475569;font-size:.75rem">Carregue os dados para gerar insights.</span>';
+    return;
+  }
+  el.innerHTML='<div style="display:flex;align-items:center;gap:.6rem;color:#475569;font-size:.75rem"><span style="animation:spin 1s linear infinite;display:inline-block">⟳</span> Analisando dados com IA...</div>';
+
+  const ctx = _insightsCtx;
+  const jan = INSIGHTS_JANELA;
+
+  // Calcular dados para o prompt
+  const hoje = new Date();
+  const fmtYM = d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  const mesesJan = [];
+  for(let m=0;m<jan;m++){
+    const d=new Date(hoje.getFullYear(),hoje.getMonth()+m,1);
+    mesesJan.push(fmtYM(d));
+  }
+
+  // Risco nos próximos N meses (provisão)
+  const riscoJanProv = mesesJan.reduce((s,m)=>{
+    const v2026 = ctx.provFinMes[m]||0;
+    const vPoss = ctx.provFinMesPoss[m]||0;
+    return s+v2026+vPoss;
+  },0);
+
+  // Risco pagamento nos próximos N meses
+  const riscoJanPag = mesesJan.reduce((s,m)=>{
+    const v2026 = ctx.pagFinMes[m]||0;
+    const vPoss = ctx.pagFinMesPoss[m]||0;
+    return s+v2026+vPoss;
+  },0);
+
+  // Mês de pico de provisão
+  let picoMes='',picoVal=0;
+  mesesJan.forEach(m=>{
+    const v=(ctx.provFinMes[m]||0)+(ctx.provFinMesPoss[m]||0);
+    if(v>picoVal){picoVal=v;picoMes=m;}
+  });
+  const fmtM=ym=>{if(!ym)return'';const[y,mo]=ym.split('-');const ns=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];return ns[+mo]+'/'+y.slice(2);};
+  const picoLabel=fmtM(picoMes);
+
+  // Temas mais ofensores (provisão, janela N meses)
+  const temaRisco={};
+  mesesJan.forEach(m=>{
+    [...(ctx.provMesProcs[m]||[]),...(ctx.provMesProcsPoss[m]||[])].forEach(p=>{
+      if(!p.tema)return;
+      temaRisco[p.tema]=(temaRisco[p.tema]||0)+(p.med||0);
+    });
+  });
+  const temasOrdenados=Object.entries(temaRisco).sort((a,b)=>b[1]-a[1]);
+  const top3Temas=temasOrdenados.slice(0,3).map(([t,v])=>({tema:t,valor:v}));
+
+  // Risco de terceiros vs próprios
+  const totalProcs=[
+    ...mesesJan.flatMap(m=>[...(ctx.provMesProcs[m]||[]),...(ctx.provMesProcsPoss[m]||[])])
+  ];
+  const totalRiscoTotal=totalProcs.reduce((s,p)=>s+(p.med||0),0);
+
+  // Processos possíveis virando prováveis nos próximos 90 dias
+  const em90d = (ctx.possNoPrazo||[]).filter(r=>r.diasRestantes<=90);
+  const riscoEm90d = em90d.reduce((s,r)=>s+(r.med||0),0);
+
+  // Alertas (aging estourado)
+  const totalAlerta = ctx.totalAlertaProc||0;
+  const riscoAlerta = ctx.totalAlertaRisco||0;
+  const temaAlertaTop = ctx.temaAlertaTop||'';
+
+  // Filtros ativos
+  const filtrosAtivos = [];
+  if(GF.nat.length) filtrosAtivos.push('Natureza: '+GF.nat.join(', '));
+  if(GF.tp.length)  filtrosAtivos.push('Tipo: '+GF.tp.join(', '));
+
+  const fBRL=v=>v.toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+
+  const prompt = `Você é um especialista em gestão de risco jurídico e orçamento de contingências. 
+Analise os dados abaixo e gere de 4 a 5 insights executivos concisos para a diretoria jurídica de uma empresa de telecom.
+
+DADOS — Janela de ${jan} meses (a partir de hoje):
+- Risco de provisão projetado: ${fBRL(riscoJanProv)}
+- Risco de pagamento projetado: ${fBRL(riscoJanPag)}
+- Mês de maior concentração de risco: ${picoLabel} (${fBRL(picoVal)})
+- Top 3 temas por risco de provisão: ${top3Temas.map((t,i)=>`${i+1}. ${t.tema} (${fBRL(t.valor)})`).join(' | ')}
+- Processos possíveis que devem virar prováveis nos próximos 90 dias: ${em90d.length} processos, risco: ${fBRL(riscoEm90d)}
+- Processos em alerta (aging já estourado): ${totalAlerta} processos, risco: ${fBRL(riscoAlerta)}, tema líder: ${temaAlertaTop}
+${filtrosAtivos.length?'- Filtros ativos: '+filtrosAtivos.join(' | '):'- Sem filtros ativos (visão geral)'}
+
+CONTEXTO:
+- Horas Extras e Jornada → área responsável: RH (controle de ponto, banco de horas)
+- Responsabilidade Subsidiária → Jurídico/Compras (contratos de terceiros, SLA, fiscalização)
+- Vínculo Empregatício → RH/Jurídico Trabalhista (gestão de prestadores)
+- Rescisão Indireta → RH/Gestão de Pessoas (clima organizacional, condições de trabalho)
+- Falha na Prestação do Serviço → Operações/Qualidade (atendimento, SLA)
+- Contratação Fraudulenta → Compliance/Jurídico (due diligence, controles)
+- FGTS/Verbas Salariais → RH/Folha (revisão de cálculos, auditorias)
+
+INSTRUÇÕES:
+- Gere exatamente 4 ou 5 insights em formato JSON
+- Cada insight deve ter: "nivel" (CRITICO, ALTO, MEDIO, INFO), "titulo" (máx 6 palavras), "texto" (2-3 frases executivas, concisas, com dados numéricos), "acao" (recomendação de 1 frase sobre área ou ação)
+- Tom executivo, direto, sem jargão excessivo
+- Responda APENAS com o JSON, sem texto adicional, sem markdown, sem blocos de código
+- Formato: [{"nivel":"...","titulo":"...","texto":"...","acao":"..."},...]`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const data = await resp.json();
+    const raw = data.content?.filter(b=>b.type==='text').map(b=>b.text).join('').trim();
+    if(!raw) throw new Error('Resposta vazia da API');
+
+    // Parse seguro — remover possíveis backticks
+    const clean = raw.replace(/```json|```/g,'').trim();
+    const insights = JSON.parse(clean);
+
+    const nivelCfg={
+      CRITICO:{cor:'#f87171',bg:'rgba(248,113,113,.08)',borda:'rgba(248,113,113,.25)',icone:'🔴'},
+      ALTO:   {cor:'#fb923c',bg:'rgba(251,146,60,.08)', borda:'rgba(251,146,60,.25)', icone:'🟠'},
+      MEDIO:  {cor:'#fbbf24',bg:'rgba(251,191,36,.08)', borda:'rgba(251,191,36,.25)', icone:'🟡'},
+      INFO:   {cor:'#34d399',bg:'rgba(52,211,153,.08)', borda:'rgba(52,211,153,.25)', icone:'🟢'},
+    };
+
+    el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.7rem;width:100%">`+
+      insights.map(ins=>{
+        const cfg=nivelCfg[ins.nivel]||nivelCfg.INFO;
+        return`<div style="background:${cfg.bg};border:1px solid ${cfg.borda};border-radius:10px;padding:.8rem 1rem;display:flex;flex-direction:column;gap:.35rem">
+          <div style="display:flex;align-items:center;gap:.4rem">
+            <span style="font-size:.75rem">${cfg.icone}</span>
+            <span style="font-size:.72rem;font-weight:700;color:${cfg.cor};letter-spacing:.02em;text-transform:uppercase">${ins.titulo}</span>
+          </div>
+          <div style="font-size:.71rem;color:#cbd5e1;line-height:1.55">${ins.texto}</div>
+          <div style="font-size:.67rem;color:#64748b;border-top:1px solid rgba(255,255,255,.06);padding-top:.3rem;margin-top:.1rem">
+            <span style="color:#94a3b8;font-weight:600">↳ </span>${ins.acao}
+          </div>
+        </div>`;
+      }).join('')+`</div>
+      <div style="font-size:.6rem;color:#334155;margin-top:.4rem;text-align:right">Gerado por Claude · Dados: ${new Date().toLocaleString('pt-BR')}</div>`;
+
+  } catch(err) {
+    el.innerHTML=`<div style="color:#f87171;font-size:.72rem;padding:.5rem">Erro ao gerar insights: ${err.message}</div>`;
+    console.error('[Insights]', err);
+  }
+}
+
 function toggleCurvaFiltro(tipo){
   GF_CURVA[tipo]=!GF_CURVA[tipo];
   // Estilo dos botões
@@ -2560,6 +2753,19 @@ function bRiscos(){
   const riscoTotal=riscoTotal2026+riscoPoss;
   const elRisco=document.getElementById('kpis-riscos');
   if(elRisco){const kpis=elRisco.querySelectorAll('.kv');if(kpis[1])kpis[1].textContent=fSh(riscoTotal);}
+
+  // Salvar contexto para os insights — inclui todos os mapas calculados
+  const alertasCtx=Object.entries(ALERTA_TEMA||{}).sort((a,b)=>b[1].contig-a[1].contig);
+  _insightsCtx={
+    provFinMes, pagFinMes, provFinMesPoss, pagFinMesPoss,
+    provMesProcs, pagMesProcs, provMesProcsPoss, pagMesProcsPoss,
+    possNoPrazo,
+    totalAlertaProc: alertasCtx.reduce((s,[,d])=>s+d.cnt,0),
+    totalAlertaRisco: alertasCtx.reduce((s,[,d])=>s+d.contig,0),
+    temaAlertaTop: alertasCtx[0]?.[0]||'',
+  };
+  // Gerar insights após primeiro carregamento (apenas se dados foram recalculados)
+  gerarInsights();
 
   // ── Gráficos consolidados com filtro GF_CURVA ────────────────────────────
   ['c-riscos-prov','c-riscos-pag'].forEach(id=>{if(CH[id]){CH[id].destroy();delete CH[id];}});
