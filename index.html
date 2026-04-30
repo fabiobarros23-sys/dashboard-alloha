@@ -386,13 +386,13 @@ tbody tr:hover td{background:var(--s0)}
     <div style="overflow-x:auto">
       <table class="hm-table" id="tbl-area-procs" style="width:100%;font-size:.68rem;table-layout:fixed">
         <colgroup>
-          <col style="width:2rem"><col style="width:4.5rem"><col style="width:13rem">
-          <col style="width:3rem"><col style="width:8rem"><col style="width:5.5rem">
-          <col style="width:5rem"><col style="width:7.5rem">
+          <col style="width:2rem"><col style="width:4.5rem"><col style="width:12rem">
+          <col style="width:3rem"><col style="width:7.5rem"><col style="width:9rem">
+          <col style="width:4rem"><col style="width:7.5rem">
         </colgroup>
         <thead><tr>
           <th>#</th><th style="text-align:left">Risco</th><th style="text-align:left">Nº Processo</th>
-          <th>Nat.</th><th style="text-align:left">Tema</th><th>Fase</th>
+          <th>Nat.</th><th style="text-align:left">Tema</th><th style="text-align:left">Fase</th>
           <th>Tipo</th><th>Contingência</th>
         </tr></thead>
         <tbody id="tbl-area-procs-body"></tbody>
@@ -2920,7 +2920,14 @@ function renderAreasResultado(){
   const faseMap={};
   base.forEach(r=>{if(r.numero) faseMap[r.numero]=r.fase||'';});
   // Adaptar para renderAreasCards: mapear r.valor → r.contigPos; buscar fase da base_geral
-  const adicoesMapped=adicoes.map(r=>({
+  // Deduplicar por procNum — manter apenas o registro de maior valor por processo
+  // (Base_mes pode ter múltiplas linhas para o mesmo processo com réus diferentes)
+  const dedupMap={};
+  adicoes.forEach(r=>{
+    const k=r.procNum||Math.random().toString();
+    if(!dedupMap[k]||r.valor>(dedupMap[k].valor||0)) dedupMap[k]=r;
+  });
+  const adicoesMapped=Object.values(dedupMap).map(r=>({
     ...r,
     numero:r.procNum||'',
     risco:'ADIÇÃO',
@@ -2941,7 +2948,13 @@ function renderAreasResultado(){
 function renderAreasEstoque(){
   const {ativos}=getFD();
   const filtrados=_areaFiltroRisco==='todos'?ativos:ativos.filter(r=>r.risco===_areaFiltroRisco);
-  renderAreasCards(filtrados,'areas-estoque-content','estoque');
+  // Deduplicar por numero — manter o de maior contigPos por processo
+  const dedupEst={};
+  filtrados.forEach(r=>{
+    const k=r.numero||Math.random().toString();
+    if(!dedupEst[k]||(r.contigPos||0)>(dedupEst[k].contigPos||0)) dedupEst[k]=r;
+  });
+  renderAreasCards(Object.values(dedupEst),'areas-estoque-content','estoque');
 }
 
 function openModalArea(areaEnc,contexto){
