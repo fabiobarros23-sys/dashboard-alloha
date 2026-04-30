@@ -3312,14 +3312,15 @@ function bRiscos(){
   if(elRisco){const kpis=elRisco.querySelectorAll('.kv');if(kpis[1])kpis[1].textContent=fSh(riscoTotal);}
 
   // Salvar contexto para os insights — inclui todos os mapas calculados
-  const alertasCtx=Object.entries(ALERTA_TEMA||{}).sort((a,b)=>b[1].contig-a[1].contig);
+  // Usar alertasCalc para o contexto de insights (já calculado acima, sensível ao cenário)
+  const alertasCtxArr=Object.entries(window._alertasCalc||ALERTA_TEMA||{});
   _insightsCtx={
     provFinMes, pagFinMes, provFinMesPoss, pagFinMesPoss,
     provMesProcs, pagMesProcs, provMesProcsPoss, pagMesProcsPoss,
     possNoPrazo,
-    totalAlertaProc: alertasCtx.reduce((s,[,d])=>s+d.cnt,0),
-    totalAlertaRisco: alertasCtx.reduce((s,[,d])=>s+d.contig,0),
-    temaAlertaTop: alertasCtx[0]?.[0]||'',
+    totalAlertaProc: alertasCtxArr.reduce((s,[,d])=>s+d.cnt,0),
+    totalAlertaRisco: alertasCtxArr.reduce((s,[,d])=>s+(d.riscoCalc||d.contig||0),0),
+    temaAlertaTop: alertasCtxArr.sort((a,b)=>(b[1].riscoCalc||b[1].contig||0)-(a[1].riscoCalc||a[1].contig||0))[0]?.[0]||'',
   };
   // Gerar insights após primeiro carregamento (apenas se dados foram recalculados)
   gerarInsights();
@@ -3431,10 +3432,11 @@ function bRiscos(){
 
   // Tabela por tema
   // Agrupar temas com < 5 entrantes como OUTROS
+  // Para getEstimador, precisamos da nat — buscar também em possNoPrazo
+  const allThemeProcs=[...dist2026prov,...possNoPrazo];
   const rowsRaw=Object.entries(porTema).map(([tema,d])=>{
     const ag=AGING_TEMA[tema];
-    // Inferir natureza predominante dos entrantes deste tema
-    const natSample=dist2026prov.filter(r=>r.tema===tema)[0]?.nat||'TRABALHISTA';
+    const natSample=allThemeProcs.filter(r=>r.tema===tema)[0]?.nat||'TRABALHISTA';
     const natKey=getNatKey(natSample);
     const provVal=ag?.prov||(AGING_NAT_PROV[natKey]||333);
     const pagVal=ag?.pag||(AGING_NAT_PAG[natKey]||673);
@@ -3481,35 +3483,46 @@ function bRiscos(){
     </tr>`;}).join('');
 
   // ── Bloco Possíveis em Alerta ──
-  const alertas=Object.entries(ALERTA_TEMA).sort((a,b)=>b[1].contig-a[1].contig);
-  const totalAlertaProc=alertas.reduce((s,[,d])=>s+d.cnt,0);
-  const totalAlertaRisco=alertas.reduce((s,[,d])=>s+d.contig,0);
-  const alertaUrgente=alertas.filter(([,d])=>d.excesso>180).length;
+  // Recalcular risco por tema usando getEstimador (sensível ao cenário)
+  const alertasCalc=Object.entries(ALERTA_TEMA).map(([tema,d])=>{
+    // Buscar nat predominante dos processos em alerta deste tema
+    const alertaProcsDoTema=ALERTA_PROCS.filter(p=>p.tema===tema);
+    const natSampleA=alertaProcsDoTema[0]?.nat||'TRABALHISTA';
+    const riscoCalc=CENARIO==='contigpos'
+      ? alertaProcsDoTema.reduce((s,p)=>s+(p.contig>0?p.contig:getMedTema({tema:p.tema,nat:p.nat})),0)
+      : d.cnt * getEstimador({tema,nat:natSampleA});
+    return [tema,{...d, riscoCalc}];
+  }).sort((a,b)=>b[1].riscoCalc-a[1].riscoCalc);
+
+  const totalAlertaProc=alertasCalc.reduce((s,[,d])=>s+d.cnt,0);
+  const totalAlertaRisco=alertasCalc.reduce((s,[,d])=>s+d.riscoCalc,0);
+  const alertaUrgente=alertasCalc.filter(([,d])=>d.excesso>180).length;
+  // Guardar para openModalAlerta usar o valor calculado
+  window._alertasCalc=Object.fromEntries(alertasCalc);
+
   document.getElementById('kpis-alerta').innerHTML=
     `<div onclick="openModalAlerta('todos')" style="cursor:pointer">`+kpi('Processos em Alerta',totalAlertaProc.toLocaleString('pt-BR'),'Clique para ver a lista completa','#f87171')+`</div>`+
-    `<div onclick="openModalAlerta('todos')" style="cursor:pointer">`+kpi('Risco de Escalada',fSh(totalAlertaRisco),'Contingência potencial de reclassificação','#fb923c')+`</div>`+
+    `<div onclick="openModalAlerta('todos')" style="cursor:pointer">`+kpi('Risco de Escalada',fSh(totalAlertaRisco),'Contingência potencial de reclassificação — cenário: '+CENARIO,'#fb923c')+`</div>`+
     `<div onclick="openModalAlerta('urgente')" style="cursor:pointer">`+kpi('Urgência Alta (>180d)',alertaUrgente,'Clique para ver os temas críticos','#fbbf24')+`</div>`+
-    `<div>`+kpi('Temas Afetados',alertas.length.toLocaleString('pt-BR'),'Temas com processos em alerta','#a78bfa')+`</div>`;
+    `<div>`+kpi('Temas Afetados',alertasCalc.length.toLocaleString('pt-BR'),'Temas com processos em alerta','#a78bfa')+`</div>`;
 
-  // Gráfico risco por tema
-  const top8a=alertas.slice(0,8);
-  barH('c-alerta-tema',top8a.map(([t,d])=>[t.length>30?t.slice(0,29)+'…':t,isV?d.cnt:d.contig]),!isV,'rgba(248,113,113,.65)');
+  // Gráfico risco por tema — usa riscoCalc
+  const top8a=alertasCalc.slice(0,8);
+  barH('c-alerta-tema',top8a.map(([t,d])=>[t.length>30?t.slice(0,29)+'…':t,isV?d.cnt:d.riscoCalc]),!isV,'rgba(248,113,113,.65)');
 
   // Gráfico excesso de aging
-  // Excesso de aging ordenado por risco financeiro (maior→menor)
-  // Excesso: top 8 por risco financeiro, ordenados por excesso de dias (maior→menor)
-  const top8aByRisco=[...alertas].sort((a,b)=>b[1].contig-a[1].contig).slice(0,8);
+  const top8aByRisco=[...alertasCalc].sort((a,b)=>b[1].riscoCalc-a[1].riscoCalc).slice(0,8);
   const top8aOrdenado=[...top8aByRisco].sort((a,b)=>b[1].excesso-a[1].excesso);
   barH('c-alerta-excesso',top8aOrdenado.map(([t,d])=>[t.length>30?t.slice(0,29)+'…':t,d.excesso]),false,'rgba(251,191,36,.65)');
 
-  // Tabela detalhada
+  // Tabela detalhada — usa riscoCalc
   const urgLabel=e=>e>365?'🔴 Crítico':e>180?'🟠 Alto':e>90?'🟡 Médio':'🟢 Baixo';
-  document.getElementById('tbl-alerta-body').innerHTML=alertas.map(([tema,d])=>{
+  document.getElementById('tbl-alerta-body').innerHTML=alertasCalc.map(([tema,d])=>{
     const temaEnc=tema.replace(/'/g,"\'");
     return`<tr onclick="openModalAlerta('${temaEnc}')" style="cursor:pointer" title="Clique para ver os processos deste tema">
       <td style="text-align:left;font-weight:600;color:#e2e8f0">${tema}</td>
       <td style="color:#4f9cf9">${d.cnt}</td>
-      <td style="color:#f87171;font-weight:600">${fSh(d.contig)}</td>
+      <td style="color:#f87171;font-weight:600">${fSh(d.riscoCalc)}</td>
       <td>${d.aging_med}d (${Math.round(d.aging_med/30)} meses)</td>
       <td style="color:#fbbf24;font-weight:600">${d.excesso}d acima</td>
       <td style="color:#94a3b8">${d.top_fase||'—'}</td>
@@ -3622,19 +3635,33 @@ function openModalAlerta(filtro){
     :filtro==='urgente'?`Temas com Urgência Alta — Excesso >180 dias (${sorted.length} processos)`
     :`${filtro} — ${sorted.length} processos`;
   document.getElementById('modal-alerta-title').textContent=titulo;
-  const riscoTotal=sorted.reduce((s,p)=>s+p.med,0);
-  document.getElementById('modal-alerta-sub').textContent=`Risco total projetado: ${fSh(riscoTotal)} · Ordenado por contingência possível`;
+  // Risco projetado sensível ao cenário
+  const getEstimadorAlerta=p=>{
+    if(CENARIO==='contigpos') return p.contig>0?p.contig:p.med;
+    // Para os outros cenários, usar _alertasCalc se disponível (cenário aplicado por tema)
+    const ac=window._alertasCalc&&window._alertasCalc[p.tema];
+    if(!ac) return p.med;
+    if(CENARIO==='base') return getMedTema({tema:p.tema,nat:p.nat})||p.med;
+    // P75 e média aparada: usar o valor por processo proporcional ao tema
+    // riscoCalc/cnt é o estimador médio por processo neste tema
+    return ac.cnt>0?(ac.riscoCalc/ac.cnt):p.med;
+  };
+  const riscoTotal=sorted.reduce((s,p)=>s+getEstimadorAlerta(p),0);
+  const cenNomes={base:'Mediana',conservador:'P75',estressado:'Média Aparada',contigpos:'Contig. Possível'};
+  document.getElementById('modal-alerta-sub').textContent=`Risco projetado (${cenNomes[CENARIO]||'Mediana'}): ${fSh(riscoTotal)} · Ordenado por contingência possível`;
   const urgLabel=e=>e>365?'🔴':e>180?'🟠':e>90?'🟡':'🟢';
-  document.getElementById('tbl-modal-alerta-body').innerHTML=sorted.map((p,i)=>`<tr>
+  document.getElementById('tbl-modal-alerta-body').innerHTML=sorted.map((p,i)=>{
+    const riscoProc=getEstimadorAlerta(p);
+    return`<tr>
     <td style="color:#64748b">${i+1}</td>
     <td style="font-family:monospace;font-size:.65rem;color:#94a3b8">${p.proc}</td>
     <td><span style="font-size:.63rem;padding:.15rem .4rem;border-radius:4px;background:${p.nat==='TRABALHISTA'?'rgba(167,139,250,.2)':'rgba(79,156,249,.2)'};color:${p.nat==='TRABALHISTA'?'#a78bfa':'#4f9cf9'}">${p.nat==='TRABALHISTA'?'TRAB':'CÍVEL'}</span></td>
     <td style="text-align:left;color:#e2e8f0;font-size:.68rem">${p.tema}</td>
     <td style="color:#fb923c;font-weight:600" data-val="${p.contig}">${p.contig.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-    <td style="color:#f87171;font-weight:700" data-val="${p.med}">${p.med.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+    <td style="color:#f87171;font-weight:700" data-val="${riscoProc}">${riscoProc.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
     <td style="color:#64748b;font-size:.66rem">${p.fase||'—'}</td>
     <td style="color:#fbbf24">${urgLabel(p.excesso)} ${p.excesso}d</td>
-  </tr>`).join('');
+  </tr>`;}).join('');
   const modal=document.getElementById('modal-alerta');
   modal.style.display='flex';
   modal.onclick=e=>{if(e.target===modal)closeModalAlerta();};
