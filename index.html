@@ -977,7 +977,7 @@ tbody tr:hover td{background:var(--s0)}
         <div class="cdb npt"><div class="cw" style="height:280px"><canvas id="c-riscos-pag"></canvas></div></div>
       </div>
       <div class="cd mb">
-        <div class="cdh"><div><div class="cdt">Tabela de Aging por Tema</div><div class="cds">Possíveis ativos (Distr. 2026 + anos anteriores no prazo) · Mediana de dias até provisão e pagamento</div></div></div>
+        <div class="cdh"><div><div class="cdt">Tabela de Aging por Tema</div><div class="cds" id="sub-aging-tema">Possíveis ativos (Distr. 2026 + anos anteriores no prazo) · Mediana de dias até provisão e pagamento</div></div></div>
         <div class="cdb" style="overflow-x:auto"><table class="hm-table" id="tbl-riscos" style="min-width:100%;font-size:.72rem">
           <thead><tr><th style="text-align:left">Tema</th><th>Processos no Prazo</th><th>Risco Projetado</th><th>Aging → Provisão</th><th>Previsão Provisão</th><th>Aging → Pagamento</th><th>Previsão Pagamento</th></tr></thead>
           <tbody id="tbl-riscos-body"></tbody>
@@ -3446,6 +3446,13 @@ function bRiscos(){
   const outrosCnt=rowsOther.reduce((s,r)=>s+r.cnt,0);
   const rows=[...rowsMain,...(outrosCnt>0?[{tema:'OUTROS',cnt:outrosCnt,prov:null,pag:null,isOther:true}]:[])];
 
+  // Atualizar subtítulo da tabela com cenário ativo
+  const subAging=document.getElementById('sub-aging-tema');
+  if(subAging){
+    const cenNomes={base:'Mediana',conservador:'P75 — Conservador',estressado:'Média Aparada — Estressado',contigpos:'Contingência Possível'};
+    subAging.textContent=`Possíveis ativos (Distr. 2026 + anos anteriores no prazo) · Risco Projetado: ${cenNomes[CENARIO]||'Mediana'} · Aging: mediana histórica`;
+  }
+
   const addMeses=(dias)=>{
     if(!dias)return'—';
     const d=new Date();d.setDate(d.getDate()+dias);
@@ -3458,11 +3465,11 @@ function bRiscos(){
       <td style="color:#64748b">${r.cnt}</td>
       <td colspan="5" style="color:#64748b;font-size:.65rem">Temas com &lt;5 entrantes — valores individuais omitidos</td>
     </tr>`;
-    const med=MEDIANA_TEMA[r.tema]||0;
-    const medNat=r.nat==='TRABALHISTA'?MEDIANA_NAT.TRABALHISTA:MEDIANA_NAT['CÍVEL'];
-    const medUsada=med>0?med:medNat;
-    const isFallback=med===0;
-    const riscoProj=fSh(r.cnt*medUsada)+(isFallback?' *':'');
+    // Risco projetado sensível ao cenário ativo
+    const medUsada=getEstimador({tema:r.tema,nat:r.nat});
+    const isFallback=!MEDIANA_TEMA[r.tema]||(CENARIO==='conservador'&&!(estPorTema[r.tema+'||'+r.nat]?.p75))||(CENARIO==='estressado'&&!(estPorTema[r.tema+'||'+r.nat]?.mediaAparada))||(CENARIO==='contigpos'&&!(MEDIANA_TEMA[r.tema]));
+    const cenarioLabel=CENARIO==='base'?'mediana':CENARIO==='conservador'?'P75':CENARIO==='estressado'?'média aparada':'contig. possível';
+    const riscoProj=fSh(r.cnt*medUsada);
     return`<tr>
       <td style="text-align:left;font-weight:600;color:#e2e8f0">${r.tema}</td>
       <td style="color:#4f9cf9;font-weight:700">${r.cnt}</td>
