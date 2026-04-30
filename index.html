@@ -961,6 +961,11 @@ tbody tr:hover td{background:var(--s0)}
           title="Média aparada dos prováveis históricos — visão estressada">
           🔴 Estressado (Média Aparada)
         </button>
+        <button id="btn-cen-contigpos" onclick="setCenario('contigpos')"
+          style="padding:.3rem .85rem;border-radius:20px;border:1.5px solid #334155;background:transparent;color:#64748b;font-size:.72rem;font-family:Outfit;font-weight:600;cursor:pointer;transition:all .2s"
+          title="Usa o valor real do campo Contingência Possível de cada processo — fallback mediana quando não preenchido">
+          🟣 Contingência Possível
+        </button>
         <span id="cenario-label" style="font-size:.67rem;color:#475569;margin-left:.2rem;font-style:italic">Estimativa central baseada na mediana histórica por tema</span>
       </div>
       <div class="cd mb2">
@@ -1147,7 +1152,7 @@ const AGING_TEMA={"CONTRATAÇÃO FRAUDULENTA": {"prov": 178, "pag": 337}, "VERBA
 // ═══════════════════════════════════════════════════════
 let D=null, CH={}, GF={nat:[],st:[],tp:[],rk:[],comp:[]}, VIEW='vol', PRES=false;
 let GF_CURVA={ent2026:false,poss:false}; // false=não filtrado (mostra tudo consolidado)
-let CENARIO='base'; // 'base' | 'conservador' | 'estressado'
+let CENARIO='base'; // 'base' | 'conservador' | 'estressado' | 'contigpos'
 const SK='alloha_v6';
 const MONTHS_PT={janeiro:'01',fevereiro:'02',março:'03',abril:'04',maio:'05',junho:'06',julho:'07',agosto:'08',setembro:'09',outubro:'10',novembro:'11',dezembro:'12'};
 
@@ -2712,7 +2717,7 @@ function openModalReclassif(){
   // Mostrar apenas os que têm reclassificação iminente (≤90 dias)
   const procs=[..._insightsCtx.possNoPrazo]
     .filter(r=>r.diasRestantes<=90)
-    .sort((a,b)=>a.diasRestantes-b.diasRestantes);
+    .sort((a,b)=>(b.contig||0)-(a.contig||0));
   const em30=procs.filter(r=>r.diasRestantes<=30).length;
   const em90=procs.filter(r=>r.diasRestantes<=90).length;
   const total=procs.length;
@@ -2908,15 +2913,19 @@ function renderAreasCards(procs, elId, contexto){
 }
 
 function renderAreasResultado(){
-  const {mes}=getFD();
+  const {mes,base}=getFD();
   // Usar diretamente Base_mes — adições do mês com valor de provisão (r.valor = Total Geral)
   const adicoes=mes.filter(r=>r.sit==='Adição'&&r.valor>0);
-  // Adaptar para renderAreasCards: mapear r.valor → r.contigPos para reuso da função
+  // Construir mapa de fase a partir da Base_geral (cruzamento por número de processo)
+  const faseMap={};
+  base.forEach(r=>{if(r.numero) faseMap[r.numero]=r.fase||'';});
+  // Adaptar para renderAreasCards: mapear r.valor → r.contigPos; buscar fase da base_geral
   const adicoesMapped=adicoes.map(r=>({
     ...r,
     numero:r.procNum||'',
     risco:'ADIÇÃO',
     contigPos:r.valor,
+    fase:faseMap[r.procNum||'']||'—',
     st:'ATIVO',
   }));
   // Salvar para o drill-down
@@ -3002,6 +3011,7 @@ function setCenario(c){
     base:        {id:'btn-cen-base',        cor:'#4f9cf9', bg:'rgba(79,156,249,.15)',  label:'Estimativa central baseada na mediana histórica por tema'},
     conservador: {id:'btn-cen-conservador', cor:'#fbbf24', bg:'rgba(251,191,36,.12)', label:'Visão conservadora — Percentil 75 dos prováveis históricos'},
     estressado:  {id:'btn-cen-estressado',  cor:'#f87171', bg:'rgba(248,113,113,.1)', label:'Visão estressada — Média aparada dos prováveis históricos (sem outliers extremos)'},
+    contigpos:   {id:'btn-cen-contigpos',   cor:'#a78bfa', bg:'rgba(167,139,250,.15)',label:'Contingência Possível real de cada processo — fallback mediana quando não preenchido'},
   };
   Object.entries(cfgs).forEach(([k,cfg])=>{
     const btn=document.getElementById(cfg.id);if(!btn)return;
@@ -3122,6 +3132,11 @@ function bRiscos(){
     }
     if(CENARIO==='estressado'){
       return est?.mediaAparada||estNat?.mediaAparada||estGeral.mediaAparada||getMedTema({tema:r.tema||r.tema,nat:r.nat||r.nat});
+    }
+    if(CENARIO==='contigpos'){
+      // Usa o valor real de contigPos quando preenchido; fallback para mediana
+      const contig=r.contigPos||r.contig||0;
+      return contig>0?contig:getMedTema({tema:r.tema||r.tema,nat:r.nat||r.nat});
     }
     // base: mediana (padrão)
     return getMedTema({tema:r.tema||r.tema,nat:r.nat||r.nat});
