@@ -127,6 +127,19 @@ body{font-family:'Outfit',sans-serif;background:var(--ink);color:#e2e8f0;min-hei
 .tb-badge .dot{width:5px;height:5px;border-radius:50%;background:var(--em);animation:pulse 2.5s ease infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.cen-tooltip-wrap{position:relative;display:inline-block}
+.cen-tooltip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
+  background:#0d1b3e;border:1px solid rgba(79,156,249,.3);border-radius:10px;
+  padding:.7rem .9rem;width:260px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.5);
+  font-family:'Outfit',sans-serif;font-size:.68rem;color:#cbd5e1;line-height:1.55;
+  pointer-events:none}
+.cen-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:6px solid transparent;border-top-color:#0d1b3e}
+.cen-tooltip-title{font-weight:700;font-size:.72rem;margin-bottom:.35rem}
+.cen-tooltip-formula{background:rgba(255,255,255,.06);border-radius:6px;
+  padding:.3rem .5rem;margin:.35rem 0;font-family:monospace;font-size:.63rem;color:#a78bfa}
+.cen-tooltip-note{font-size:.62rem;color:#64748b;margin-top:.3rem}
+.cen-tooltip-wrap:hover .cen-tooltip{display:block}
 .tb-date{font-size:.65rem;color:var(--sld);font-family:'JetBrains Mono',monospace}
 /* GLOBAL FILTER BAR */
 .gfb{display:flex;align-items:center;gap:.55rem;padding:.45rem 1.6rem;border-bottom:1px solid var(--bd);flex-wrap:wrap;background:rgba(13,17,23,.92)}
@@ -164,6 +177,19 @@ body.pres-mode .gfb{display:none}
 body.pres-mode .tb-brand-stripe{height:4px}
 body.pres-mode .kpi{border-color:rgba(65,239,105,.25)}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.cen-tooltip-wrap{position:relative;display:inline-block}
+.cen-tooltip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
+  background:#0d1b3e;border:1px solid rgba(79,156,249,.3);border-radius:10px;
+  padding:.7rem .9rem;width:260px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.5);
+  font-family:'Outfit',sans-serif;font-size:.68rem;color:#cbd5e1;line-height:1.55;
+  pointer-events:none}
+.cen-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:6px solid transparent;border-top-color:#0d1b3e}
+.cen-tooltip-title{font-weight:700;font-size:.72rem;margin-bottom:.35rem}
+.cen-tooltip-formula{background:rgba(255,255,255,.06);border-radius:6px;
+  padding:.3rem .5rem;margin:.35rem 0;font-family:monospace;font-size:.63rem;color:#a78bfa}
+.cen-tooltip-note{font-size:.62rem;color:#64748b;margin-top:.3rem}
+.cen-tooltip-wrap:hover .cen-tooltip{display:block}
 body.pres-mode .ins{border-width:1.5px}
 /* Local filter bar for Indenizações */
 .pag-fbar{display:flex;align-items:center;gap:.5rem;margin-bottom:1rem;padding:.5rem .85rem;background:rgba(65,239,105,.04);border:1px solid rgba(65,239,105,.15);border-radius:var(--r);flex-wrap:wrap}
@@ -946,26 +972,54 @@ tbody tr:hover td{background:var(--s0)}
       </div>
       <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
         <span style="font-size:.72rem;color:#64748b;font-weight:600;letter-spacing:.04em">CENÁRIO DE PROVISÃO:</span>
-        <button id="btn-cen-base" onclick="setCenario('base')"
-          style="padding:.3rem .85rem;border-radius:20px;border:1.5px solid #4f9cf9;background:rgba(79,156,249,.15);color:#4f9cf9;font-size:.72rem;font-family:Outfit;font-weight:600;cursor:pointer;transition:all .2s"
-          title="Mediana histórica por tema — estimativa central">
-          🔵 Base (Mediana)
-        </button>
-        <button id="btn-cen-conservador" onclick="setCenario('conservador')"
-          style="padding:.3rem .85rem;border-radius:20px;border:1.5px solid #334155;background:transparent;color:#64748b;font-size:.72rem;font-family:Outfit;font-weight:600;cursor:pointer;transition:all .2s"
-          title="Percentil 75 dos prováveis históricos — visão conservadora">
-          🟡 Conservador (P75)
-        </button>
-        <button id="btn-cen-estressado" onclick="setCenario('estressado')"
-          style="padding:.3rem .85rem;border-radius:20px;border:1.5px solid #334155;background:transparent;color:#64748b;font-size:.72rem;font-family:Outfit;font-weight:600;cursor:pointer;transition:all .2s"
-          title="Média aparada dos prováveis históricos — visão estressada">
-          🔴 Estressado (Média Aparada)
-        </button>
-        <button id="btn-cen-contigpos" onclick="setCenario('contigpos')"
-          style="padding:.3rem .85rem;border-radius:20px;border:1.5px solid #334155;background:transparent;color:#64748b;font-size:.72rem;font-family:Outfit;font-weight:600;cursor:pointer;transition:all .2s"
-          title="Usa o valor real do campo Contingência Possível de cada processo — fallback mediana quando não preenchido">
-          🟣 Contingência Possível
-        </button>
+        <div class="cen-tooltip-wrap">
+          <button id="btn-cen-base" onclick="setCenario('base')"
+            style="padding:.3rem .85rem;border-radius:20px;border:1.5px solid #4f9cf9;background:rgba(79,156,249,.15);color:#4f9cf9;font-size:.72rem;font-family:Outfit;font-weight:600;cursor:pointer;transition:all .2s">
+            🔵 Base (Mediana)
+          </button>
+          <div class="cen-tooltip">
+            <div class="cen-tooltip-title" style="color:#4f9cf9">🔵 Base — Mediana Histórica</div>
+            O valor típico de processos já encerrados com o mesmo tema. Metade dos casos históricos custou menos, metade custou mais.
+            <div class="cen-tooltip-formula">Projeção = Mediana do tema × Nº processos</div>
+            <div class="cen-tooltip-note">📌 Uso: análise do dia a dia, referência central. Pode subestimar em carteiras com muitos casos de alto valor.</div>
+          </div>
+        </div>
+        <div class="cen-tooltip-wrap">
+          <button id="btn-cen-conservador" onclick="setCenario('conservador')"
+            style="padding:.3rem .85rem;border-radius:20px;border:1.5px solid #334155;background:transparent;color:#64748b;font-size:.72rem;font-family:Outfit;font-weight:600;cursor:pointer;transition:all .2s">
+            🟡 Conservador (P75)
+          </button>
+          <div class="cen-tooltip">
+            <div class="cen-tooltip-title" style="color:#fbbf24">🟡 Conservador — Percentil 75</div>
+            O valor abaixo do qual ficam 75% dos casos históricos. Apenas 25% dos processos custaram mais do que esse valor.
+            <div class="cen-tooltip-formula">Projeção = P75 do tema × Nº processos</div>
+            <div class="cen-tooltip-note">📌 Uso: comitês de auditoria, board e provisão contábil. Conservador sem ser alarmista — padrão de mercado para CPC 25.</div>
+          </div>
+        </div>
+        <div class="cen-tooltip-wrap">
+          <button id="btn-cen-estressado" onclick="setCenario('estressado')"
+            style="padding:.3rem .85rem;border-radius:20px;border:1.5px solid #334155;background:transparent;color:#64748b;font-size:.72rem;font-family:Outfit;font-weight:600;cursor:pointer;transition:all .2s">
+            🔴 Estressado (Média Aparada)
+          </button>
+          <div class="cen-tooltip">
+            <div class="cen-tooltip-title" style="color:#f87171">🔴 Estressado — Média Aparada</div>
+            Média de todos os casos históricos, excluindo os 10% de valores mais extremos (outliers). Representa o custo médio real da carteira.
+            <div class="cen-tooltip-formula">Projeção = Média(sem top 10%) × Nº processos</div>
+            <div class="cen-tooltip-note">📌 Uso: orçamento anual, stress test e planejamento financeiro. Reflete melhor o impacto esperado em cenário adverso.</div>
+          </div>
+        </div>
+        <div class="cen-tooltip-wrap">
+          <button id="btn-cen-contigpos" onclick="setCenario('contigpos')"
+            style="padding:.3rem .85rem;border-radius:20px;border:1.5px solid #334155;background:transparent;color:#64748b;font-size:.72rem;font-family:Outfit;font-weight:600;cursor:pointer;transition:all .2s">
+            🟣 Contingência Possível
+          </button>
+          <div class="cen-tooltip">
+            <div class="cen-tooltip-title" style="color:#a78bfa">🟣 Contingência Possível</div>
+            Usa o valor real do campo "CONTINGENCIAR PÓS CLOSING" de cada processo — estimativa individual do advogado responsável.
+            <div class="cen-tooltip-formula">Projeção = contigPos do processo (ou mediana se não preenchido)</div>
+            <div class="cen-tooltip-note">📌 Uso: visão mais precisa por processo. Depende da qualidade do preenchimento da planilha. Recomendado quando a base está bem preenchida.</div>
+          </div>
+        </div>
         <span id="cenario-label" style="font-size:.67rem;color:#475569;margin-left:.2rem;font-style:italic">Estimativa central baseada na mediana histórica por tema</span>
       </div>
       <div class="cd mb2">
@@ -2265,215 +2319,583 @@ document.addEventListener('DOMContentLoaded',()=>{renderHist();});
 async function exportPNG(){const btn=document.getElementById('btn-png');btn.innerHTML='<span style="color:#fb923c">Aguarde...</span>';btn.disabled=true;try{const el=document.getElementById('mn');const canvas=await html2canvas(el,{scale:1.5,useCORS:true,backgroundColor:'#080d20',logging:false});const a=document.createElement('a');a.download=`Relatorio-Juridico-${D?.period||'Alloha'}.png`;a.href=canvas.toDataURL('image/png');a.click();}catch(e){console.error(e);}btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2" width="12" height="12"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span style="color:#fb923c">PNG</span>';btn.disabled=false;}
 async function exportPDF(){
   const btn=document.getElementById('btn-pdf');
-  btn.innerHTML='<span style="color:#f87171">Analisando...</span>';
+  const origHTML=btn.innerHTML;
   btn.disabled=true;
   const{jsPDF}=window.jspdf;
-  const W=297,H=210;
+  const W=210,H=297; // A4 portrait
+
+  // ── Coletar todos os dados ──────────────────────────────────────────────────
+  const fd=getFD();
   const per=D?.period?fMon(D.period):'—';
   const dt=new Date().toLocaleDateString('pt-BR');
+  const cenNomes={base:'Base (Mediana)',conservador:'Conservador (P75)',estressado:'Estressado (Média Aparada)',contigpos:'Contingência Possível'};
+  const cenAtivo=cenNomes[CENARIO]||'Base';
 
-  // Coletar dados para interpretação
-  const fd=getFD();
   const adic=fd.mes.filter(r=>r.sit==='Adição');
   const rev=fd.mes.filter(r=>r.sit==='Reversão');
+  const ativos=fd.ativos;
+  const pag=fd.pag;
+  const ent=fd.ent||[];
+
   const vA=adic.reduce((a,r)=>a+r.valor,0);
   const vR=Math.abs(rev.reduce((a,r)=>a+r.valor,0));
-  const ativos=fd.ativos;
   const tc=ativos.reduce((a,r)=>a+r.contigPos,0);
-  const prob=ativos.filter(r=>r.risco==='PROVÁVEL');
-  const poss=ativos.filter(r=>r.risco==='POSSÍVEL');
-  const t3=ativos.filter(r=>r.tipo==='TERCEIRO');
-  const pag=fd.pag;
   const tPag=pag.reduce((a,r)=>a+r.pagamento,0);
   const tCont=pag.reduce((a,r)=>a+r.contingencia,0);
-  const ent=fd.ent;
 
-  const dadosResumo={
-    periodo:per,
-    totalProcessos:D?.total||0,
-    processosAtivos:ativos.length,
-    resultado:{
-      adicoes:adic.length, valorAdicoes:fSh(vA),
-      reversoes:rev.length, valorReversoes:fSh(vR),
-      saldoLiquido:fSh(Math.abs(vA-vR)), tipo:vA>vR?'adição':'reversão',
-      trabalhista:{qtd:adic.filter(r=>r.nat==='TRABALHISTA').length, valor:fSh(adic.filter(r=>r.nat==='TRABALHISTA').reduce((a,r)=>a+r.valor,0))},
-      civel:{qtd:adic.filter(r=>r.nat==='CÍVEL').length, valor:fSh(adic.filter(r=>r.nat==='CÍVEL').reduce((a,r)=>a+r.valor,0))},
-      poss2prov:adic.filter(r=>r.op&&r.op.includes('Provável')).length
-    },
-    estoque:{
-      total:ativos.length,
-      contingenciaTotal:fSh(tc),
-      ticketMedio:fSh(ativos.length?tc/ativos.length:0)
-    },
-    risco:{
-      provavel:{qtd:prob.length, valor:fSh(prob.reduce((a,r)=>a+r.contigPos,0)), pct:pct(prob.reduce((a,r)=>a+r.contigPos,0),tc)+'%'},
-      possivel:{qtd:poss.length, valor:fSh(poss.reduce((a,r)=>a+r.contigPos,0)), pct:pct(poss.reduce((a,r)=>a+r.contigPos,0),tc)+'%'},
-      topTema:Object.entries(ativos.filter(r=>r.risco==='PROVÁVEL').reduce((a,r)=>{a[r.tema]=(a[r.tema]||0)+r.contigPos;return a},{})).sort((a,b)=>b[1]-a[1])[0]?.[0]||'N/A'
-    },
-    proprios:{
-      proprios:{qtd:ativos.filter(r=>r.tipo==='PROPRIO').length, valor:fSh(ativos.filter(r=>r.tipo==='PROPRIO').reduce((a,r)=>a+r.contigPos,0))},
-      terceiros:{qtd:t3.length, valor:fSh(t3.reduce((a,r)=>a+r.contigPos,0))},
-      topTerceirizada:Object.entries(t3.reduce((a,r)=>{a[r.reclamada]=(a[r.reclamada]||0)+r.contigPos;return a},{})).sort((a,b)=>b[1]-a[1])[0]?.[0]||'N/A'
-    },
-    indenizacoes:{
-      totalPago:fSh(tPag), processos:pag.length,
-      contingenciaAssociada:fSh(tCont),
-      economia:fSh(tCont-tPag),
-      acordos:pag.filter(r=>r.tipo==='ACORDO').length
-    },
-    entrantes:{
-      total:ent.length,
-      trabalhista:ent.filter(r=>r.nat==='TRABALHISTA').length,
-      civel:ent.filter(r=>r.nat==='CÍVEL').length,
-      terceiros:ent.filter(r=>r.tipo==='TERCEIRO').length,
-      topUF:Object.entries(ent.reduce((a,r)=>{a[r.uf]=(a[r.uf]||0)+1;return a},{})).sort((a,b)=>b[1]-a[1])[0]?.[0]||'N/A',
-      topTema:Object.entries(ent.reduce((a,r)=>{if(r.tema)a[r.tema]=(a[r.tema]||0)+1;return a},{})).sort((a,b)=>b[1]-a[1])[0]?.[0]||'N/A'
-    }
+  const prob=ativos.filter(r=>r.risco==='PROVÁVEL');
+  const poss=ativos.filter(r=>r.risco==='POSSÍVEL');
+  const rem=ativos.filter(r=>r.risco==='REMOTO');
+  const t3=ativos.filter(r=>r.tipo==='TERCEIRO');
+  const prop=ativos.filter(r=>r.tipo==='PROPRIO');
+
+  const probTrab=prob.filter(r=>r.nat==='TRABALHISTA');
+  const probCiv=prob.filter(r=>r.risco==='PROVÁVEL'&&r.nat!=='TRABALHISTA');
+  const possTrab=poss.filter(r=>r.nat==='TRABALHISTA');
+  const possCiv=poss.filter(r=>r.nat!=='TRABALHISTA');
+
+  const vProb=prob.reduce((a,r)=>a+r.contigPos,0);
+  const vPoss=poss.reduce((a,r)=>a+r.contigPos,0);
+  const vT3=t3.reduce((a,r)=>a+r.contigPos,0);
+  const vProp=prop.reduce((a,r)=>a+r.contigPos,0);
+
+  // Top temas por risco (prováveis)
+  const temasProv=Object.entries(prob.reduce((a,r)=>{a[r.tema]=(a[r.tema]||0)+r.contigPos;return a},{}))
+    .sort((a,b)=>b[1]-a[1]).slice(0,8);
+  // Top temas por qtd (todos ativos)
+  const temasQtd=Object.entries(ativos.reduce((a,r)=>{a[r.tema]=(a[r.tema]||0)+1;return a},{}))
+    .sort((a,b)=>b[1]-a[1]).slice(0,8);
+  // Top terceirizadas
+  const topT3=Object.entries(t3.reduce((a,r)=>{const k=r.reclamada||r.nome||'N/A';a[k]=(a[k]||0)+r.contigPos;return a},{}))
+    .filter(([k])=>k&&k!=='N/A').sort((a,b)=>b[1]-a[1]).slice(0,6);
+  // Adições por tema
+  const adicTema=Object.entries(adic.reduce((a,r)=>{a[r.tema||'N/A']=(a[r.tema||'N/A']||0)+r.valor;return a},{}))
+    .filter(([k])=>k!=='N/A').sort((a,b)=>b[1]-a[1]).slice(0,6);
+  // Entrantes por tema
+  const entTema=Object.entries(ent.reduce((a,r)=>{if(r.tema)a[r.tema]=(a[r.tema]||0)+1;return a},{}))
+    .sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  // Alertas
+  const alertasCalc=window._alertasCalc||{};
+  const totalAlertaProc=Object.values(alertasCalc).reduce((s,d)=>s+d.cnt,0);
+  const totalAlertaRisco=Object.values(alertasCalc).reduce((s,d)=>s+(d.riscoCalc||d.contig||0),0);
+  const topAlerta=Object.entries(alertasCalc).sort((a,b)=>(b[1].riscoCalc||0)-(a[1].riscoCalc||0)).slice(0,4);
+
+  // Projeção (riscos futuros)
+  const projCtx=_insightsCtx||{};
+  const riscoProvJan6=projCtx.provFinMes?Object.entries(projCtx.provFinMes).slice(0,6).reduce((s,[,v])=>s+v,0)+
+    Object.entries(projCtx.provFinMesPoss||{}).slice(0,6).reduce((s,[,v])=>s+v,0):0;
+
+  // Áreas ofensoras (todos ativos)
+  const areaRisco={};
+  ativos.forEach(r=>{const a=getAreaInfo(r.tema).area;areaRisco[a]=(areaRisco[a]||0)+r.contigPos;});
+  const topAreas=Object.entries(areaRisco).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  // ── Montar PDF ──────────────────────────────────────────────────────────────
+  btn.innerHTML='<span style="color:#f87171">Gerando...</span>';
+  const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+
+  const NAVY=[5,15,86];
+  const GREEN=[2,170,95];
+  const TEAL=[5,101,100];
+  const WHITE=[255,255,255];
+  const GRAY=[100,116,139];
+  const LIGHT=[203,213,225];
+  const ORANGE=[251,146,60];
+  const PURPLE=[167,139,250];
+  const RED=[248,113,113];
+  const BLUE=[79,156,249];
+
+  const addPageBg=(darkBg=true)=>{
+    if(darkBg){pdf.setFillColor(...NAVY);pdf.rect(0,0,W,H,'F');}
+    else{pdf.setFillColor(248,250,252);pdf.rect(0,0,W,H,'F');}
+    pdf.setFillColor(...GREEN);pdf.rect(0,0,W,3,'F');
+    pdf.setFillColor(...TEAL);pdf.rect(0,3,W,1,'F');
   };
 
-  // Gerar interpretações via API Claude
-  btn.innerHTML='<span style="color:#f87171">IA analisando...</span>';
-  let interps={};
-  try{
-    const prompt=`Você é um analista jurídico sênior. Com base nos dados do contencioso jurídico da Alloha Fibra para o período ${per}, gere interpretações executivas formais e objetivas para cada seção do relatório. Para cada seção, escreva exatamente 2 frases: a primeira destaca o principal número/fato, a segunda traz contexto ou implicação estratégica. Use linguagem formal de relatório executivo em português. Não use markdown, bullet points ou formatação especial — apenas texto corrido.
+  const addHeader=(title,pageNum,total)=>{
+    pdf.setFontSize(7);pdf.setFont('helvetica','normal');pdf.setTextColor(...GRAY);
+    pdf.text(`Alloha Gestão Jurídica · ${per} · ${dt}`,8,10);
+    pdf.text(`${pageNum}/${total}`,W-8,10,{align:'right'});
+    pdf.setFontSize(12);pdf.setFont('helvetica','bold');pdf.setTextColor(...WHITE);
+    pdf.text(title,8,18);
+    pdf.setDrawColor(...TEAL);pdf.setLineWidth(0.3);pdf.line(8,20,W-8,20);
+  };
 
-DADOS DO PERÍODO:
-${JSON.stringify(dadosResumo,null,2)}
+  const addFooter=(note='')=>{
+    pdf.setDrawColor(...TEAL);pdf.setLineWidth(0.2);pdf.line(8,H-8,W-8,H-8);
+    pdf.setFontSize(6.5);pdf.setFont('helvetica','normal');pdf.setTextColor(...GRAY);
+    pdf.text('Alloha Fibra · Gestão Jurídica Contenciosa · Documento Confidencial',8,H-4);
+    if(note) pdf.text(note,W-8,H-4,{align:'right'});
+  };
 
-Retorne APENAS um JSON válido com esta estrutura exata:
-{
-  "resultado": "interpretação aqui",
-  "adicoes": "interpretação aqui",
-  "indenizacoes": "interpretação aqui",
-  "estoque": "interpretação aqui",
-  "risco": "interpretação aqui",
-  "proprios": "interpretação aqui",
-  "evolucao": "interpretação aqui",
-  "entrantes": "interpretação aqui",
-  "temas": "interpretação aqui",
-  "executivo": "parágrafo executivo geral de 3 frases resumindo o mês para a diretoria"
-}`;
+  const addKpiBox=(x,y,w,h,label,value,sub,accentColor)=>{
+    pdf.setFillColor(12,22,58);pdf.roundedRect(x,y,w,h,2,2,'F');
+    pdf.setDrawColor(...accentColor);pdf.setLineWidth(0.4);pdf.roundedRect(x,y,w,h,2,2,'S');
+    pdf.setFillColor(...accentColor);pdf.rect(x,y,w,1,'F');
+    pdf.setFontSize(6);pdf.setFont('helvetica','normal');pdf.setTextColor(...LIGHT);
+    pdf.text(label,x+w/2,y+5,{align:'center'});
+    pdf.setFontSize(11);pdf.setFont('helvetica','bold');pdf.setTextColor(...WHITE);
+    pdf.text(value,x+w/2,y+12,{align:'center'});
+    if(sub){pdf.setFontSize(6);pdf.setFont('helvetica','normal');pdf.setTextColor(...GRAY);
+      pdf.text(sub,x+w/2,y+h-3,{align:'center'});}
+  };
 
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        messages:[{role:'user',content:prompt}]
-      })
+  const addSectionTitle=(x,y,title,color=WHITE)=>{
+    pdf.setFontSize(8);pdf.setFont('helvetica','bold');pdf.setTextColor(...color);
+    pdf.text(title,x,y);
+    pdf.setDrawColor(...color);pdf.setLineWidth(0.2);pdf.line(x,y+1,x+80,y+1);
+  };
+
+  const addTableRow=(x,y,cols,widths,isHeader=false,altRow=false)=>{
+    if(altRow){pdf.setFillColor(12,22,58);pdf.rect(x,y-3.5,widths.reduce((a,b)=>a+b,0),4,'F');}
+    if(isHeader){pdf.setFillColor(5,101,100);pdf.rect(x,y-3.5,widths.reduce((a,b)=>a+b,0),4,'F');}
+    pdf.setFontSize(6.5);
+    pdf.setFont('helvetica',isHeader?'bold':'normal');
+    pdf.setTextColor(...(isHeader?WHITE:LIGHT));
+    let cx=x;
+    cols.forEach((col,i)=>{
+      const align=typeof col==='object'?col.align||'left':'left';
+      const txt=typeof col==='object'?col.text:String(col);
+      const tx=align==='right'?cx+widths[i]-1:cx+1;
+      pdf.text(txt.length>22?txt.slice(0,21)+'…':txt,tx,y,{align});
+      cx+=widths[i];
     });
-    const data=await resp.json();
-    const txt=data.content?.[0]?.text||'{}';
-    const clean=txt.replace(/```json|```/g,'').trim();
-    interps=JSON.parse(clean);
-  }catch(e){
-    console.error('Erro API Claude:',e);
-    interps={
-      resultado:'Dados de resultado do período processados com sucesso.',
-      adicoes:'Detalhamento das adições e reversões do período.',
-      indenizacoes:'Análise dos pagamentos realizados no período.',
-      estoque:'Visão consolidada do estoque ativo de processos.',
-      risco:'Distribuição do risco financeiro por categoria.',
-      proprios:'Segregação entre processos próprios e de terceiros.',
-      evolucao:'Evolução temporal dos indicadores jurídicos.',
-      entrantes:'Análise dos processos entrantes no período.',
-      temas:'Concentração por tema, UF e escritório.',
-      executivo:'Relatório jurídico executivo gerado automaticamente.'
-    };
-  }
+  };
 
-  // Montar PDF
-  btn.innerHTML='<span style="color:#f87171">Gerando PDF...</span>';
-  const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const fShi=v=>v>=1e6?(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:2})+'Mi':(v/1e3).toLocaleString('pt-BR',{maximumFractionDigits:1})+'K';
+  const pctCalc=(a,b)=>b>0?Math.round(a/b*100)+'%':'—';
 
-  // Capa
-  pdf.setFillColor(5,15,86);pdf.rect(0,0,W,H,'F');
-  pdf.setFillColor(2,170,95);pdf.rect(0,0,W,6,'F');
-  pdf.setFillColor(5,101,100);pdf.rect(0,6,W,2,'F');
-  pdf.setTextColor(255,255,255);
-  pdf.setFontSize(32);pdf.setFont('helvetica','bold');
-  pdf.text('alloha',W/2,60,{align:'center'});
-  pdf.setFontSize(13);pdf.setFont('helvetica','normal');pdf.setTextColor(180,210,255);
-  pdf.text('Gestão Jurídica Contenciosa',W/2,71,{align:'center'});
-  pdf.setFontSize(20);pdf.setFont('helvetica','bold');pdf.setTextColor(255,255,255);
-  pdf.text(`Relatório Executivo — ${per}`,W/2,88,{align:'center'});
-  // Sumário executivo na capa
-  if(interps.executivo){
-    pdf.setFontSize(10);pdf.setFont('helvetica','normal');pdf.setTextColor(203,213,225);
-    const lines=pdf.splitTextToSize(interps.executivo,W-60);
-    pdf.text(lines,W/2,102,{align:'center'});
-  }
-  pdf.setFontSize(9);pdf.setFont('helvetica','normal');pdf.setTextColor(100,116,139);
-  pdf.text(`Gerado em ${dt} · ${D?.total?.toLocaleString('pt-BR')||'—'} processos · Confidencial`,W/2,H-8,{align:'center'});
+  const TOTAL_PAGES=9;
 
-  // Páginas por seção
-  const pages=[
-    {id:'pg-resultado',label:'Resultado Geral',key:'resultado'},
-    {id:'pg-adicoes',label:'Adições & Reversões',key:'adicoes'},
-    {id:'pg-pagamentos',label:'Indenizações',key:'indenizacoes'},
-    {id:'pg-estoque',label:'Estoque Ativo',key:'estoque'},
-    {id:'pg-risco',label:'Risco & Exposição',key:'risco'},
-    {id:'pg-proprios',label:'Próprios vs. Terceiros',key:'proprios'},
-    {id:'pg-evolucao',label:'Evolução Temporal',key:'evolucao'},
-    {id:'pg-entrantes',label:'Entrantes',key:'entrantes'},
-    {id:'pg-temas',label:'Temas, UF & Escritórios',key:'temas'},
+  // ═══════════════════════════════════════════
+  // PÁGINA 1 — CAPA
+  // ═══════════════════════════════════════════
+  addPageBg(true);
+  // Logo
+  try{pdf.addImage( + LOGO + r,'PNG',W/2-25,30,50,18);}catch(e){}
+  pdf.setFontSize(8);pdf.setFont('helvetica','normal');pdf.setTextColor(...LIGHT);
+  pdf.text('GESTÃO JURÍDICA CONTENCIOSA',W/2,55,{align:'center'});
+  pdf.setFontSize(20);pdf.setFont('helvetica','bold');pdf.setTextColor(...WHITE);
+  pdf.text('Relatório Executivo de',W/2,80,{align:'center'});
+  pdf.text('Riscos Jurídicos',W/2,92,{align:'center'});
+  pdf.setFillColor(...GREEN);pdf.rect(W/2-30,97,60,0.8,'F');
+  pdf.setFontSize(13);pdf.setFont('helvetica','normal');pdf.setTextColor(...LIGHT);
+  pdf.text(`Período de Referência: ${per}`,W/2,106,{align:'center'});
+  // Indicadores na capa
+  const capKpis=[
+    ['Processos Ativos',(D?.total||ativos.length).toLocaleString('pt-BR'),BLUE],
+    ['Contingência Total',fShi(tc),RED],
+    ['Risco Provável',fShi(vProb),PURPLE],
+    ['Adições do Mês',fShi(vA),GREEN],
   ];
+  capKpis.forEach(([l,v,c],i)=>{
+    const x=8+(i%2)*(W/2-4),y=118+(Math.floor(i/2)*28);
+    addKpiBox(x,y,W/2-12,24,l,v,'',c);
+  });
+  // Cenário ativo
+  pdf.setFontSize(7.5);pdf.setFont('helvetica','bold');pdf.setTextColor(...LIGHT);
+  pdf.text(`Cenário de Provisão: ${cenAtivo}`,W/2,176,{align:'center'});
+  // Sumário narrativo
+  const saldo=vA-vR;
+  const saldoDir=saldo>=0?'positivo (mais adições que reversões)':'negativo (mais reversões que adições)';
+  const riscoDir=vProb>tc*0.5?'concentrado majoritariamente em Provável':'distribuído entre Provável e Possível';
+  const t3pct=tc>0?Math.round(vT3/tc*100):0;
+  const narrativa=`No período de ${per}, a carteira jurídica da Alloha registrou ${ativos.length.toLocaleString('pt-BR')} processos ativos com contingência total de ${fShi(tc)}, distribuída entre ${prob.length} prováveis (${fShi(vProb)}) e ${poss.length} possíveis (${fShi(vPoss)}). O resultado do mês foi ${saldoDir}, com adições de ${fShi(vA)} e reversões de ${fShi(vR)}. O risco está ${riscoDir}, com ${t3pct}% da exposição vinculada a terceiros. Os próximos 6 meses projetam impacto de ${fShi(riscoProvJan6)} em novas provisões.`;
+  pdf.setFontSize(7);pdf.setFont('helvetica','normal');pdf.setTextColor(...LIGHT);
+  const narLines=pdf.splitTextToSize(narrativa,W-20);
+  pdf.text(narLines,W/2,185,{align:'center'});
+  pdf.setFontSize(7);pdf.setTextColor(...GRAY);
+  pdf.text(`Gerado em ${dt} · Confidencial — uso interno`,W/2,H-10,{align:'center'});
 
-  const currPage=document.querySelector('.pg.ac');
-  const currNav=document.querySelector('.nb.ac');
+  // ═══════════════════════════════════════════
+  // PÁGINA 2 — SITUAÇÃO ATUAL DO PASSIVO
+  // ═══════════════════════════════════════════
+  pdf.addPage();addPageBg();addHeader('Situação Atual do Passivo',2,TOTAL_PAGES);addFooter('Base: '+dt);
+  // KPIs linha 1
+  addKpiBox(8,24,44,22,'Total Ativos',(ativos.length).toLocaleString('pt-BR'),'processos',BLUE);
+  addKpiBox(56,24,44,22,'Contingência Total',fShi(tc),'todos os riscos',RED);
+  addKpiBox(104,24,44,22,'Ticket Médio',fShi(ativos.length?tc/ativos.length:0),'por processo',ORANGE);
+  addKpiBox(152,24,44,22,'Risco de Terceiros',fShi(vT3),t3pct+'% do total',PURPLE);
+  // Tabela de distribuição por risco e natureza
+  addSectionTitle(8,54,'Distribuição por Risco e Natureza',GREEN);
+  const tblY=58;
+  addTableRow(8,tblY+4,['Categoria','Qtd.','% Qtd.',{text:'Contingência',align:'right'},{text:'% Valor',align:'right'}],[50,20,20,55,27],true);
+  const riscoRows=[
+    ['Provável — Trabalhista',probTrab.length,pctCalc(probTrab.length,ativos.length),fShi(probTrab.reduce((a,r)=>a+r.contigPos,0)),pctCalc(probTrab.reduce((a,r)=>a+r.contigPos,0),tc)],
+    ['Provável — Cível/Outros',probCiv.length,pctCalc(probCiv.length,ativos.length),fShi(probCiv.reduce((a,r)=>a+r.contigPos,0)),pctCalc(probCiv.reduce((a,r)=>a+r.contigPos,0),tc)],
+    ['Possível — Trabalhista',possTrab.length,pctCalc(possTrab.length,ativos.length),fShi(possTrab.reduce((a,r)=>a+r.contigPos,0)),pctCalc(possTrab.reduce((a,r)=>a+r.contigPos,0),tc)],
+    ['Possível — Cível/Outros',possCiv.length,pctCalc(possCiv.length,ativos.length),fShi(possCiv.reduce((a,r)=>a+r.contigPos,0)),pctCalc(possCiv.reduce((a,r)=>a+r.contigPos,0),tc)],
+    ['Remoto (todos)',rem.length,pctCalc(rem.length,ativos.length),'—','—'],
+    ['TOTAL',ativos.length,'100%',fShi(tc),'100%'],
+  ];
+  riscoRows.forEach((row,i)=>{
+    const isLast=i===riscoRows.length-1;
+    addTableRow(8,tblY+4+(i+1)*5,[row[0],{text:String(row[1]),align:'right'},{text:row[2],align:'right'},{text:row[3],align:'right'},{text:row[4],align:'right'}],[50,20,20,55,27],isLast,i%2===0&&!isLast);
+  });
 
-  for(let i=0;i<pages.length;i++){
-    const p=pages[i];
-    const el=document.getElementById(p.id);
-    if(!el) continue;
-    document.querySelectorAll('.pg').forEach(x=>x.classList.remove('ac'));
-    el.classList.add('ac');
-    await new Promise(r=>setTimeout(r,600));
-    btn.innerHTML=`<span style="color:#f87171">${i+1}/${pages.length}</span>`;
-    try{
-      const canvas=await html2canvas(el,{scale:1.8,useCORS:true,backgroundColor:'#080d20',logging:false,windowWidth:1400});
-      const img=canvas.toDataURL('image/jpeg',0.85);
-      pdf.addPage();
-      // Fundo
-      pdf.setFillColor(8,13,32);pdf.rect(0,0,W,H,'F');
-      pdf.setFillColor(2,170,95);pdf.rect(0,0,W,1.5,'F');
-      // Header da seção
-      pdf.setFontSize(11);pdf.setFont('helvetica','bold');pdf.setTextColor(255,255,255);
-      pdf.text(p.label,8,9);
-      pdf.setFontSize(7);pdf.setFont('helvetica','normal');pdf.setTextColor(100,116,139);
-      pdf.text(`${per} · Alloha Gestão Jurídica`,W-8,9,{align:'right'});
-      // Interpretação da IA
-      const interp=interps[p.key]||'';
-      if(interp){
-        pdf.setFontSize(8.5);pdf.setFont('helvetica','italic');pdf.setTextColor(148,163,184);
-        const lines=pdf.splitTextToSize(interp,W-16);
-        pdf.text(lines,8,16);
-      }
-      // Screenshot — ajusta posição conforme tamanho do texto
-      const textH=interp?pdf.splitTextToSize(interp,W-16).length*4:0;
-      const imgY=18+textH;
-      const iW=W-16,iH=H-imgY-6;
-      const cW=canvas.width,cH=canvas.height;
-      const ratio=Math.min(iW/cW*96,iH/cH*96);
-      const fW=cW*ratio/96,fH=cH*ratio/96;
-      pdf.addImage(img,'JPEG',8,imgY,Math.min(fW,iW),Math.min(fH,iH));
-      // Rodapé
-      pdf.setFontSize(7);pdf.setFont('helvetica','normal');pdf.setTextColor(100,116,139);
-      pdf.text(`${i+2}`,W-8,H-3,{align:'right'});
-    }catch(e){console.error('Erro página',p.label,e);}
+  // Top temas prováveis
+  addSectionTitle(8,105,'Top Temas por Contingência (Prováveis)',ORANGE);
+  addTableRow(8,110,[{text:'Tema',align:'left'},'Qtd.',{text:'Contingência',align:'right'},{text:'% Total',align:'right'}],[85,25,55,27],true);
+  temasProv.forEach(([tema,val],i)=>{
+    addTableRow(8,110+(i+1)*5,[tema,{text:String(prob.filter(r=>r.tema===tema).length),align:'right'},{text:fShi(val),align:'right'},{text:pctCalc(val,vProb),align:'right'}],[85,25,55,27],false,i%2===0);
+  });
+
+  // Próprios vs Terceiros
+  addSectionTitle(8,160,'Próprios vs. Terceiros',PURPLE);
+  addKpiBox(8,165,46,20,'Próprios',fShi(vProp),prop.length+' processos',BLUE);
+  addKpiBox(58,165,46,20,'Terceiros',fShi(vT3),t3.length+' processos',ORANGE);
+  addKpiBox(108,165,46,20,'Exp. Terceiros',t3pct+'%','do risco total',RED);
+  addSectionTitle(8,192,'Top Empresas Terceirizadas (Contingência)',ORANGE);
+  addTableRow(8,197,['Empresa','Qtd.',{text:'Contingência',align:'right'},{text:'% Total',align:'right'}],[90,25,55,22],true);
+  topT3.forEach(([emp,val],i)=>{
+    addTableRow(8,197+(i+1)*5,[emp,{text:String(t3.filter(r=>(r.reclamada||r.nome||'N/A')===emp).length),align:'right'},{text:fShi(val),align:'right'},{text:pctCalc(val,vT3),align:'right'}],[90,25,55,22],false,i%2===0);
+  });
+
+  // ═══════════════════════════════════════════
+  // PÁGINA 3 — MOVIMENTAÇÃO DO MÊS
+  // ═══════════════════════════════════════════
+  pdf.addPage();addPageBg();addHeader('Movimentação do Mês — '+per,3,TOTAL_PAGES);addFooter();
+  addKpiBox(8,24,44,22,'Adições',fShi(vA),adic.length+' processos',GREEN);
+  addKpiBox(56,24,44,22,'Reversões',fShi(vR),rev.length+' processos',RED);
+  addKpiBox(104,24,44,22,'Saldo Líquido',fShi(Math.abs(vA-vR)),vA>vR?'↑ Adição líq.':'↓ Reversão líq.',vA>vR?RED:GREEN);
+  addKpiBox(152,24,44,22,'Pagamentos',fShi(tPag),pag.length+' processos',ORANGE);
+
+  // Adições por natureza e risco
+  addSectionTitle(8,54,'Adições por Natureza',BLUE);
+  const adicTrab=adic.filter(r=>r.nat==='TRABALHISTA');
+  const adicCiv=adic.filter(r=>r.nat!=='TRABALHISTA');
+  addKpiBox(8,59,46,20,'Trabalhista',fShi(adicTrab.reduce((a,r)=>a+r.valor,0)),adicTrab.length+' proc.',PURPLE);
+  addKpiBox(58,59,46,20,'Cível/Outros',fShi(adicCiv.reduce((a,r)=>a+r.valor,0)),adicCiv.length+' proc.',BLUE);
+  addKpiBox(108,59,46,20,'Poss→Provável',String(adic.filter(r=>r.op&&r.op.includes('Provável')).length)+' proc.','reclassificações',ORANGE);
+
+  // Adições por tema
+  addSectionTitle(8,87,'Principais Temas nas Adições',GREEN);
+  addTableRow(8,92,['Tema','Qtd.',{text:'Valor Adicionado',align:'right'},{text:'% Total',align:'right'}],[85,25,60,22],true);
+  adicTema.forEach(([tema,val],i)=>{
+    addTableRow(8,92+(i+1)*5,[tema,{text:String(adic.filter(r=>r.tema===tema).length),align:'right'},{text:fShi(val),align:'right'},{text:pctCalc(val,vA),align:'right'}],[85,25,60,22],false,i%2===0);
+  });
+
+  // Pagamentos
+  addSectionTitle(8,130,'Análise de Pagamentos e Indenizações',ORANGE);
+  addKpiBox(8,135,44,22,'Total Pago',fShi(tPag),pag.length+' liquidações',RED);
+  addKpiBox(56,135,44,22,'Contingência Assoc.',fShi(tCont),'valor provisionado',PURPLE);
+  addKpiBox(104,135,44,22,'Saving Obtido',fShi(Math.max(0,tCont-tPag)),tCont>tPag?'↑ Economizado':'—',GREEN);
+  addKpiBox(152,135,44,22,'Acordos',String(pag.filter(r=>r.tipo==='ACORDO').length),String(pag.filter(r=>r.tipo==='ACORDO').length)+' dos '+pag.length+' pag.',BLUE);
+
+  // Nota sobre entrantes
+  addSectionTitle(8,165,'Processos Entrantes no Período',BLUE);
+  addKpiBox(8,170,44,22,'Total Entrantes',String(ent.length),'novos processos',BLUE);
+  addKpiBox(56,170,44,22,'Trabalhista',String(ent.filter(r=>r.nat==='TRABALHISTA').length),'entrantes',PURPLE);
+  addKpiBox(104,170,44,22,'Cível',String(ent.filter(r=>r.nat!=='TRABALHISTA').length),'entrantes',TEAL);
+  addKpiBox(152,170,44,22,'Terceiros',String(ent.filter(r=>r.tipo==='TERCEIRO').length),'dos entrantes',ORANGE);
+
+  addSectionTitle(8,200,'Top Temas dos Entrantes',GREEN);
+  addTableRow(8,205,['Tema',{text:'Entrantes',align:'right'},{text:'% Total',align:'right'}],[110,45,37],true);
+  entTema.forEach(([tema,cnt],i)=>{
+    addTableRow(8,205+(i+1)*5,[tema,{text:String(cnt),align:'right'},{text:pctCalc(cnt,ent.length),align:'right'}],[110,45,37],false,i%2===0);
+  });
+
+  // ═══════════════════════════════════════════
+  // PÁGINA 4 — ALERTAS E PRIORIDADES
+  // ═══════════════════════════════════════════
+  pdf.addPage();addPageBg();addHeader('Alertas e Prioridades',4,TOTAL_PAGES);addFooter('Cenário: '+cenAtivo);
+
+  addKpiBox(8,24,44,22,'Em Alerta',String(totalAlertaProc),'aging estourado',RED);
+  addKpiBox(56,24,44,22,'Risco Alerta',fShi(totalAlertaRisco),'cenário: '+cenAtivo,RED);
+  addKpiBox(104,24,44,22,'Urgência Alta',String(Object.values(alertasCalc).filter(d=>d.excesso>180).length),'temas >180d excesso',ORANGE);
+  addKpiBox(152,24,44,22,'Reclassif. ≤90d',String((_insightsCtx?.possNoPrazo||[]).filter(r=>r.diasRestantes<=90).length),'possíveis→prováveis',PURPLE);
+
+  addSectionTitle(8,54,'Possíveis em Alerta — Risco por Tema',RED);
+  addTableRow(8,59,['Tema','Qtd.',{text:'Risco Calc.',align:'right'},'Aging Med.','Excesso','Urgência','Fase'],[54,14,30,22,22,24,26],true);
+  const urgLabel=e=>e>365?'Crítico':e>180?'Alto':e>90?'Médio':'Baixo';
+  topAlerta.forEach(([tema,d],i)=>{
+    addTableRow(8,59+(i+1)*5,[tema,String(d.cnt),{text:fShi(d.riscoCalc||d.contig||0),align:'right'},d.aging_med+'d',d.excesso+'d ac.',urgLabel(d.excesso),d.top_fase||'—'],[54,14,30,22,22,24,26],false,i%2===0);
+  });
+
+  // Reclassificação iminente
+  addSectionTitle(8,85,'Processos Próximos de Reclassificação (≤90 dias)',PURPLE);
+  const reclassifProcs=(_insightsCtx?.possNoPrazo||[]).filter(r=>r.diasRestantes<=90).sort((a,b)=>b.contig-a.contig).slice(0,10);
+  addTableRow(8,90,['Nº Processo','Nat.','Tema','Dias Restantes',{text:'Conting. Possível',align:'right'},{text:'Projeção',align:'right'}],[50,14,50,28,35,15],true);
+  reclassifProcs.forEach((p,i)=>{
+    const proc=p.proc?p.proc.slice(-20):'—';
+    addTableRow(8,90+(i+1)*5,[proc,p.nat==='TRABALHISTA'?'TRAB':'CIV',p.tema||'—',String(p.diasRestantes)+'d',{text:fShi(p.contig||0),align:'right'},{text:fShi(p.med||0),align:'right'}],[50,14,50,28,35,15],false,i%2===0);
+  });
+
+  // Top 10 processos por contingência individual (prováveis)
+  const top10=prob.sort((a,b)=>b.contigPos-a.contigPos).slice(0,10);
+  addSectionTitle(8,148,'Top 10 Processos por Contingência Individual (Prováveis)',ORANGE);
+  addTableRow(8,153,['Nº Processo','Nat.','Tema','Fase',{text:'Contingência',align:'right'}],[52,14,55,40,31],true);
+  top10.forEach((r,i)=>{
+    const proc=r.numero?r.numero.slice(-22):'—';
+    addTableRow(8,153+(i+1)*5,[proc,r.nat==='TRABALHISTA'?'TRAB':'CIV',r.tema||'—',r.fase||'—',{text:fShi(r.contigPos),align:'right'}],[52,14,55,40,31],false,i%2===0);
+  });
+
+  // ═══════════════════════════════════════════
+  // PÁGINA 5 — ÁREAS OFENSORAS
+  // ═══════════════════════════════════════════
+  pdf.addPage();addPageBg();addHeader('Áreas Ofensoras — Passivo Total',5,TOTAL_PAGES);addFooter();
+
+  addSectionTitle(8,24,'Contingência por Área Responsável (Todos os Riscos)',GREEN);
+  const pctArea=(v)=>pctCalc(v,tc);
+  addTableRow(8,29,['Área Responsável',{text:'Contingência',align:'right'},{text:'% Total',align:'right'},'Recomendação'],[55,40,20,77],true);
+  const AREA_RECS_PDF={
+    'RH':'Revisar controles de jornada, banco de horas e cálculos de verbas. Alinhar com Gestão de Pessoas.',
+    'Compras/Jurídico':'Revisar cláusulas de responsabilidade subsidiária nos contratos. Exigir documentação trabalhista.',
+    'RH/Jurídico':'Mapear critérios de contratação de prestadores. Avaliar risco de vínculo empregatício.',
+    'Gestão de Pessoas':'Investigar condições de trabalho. Implementar pesquisa de clima e canais de escuta.',
+    'RH/Folha':'Auditar cálculos de folha e recolhimento de FGTS. Corrigir divergências sistêmicas.',
+    'Operações/Qualidade':'Revisar SLA de atendimento. Implementar protocolo de tratamento de reclamações.',
+    'Compliance/Jurídico':'Reforçar due diligence na contratação. Monitorar parceiros com reincidência.',
+    'SESMT/RH':'Revisar laudos de periculosidade e insalubridade. Atualizar programa de saúde ocupacional.',
+    'Comercial/RH':'Revisar regras de cálculo e pagamento de comissões. Alinhar critérios entre áreas.',
+    'Jurídico/Operações':'Mapear eventos geradores de dano. Implementar controles preventivos operacionais.',
+    'Jurídico':'Priorizar análise dos casos e definir estratégia de defesa e prevenção por tema.',
+  };
+  topAreas.forEach(([area,val],i)=>{
+    const rec=AREA_RECS_PDF[area]||'Avaliar com equipe jurídica as causas raiz e oportunidades de prevenção.';
+    addTableRow(8,29+(i+1)*7,[area,{text:fShi(val),align:'right'},{text:pctArea(val),align:'right'},rec],[55,40,20,77],false,i%2===0);
+  });
+
+  // Barras visuais simples
+  const barY=88;
+  addSectionTitle(8,barY,'Distribuição Visual por Área',BLUE);
+  const maxArea=topAreas[0]?.[1]||1;
+  topAreas.forEach(([area,val],i)=>{
+    const y=barY+5+i*11;
+    const barW=Math.max(2,(val/maxArea)*(W-80));
+    pdf.setFontSize(6.5);pdf.setFont('helvetica','normal');pdf.setTextColor(...LIGHT);
+    pdf.text(area.length>30?area.slice(0,29)+'…':area,8,y+3);
+    pdf.setFillColor(...([BLUE,ORANGE,PURPLE,GREEN,TEAL,RED][i%6]));
+    pdf.roundedRect(58,y,barW,5,1,1,'F');
+    pdf.setFontSize(6);pdf.setTextColor(...WHITE);
+    pdf.text(fShi(val),60+barW,y+3.5);
+  });
+
+  // Nota conceitual
+  pdf.setFillColor(8,22,58);pdf.roundedRect(8,160,W-16,45,3,3,'F');
+  pdf.setDrawColor(...TEAL);pdf.setLineWidth(0.3);pdf.roundedRect(8,160,W-16,45,3,3,'S');
+  pdf.setFontSize(8);pdf.setFont('helvetica','bold');pdf.setTextColor(...GREEN);
+  pdf.text('Como usar este relatório por área',12,167);
+  pdf.setFontSize(7);pdf.setFont('helvetica','normal');pdf.setTextColor(...LIGHT);
+  const notaArea='Cada área responsável deve ser acionada pelo Jurídico para um plano de ação preventivo. A priorização deve seguir a magnitude financeira e a velocidade de crescimento dos casos. Recomenda-se reunião trimestral de alinhamento entre o Jurídico e as áreas de maior exposição, com apresentação dos indicadores deste relatório e definição de KPIs de redução de litígios. O acompanhamento mensal da evolução do passivo por área permite identificar tendências e antecipar intervenções antes que os casos se tornem prováveis.';
+  const notaLines=pdf.splitTextToSize(notaArea,W-24);
+  pdf.text(notaLines,12,173);
+
+  // ═══════════════════════════════════════════
+  // PÁGINA 6 — PROJEÇÃO E TENDÊNCIAS
+  // ═══════════════════════════════════════════
+  pdf.addPage();addPageBg();addHeader('Projeção e Tendências — Próximos 12 Meses',6,TOTAL_PAGES);addFooter('Cenário: '+cenAtivo);
+
+  addKpiBox(8,24,44,22,'Projeção Provisão 6m',fShi(riscoProvJan6),'cenário: '+cenAtivo,RED);
+  const riscoProvJan12=projCtx.provFinMes?Object.entries(projCtx.provFinMes).slice(0,12).reduce((s,[,v])=>s+v,0)+
+    Object.entries(projCtx.provFinMesPoss||{}).slice(0,12).reduce((s,[,v])=>s+v,0):0;
+  addKpiBox(56,24,44,22,'Projeção Provisão 12m',fShi(riscoProvJan12),'cenário: '+cenAtivo,RED);
+  const dist2026cnt=projCtx.provMesProcs?Object.values(projCtx.provMesProcs).reduce((s,arr)=>s+arr.length,0):0;
+  addKpiBox(104,24,44,22,'Distr. 2026 no Prazo',String(dist2026cnt),'processos projetados',BLUE);
+  const possNoPrazoCnt=(_insightsCtx?.possNoPrazo||[]).length;
+  addKpiBox(152,24,44,22,'Anos Anteriores',String(possNoPrazoCnt),'possíveis no prazo',ORANGE);
+
+  // Curva de provisão (dados tabulados)
+  addSectionTitle(8,54,'Curva de Provisão Projetada — Mensal',GREEN);
+  const provMes=projCtx.provFinMes||{};
+  const provMesPoss=projCtx.provFinMesPoss||{};
+  const mesesProj=Object.keys(provMes).slice(0,12);
+  const fmtM=ym=>{if(!ym)return'';const[y,mo]=ym.split('-');const ns=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];return ns[+mo]+'/'+y.slice(2);};
+
+  addTableRow(8,59,['Mês',{text:'Distr. 2026',align:'right'},{text:'Anos Anteriores',align:'right'},{text:'Total',align:'right'}],[40,50,50,52],true);
+  mesesProj.forEach((ym,i)=>{
+    const v1=provMes[ym]||0;const v2=provMesPoss[ym]||0;
+    addTableRow(8,59+(i+1)*5,[fmtM(ym),{text:fShi(v1),align:'right'},{text:fShi(v2),align:'right'},{text:fShi(v1+v2),align:'right'}],[40,50,50,52],false,i%2===0);
+  });
+
+  // Observação metodológica
+  pdf.setFillColor(8,22,58);pdf.roundedRect(8,125,W-16,55,3,3,'F');
+  pdf.setDrawColor(...BLUE);pdf.setLineWidth(0.3);pdf.roundedRect(8,125,W-16,55,3,3,'S');
+  pdf.setFontSize(8);pdf.setFont('helvetica','bold');pdf.setTextColor(...BLUE);
+  pdf.text('Metodologia de Projeção',12,132);
+  pdf.setFontSize(7);pdf.setFont('helvetica','normal');pdf.setTextColor(...LIGHT);
+  const metLines=pdf.splitTextToSize(
+    `Cenário ativo: ${cenAtivo}. Os valores de projeção são calculados com base no aging histórico mediano de provisão por tema, aplicado sobre a data de distribuição de cada processo. "Distribuídos 2026" inclui processos Possíveis Ativos com data de distribuição em 2026. "Anos Anteriores" inclui processos Possíveis de anos anteriores que ainda estão dentro do prazo mediano de aging. O cenário ${cenAtivo} aplica o estimador correspondente como valor de referência por processo.`,
+    W-24);
+  pdf.text(metLines,12,138);
+
+  // Alertas de provisão por mês (meses com maior concentração)
+  const topMeses=mesesProj.map(ym=>({ym,total:(provMes[ym]||0)+(provMesPoss[ym]||0)}))
+    .sort((a,b)=>b.total-a.total).slice(0,3);
+  addSectionTitle(8,186,'Meses de Maior Concentração de Risco',RED);
+  topMeses.forEach((m,i)=>{
+    const x=8+i*65;
+    addKpiBox(x,191,60,22,fmtM(m.ym),fShi(m.total),'pico de provisão',RED);
+  });
+
+  // ═══════════════════════════════════════════
+  // PÁGINA 7 — CONCENTRAÇÃO POR TEMA
+  // ═══════════════════════════════════════════
+  pdf.addPage();addPageBg();addHeader('Concentração por Tema — Passivo Total',7,TOTAL_PAGES);addFooter();
+
+  // Top temas por volume total (prováveis + possíveis)
+  const temasTotal=Object.entries(ativos.reduce((a,r)=>{
+    if(!a[r.tema])a[r.tema]={qtd:0,val:0,prob:0,poss:0,trab:0,civ:0};
+    a[r.tema].qtd++;a[r.tema].val+=r.contigPos;
+    if(r.risco==='PROVÁVEL')a[r.tema].prob++;
+    if(r.risco==='POSSÍVEL')a[r.tema].poss++;
+    if(r.nat==='TRABALHISTA')a[r.tema].trab++;
+    else a[r.tema].civ++;
+    return a;
+  },{})).sort((a,b)=>b[1].val-a[1].val).slice(0,12);
+
+  addSectionTitle(8,24,'Ranking de Temas — Contingência Total',RED);
+  addTableRow(8,29,['Tema','Total','Prob.','Poss.','Trab.','Cível',{text:'Contingência',align:'right'},{text:'% Tot.',align:'right'}],[55,14,14,14,14,14,38,19],true);
+  temasTotal.forEach(([tema,d],i)=>{
+    addTableRow(8,29+(i+1)*5,[tema,String(d.qtd),String(d.prob),String(d.poss),String(d.trab),String(d.civ),{text:fShi(d.val),align:'right'},{text:pctCalc(d.val,tc),align:'right'}],[55,14,14,14,14,14,38,19],false,i%2===0);
+  });
+
+  // Barras visuais por tema
+  const temaBarY=100;
+  addSectionTitle(8,temaBarY,'Distribuição Visual — Contingência por Tema',ORANGE);
+  const maxTema=temasTotal[0]?.[1]?.val||1;
+  temasTotal.slice(0,8).forEach(([tema,d],i)=>{
+    const y=temaBarY+5+i*10;
+    const barW=Math.max(2,(d.val/maxTema)*(W-80));
+    pdf.setFontSize(6);pdf.setFont('helvetica','normal');pdf.setTextColor(...LIGHT);
+    pdf.text(tema.length>28?tema.slice(0,27)+'…':tema,8,y+3);
+    const col=[PURPLE,ORANGE,RED,BLUE,GREEN,TEAL,LIGHT,GRAY][i%8];
+    pdf.setFillColor(...col);pdf.roundedRect(58,y,barW,5,1,1,'F');
+    pdf.text(fShi(d.val),60+barW,y+3.5);
+  });
+
+  // Observação sobre concentração
+  pdf.setFillColor(8,22,58);pdf.roundedRect(8,185,W-16,40,3,3,'F');
+  pdf.setDrawColor(...ORANGE);pdf.setLineWidth(0.3);pdf.roundedRect(8,185,W-16,40,3,3,'S');
+  pdf.setFontSize(8);pdf.setFont('helvetica','bold');pdf.setTextColor(...ORANGE);
+  pdf.text('Análise de Concentração',12,192);
+  pdf.setFontSize(7);pdf.setFont('helvetica','normal');pdf.setTextColor(...LIGHT);
+  const top3temas=temasTotal.slice(0,3).map(([t,d])=>`${t} (${fShi(d.val)}, ${pctCalc(d.val,tc)})`).join(', ');
+  const concLines=pdf.splitTextToSize(`Os três temas de maior exposição são: ${top3temas}. Alta concentração temática indica oportunidade de ação preventiva estruturada junto às áreas responsáveis. Temas com crescimento consistente de entrantes devem ser monitorados como tendência para os próximos períodos. Recomenda-se avaliar a possibilidade de defesa padronizada (teses defensivas) para os temas mais recorrentes.`,W-24);
+  pdf.text(concLines,12,198);
+
+  // ═══════════════════════════════════════════
+  // PÁGINA 8 — HISTÓRICO E TENDÊNCIAS
+  // ═══════════════════════════════════════════
+  pdf.addPage();addPageBg();addHeader('Histórico e Tendências',8,TOTAL_PAGES);addFooter();
+  const hist=getHist2?getHist2():[];
+  const fmtMH=ym=>{if(!ym)return'';const[y,mo]=ym.split('-');const ns=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];return ns[+mo]+'/'+y.slice(2);};
+
+  if(hist.length>0){
+    const histRec=hist.slice(-12);
+    addSectionTitle(8,24,'Evolução da Contingência (últimos 12 meses)',BLUE);
+    addTableRow(8,29,['Período','Ativos','Contingência',{text:'Provável',align:'right'},{text:'Possível',align:'right'},'Entrantes','Adições',{text:'Reversões',align:'right'}],[28,20,38,33,30,24,24,20],true);
+    histRec.forEach((h,i)=>{
+      addTableRow(8,29+(i+1)*5,[fmtMH(h.mes),String(h.ativos||0),fShi(h.contig||0),{text:fShi(h.provavel||0),align:'right'},{text:fShi(h.possivel||0),align:'right'},String(h.entrantes||0),fShi(h.adicoes||0),{text:fShi(Math.abs(h.reversoes||0)),align:'right'}],[28,20,38,33,30,24,24,20],false,i%2===0);
+    });
+
+    // Tendência
+    if(histRec.length>=3){
+      const ult=histRec[histRec.length-1];const ant=histRec[histRec.length-2];
+      const varContig=ult.contig&&ant.contig?((ult.contig-ant.contig)/ant.contig*100).toFixed(1):'—';
+      const varAtivos=ult.ativos&&ant.ativos?((ult.ativos-ant.ativos)/ant.ativos*100).toFixed(1):'—';
+      const varEntr=ult.entrantes&&ant.entrantes?((ult.entrantes-ant.entrantes)/ant.entrantes*100).toFixed(1):'—';
+
+      addSectionTitle(8,102,'Variação Mensal — Últimos Dois Períodos',GREEN);
+      addKpiBox(8,107,44,22,'Δ Contingência',varContig+'%',`${fmtMH(ant.mes)} → ${fmtMH(ult.mes)}`,Number(varContig)>0?RED:GREEN);
+      addKpiBox(56,107,44,22,'Δ Ativos',varAtivos+'%','variação de estoque',Number(varAtivos)>0?ORANGE:GREEN);
+      addKpiBox(104,107,44,22,'Δ Entrantes',varEntr+'%','novos processos',Number(varEntr)>0?RED:GREEN);
+    }
+  } else {
+    pdf.setFontSize(9);pdf.setFont('helvetica','italic');pdf.setTextColor(...GRAY);
+    pdf.text('Dados históricos não disponíveis. Certifique-se de que a aba Historico está presente na planilha.',W/2,80,{align:'center'});
   }
 
-  // Restaurar
-  document.querySelectorAll('.pg').forEach(x=>x.classList.remove('ac'));
-  document.querySelectorAll('.nb').forEach(x=>x.classList.remove('ac'));
-  if(currPage)currPage.classList.add('ac');
-  if(currNav)currNav.classList.add('ac');
+  // ═══════════════════════════════════════════
+  // PÁGINA 9 — RECOMENDAÇÕES E PLANO DE AÇÃO
+  // ═══════════════════════════════════════════
+  pdf.addPage();addPageBg();addHeader('Recomendações e Plano de Ação',9,TOTAL_PAGES);addFooter(dt);
 
-  pdf.save(`Relatorio-Juridico-${D?.period||'Alloha'}.pdf`);
-  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" width="12" height="12"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg><span style="color:#f87171">PDF</span>';
+  pdf.setFontSize(8.5);pdf.setFont('helvetica','normal');pdf.setTextColor(...LIGHT);
+  pdf.text('Baseado na análise dos dados deste período, o Jurídico recomenda as seguintes ações prioritárias:',8,26);
+
+  // Gerar recomendações automaticamente baseadas nos dados
+  const recs=[];
+  // R1: Maior área de risco
+  if(topAreas[0]){
+    const [area1,val1]=topAreas[0];
+    recs.push({
+      prioridade:'🔴 CRÍTICA',cor:RED,
+      titulo:`Ação Imediata — ${area1}`,
+      desc:AREA_RECS_PDF[area1]||'Priorizar reunião de alinhamento com a área.',
+      prazo:'30 dias',
+      responsavel:`${area1} + Jurídico`,
+      impacto:`${fShi(val1)} (${pctArea(val1)} do passivo)`,
+    });
+  }
+  // R2: Processos em alerta
+  if(totalAlertaProc>0){
+    recs.push({
+      prioridade:'🔴 ALTA',cor:RED,
+      titulo:`Revisão dos ${totalAlertaProc} Processos em Alerta`,
+      desc:`${totalAlertaProc} processos Possíveis já ultrapassaram o aging mediano. Risco de impacto imediato de ${fShi(totalAlertaRisco)} na provisão caso sejam reclassificados.`,
+      prazo:'15 dias',
+      responsavel:'Jurídico (equipe de contencioso)',
+      impacto:fShi(totalAlertaRisco),
+    });
+  }
+  // R3: Terceiros
+  if(t3pct>30){
+    recs.push({
+      prioridade:'🟠 ALTA',cor:ORANGE,
+      titulo:`Revisão de Contratos de Terceiros (${t3pct}% do risco)`,
+      desc:`O risco de terceiros representa ${t3pct}% da exposição total (${fShi(vT3)}). Recomenda-se revisão das cláusulas de responsabilidade e exigência de certidões trabalhistas.`,
+      prazo:'60 dias',
+      responsavel:'Compras + Jurídico',
+      impacto:fShi(vT3),
+    });
+  }
+  // R4: Reclassificação iminente
+  const reclassifCnt=(_insightsCtx?.possNoPrazo||[]).filter(r=>r.diasRestantes<=90).length;
+  if(reclassifCnt>0){
+    recs.push({
+      prioridade:'🟡 MÉDIA',cor:[251,191,36],
+      titulo:`Antecipar Análise dos ${reclassifCnt} Possíveis com Reclassificação Iminente`,
+      desc:`Há ${reclassifCnt} processos Possíveis que devem atingir o aging de provisão nos próximos 90 dias. Antecipar a análise permite provisionar de forma planejada, evitando impactos inesperados no orçamento.`,
+      prazo:'90 dias',
+      responsavel:'Jurídico (análise individual)',
+      impacto:fShi((_insightsCtx?.possNoPrazo||[]).filter(r=>r.diasRestantes<=90).reduce((s,r)=>s+(r.med||0),0)),
+    });
+  }
+  // R5: Maior tema de entrantes
+  if(entTema[0]){
+    recs.push({
+      prioridade:'🟢 PREVENTIVA',cor:GREEN,
+      titulo:`Prevenção — Tema "${entTema[0][0]}" (${entTema[0][1]} entrantes)`,
+      desc:`O tema "${entTema[0][0]}" lidera os processos entrantes. Avaliar com as áreas envolvidas medidas preventivas para reduzir a geração de novos litígios deste tema nos próximos períodos.`,
+      prazo:'90 dias',
+      responsavel:getAreaInfo(entTema[0][0]).area+' + Jurídico',
+      impacto:'Redução de novos processos',
+    });
+  }
+
+  let recY=32;
+  recs.slice(0,5).forEach((r,i)=>{
+    pdf.setFillColor(8,22,58);pdf.roundedRect(8,recY,W-16,40,3,3,'F');
+    pdf.setFillColor(...r.cor);pdf.rect(8,recY,2,40,'F');
+    pdf.setFontSize(6.5);pdf.setFont('helvetica','bold');pdf.setTextColor(...r.cor);
+    pdf.text(r.prioridade,12,recY+6);
+    pdf.setFontSize(8);pdf.setTextColor(...WHITE);
+    pdf.text(r.titulo,12,recY+12);
+    pdf.setFontSize(6.5);pdf.setFont('helvetica','normal');pdf.setTextColor(...LIGHT);
+    const descLines=pdf.splitTextToSize(r.desc,W-28);
+    pdf.text(descLines.slice(0,3),12,recY+18);
+    pdf.setTextColor(...GRAY);
+    pdf.text(`Prazo: ${r.prazo}  ·  Responsável: ${r.responsavel}  ·  Impacto: ${r.impacto}`,12,recY+36);
+    recY+=44;
+  });
+
+  pdf.save(`Relatorio-Juridico-${D?.period||'Alloha'}-${dt.replace(/\//g,'-')}.pdf`);
+  btn.innerHTML=origHTML;
   btn.disabled=false;
-} 
+}
+
 function openModalUF(uf){const{mes}=getFD();const adic=mes.filter(r=>r.sit==='Adição'&&r.estado===uf);const isV=VIEW==='vol';const total=isV?adic.length:adic.reduce((a,r)=>a+r.valor,0);const temaGrp=Object.entries(isV?adic.reduce((a,r)=>{a[r.tema||'N/A']=(a[r.tema||'N/A']||0)+1;return a},{}):adic.reduce((a,r)=>{a[r.tema||'N/A']=(a[r.tema||'N/A']||0)+r.valor;return a},{})).filter(([k])=>k&&k!=='N/A'&&k!=='').sort((a,b)=>b[1]-a[1]);document.getElementById('modal-uf-title').textContent=`Adições em ${uf} — ${isV?adic.length+' processos':fSh(total)}`;document.getElementById('modal-uf-total').textContent=`${temaGrp.length} temas · clique fora para fechar`;let cum=0;document.getElementById('modal-uf-pareto').innerHTML=temaGrp.map(([n,v],i)=>{cum+=v;const cp=pct(cum,total);const vp=pct(v,total);return`<div class="pr"><span class="pr-i">${i+1}</span><span class="pr-name">${n}</span><div class="pr-bb" style="width:90px"><div class="pr-bf" style="width:${vp}%;background:${cp<=80?'#fb923c':'#64748b'}"></div></div><span class="pr-val">${isV?v.toLocaleString('pt-BR'):fSh(v)}</span><span class="pr-cum">${cp}%</span></div>`;}).join('');if(CH['c-modal-uf']){CH['c-modal-uf'].destroy();delete CH['c-modal-uf'];}const top8=temaGrp.slice(0,8);const colors=top8.map((_,i)=>`hsl(${200+i*18},70%,${60-i*3}%)`);CH['c-modal-uf']=new Chart(document.getElementById('c-modal-uf').getContext('2d'),{type:'bar',data:{labels:top8.map(([k])=>k.length>28?k.slice(0,27)+'…':k),datasets:[{data:top8.map(([,v])=>v),backgroundColor:colors,borderRadius:6,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:60}},plugins:{legend:{display:false},datalabels:{display:true,anchor:'end',align:'right',color:'rgba(255,255,255,.7)',font:{size:10,family:'Outfit'},formatter:v=>isV?v.toLocaleString('pt-BR'):fSh(v)},tooltip:{...CB.plugins.tooltip,callbacks:{label:ctx=>isV?ctx.raw.toLocaleString('pt-BR'):fBRL(ctx.raw)}}},scales:{x:{...AX,ticks:{...AX.ticks,callback:v=>isV?v:fSh(v)}},y:{...AX}}}});const modal=document.getElementById('modal-uf');modal.style.display='flex';modal.onclick=e=>{if(e.target===modal)closeModalUF();};}
 function closeModalUF(){document.getElementById('modal-uf').style.display='none';if(CH['c-modal-uf']){CH['c-modal-uf'].destroy();delete CH['c-modal-uf'];}}
 // ═══════════════════════════════════════════════════════
