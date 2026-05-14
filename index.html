@@ -1544,25 +1544,31 @@ function parse(wb,fname){
     });
   }
 
-  // CORREÇÃO: detectar período SEMPRE pela data mais recente dos dados.
-  // "Dashboard_atual.xlsx" é nome genérico — detectPeriod() retorna null
-  // e o fallback anterior usava new Date() → exibia mês errado (abril/2026).
+  // DETECÇÃO DE PERÍODO: fonte primária = último mês da aba Historico.
+  // A moda de DATA ATUAL. PROCESSO é instável: processos não revisados no mês
+  // atual ficam com o mês anterior, fazendo a moda apontar para mês errado.
+  // O Historico é atualizado pelo Power Automate junto com a base → fonte confiável.
   let period;
   {
-    const allDates=[
-      ...mes.filter(r=>r.dataAlt).map(r=>r.dataAlt),
-      ...base.filter(r=>r.dataAtual).map(r=>r.dataAtual)
-    ].filter(Boolean).sort((a,b)=>b-a);
-    if(allDates.length>0){
-  // Usar moda (mês mais frequente) em vez do máximo
-  // evita que datas incorretas/futuras contaminem o período
-  const freq={};
-  allDates.forEach(d=>{const k=fmtYM(d);freq[k]=(freq[k]||0)+1;});
-  period=Object.entries(freq).sort((a,b)=>b[1]-a[1])[0][0];
-} else {
-      period=detectPeriod(fname); // tenta pelo nome do arquivo
+    // Pré-parsear Historico só para obter o último mês (antes do bloco principal)
+    const wsHpre=wb.Sheets['Historico'];
+    if(wsHpre){
+      const rawHpre=XLSX.utils.sheet_to_json(wsHpre,{header:1,defval:null});
+      const mesesHist=rawHpre
+        .map(r=>String(r&&r[0]||'').trim())
+        .filter(m=>/^\d{4}-\d{2}$/.test(m))
+        .sort();
+      if(mesesHist.length>0) period=mesesHist[mesesHist.length-1];
     }
-    if(!period) period=fmtYM(new Date()); // fallback final
+    // Fallback: moda de Data Alteração (Base_mes) — mais estável que Base_geral
+    if(!period){
+      const freq={};
+      mes.filter(r=>r.dataAlt).forEach(r=>{const k=fmtYM(r.dataAlt);freq[k]=(freq[k]||0)+1;});
+      if(Object.keys(freq).length>0)
+        period=Object.entries(freq).sort((a,b)=>b[1]-a[1])[0][0];
+    }
+    // Fallback final: nome do arquivo ou data atual
+    if(!period) period=detectPeriod(fname)||fmtYM(new Date());
   }
   // ── Parse aba Historico ──
   let hist=[];
