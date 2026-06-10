@@ -1457,7 +1457,20 @@ function parse(wb,fname){
       const cidade=cl(g('CIDADE'))||'';
       const comp=cl(g('Competência'))||'';
       // CRITICAL: use OBJETO 1 (TEMA) for all theme analysis
-      const tema=clu(g('OBJETO 1 (TEMA)'))||'';
+      // Para temas consolidados (Resp.Subsidiária, Verbas Trab., Verbas Resc.),
+      // resolver em cascata: tema1 → tema2 → tema3 (se válido e não-alvo)
+      const _t1raw=clu(g('OBJETO 1 (TEMA)'))||'';
+      const _t2raw=clu(g('TEMA 2º'))||'';
+      const _t3raw=clu(g('TEMA 3º'))||'';
+      const TEMAS_EXP=new Set(['RESPONSABILIDADE SUBSIDIÁRIA','RESPONSABILIDADE SUBSIDIARIA','VERBAS TRABALHISTAS','VERBAS RESCISÓRIAS','VERBAS RESCISORIAS']);
+      const _isNA=v=>!v||v==='N/A'||v==='NA';
+      function _resolveT(t1,t2,t3){
+        if(!TEMAS_EXP.has(t1)) return t1; // não é alvo — mantém
+        if(!_isNA(t2)&&!TEMAS_EXP.has(t2)) return t2; // tema2 válido
+        if(!_isNA(t3)&&!TEMAS_EXP.has(t3)) return t3; // tema3 válido
+        return t1; // sem alternativa — mantém original
+      }
+      const tema=_resolveT(_t1raw,_t2raw,_t3raw);
       // CRITICAL: use CONTINGENCIAR PÓS CLOSING for all financial calcs
       const contigPos=n2(g('CONTINGENCIAR PÓS CLOSING'));
       const contigPre=n2(g('CONTINGENCIAR PRÉ CLOSING'));
@@ -1475,6 +1488,11 @@ function parse(wb,fname){
 // processos com mesmo número em réus diferentes são registros intencionais.
   }
 
+  // Mapa proc → temaEf: usado para corrigir tema na Base_mes
+  // (Base_mes não tem tema2/tema3; buscamos pelo número do processo)
+  const _procTemaMap={};
+  base.forEach(r=>{if(r.numero && r.tema) _procTemaMap[r.numero]=r.tema;});
+
   let mes=[];
   const ws2=wb.Sheets['Base_mes'];
   if(ws2){
@@ -1483,7 +1501,13 @@ function parse(wb,fname){
       const sit=cl(g('Situação'))||'';if(!sit||sit==='Situação')return;
       const op=cl(g('Operação'))||'';
       const nat=normNat(g('Natureza'));
-      const tema=clu(g('Tema'))||''; // OBJETO from Base_mes 'Tema' column
+      const procNum=cl(g('Rótulos de Linha'))||'';
+      // Resolver tema: se for consolidado, buscar temaEf no mapa da Base_geral
+      const _temaRaw=clu(g('Tema'))||'';
+      const _TEMAS_EXP_M=new Set(['RESPONSABILIDADE SUBSIDIÁRIA','RESPONSABILIDADE SUBSIDIARIA','VERBAS TRABALHISTAS','VERBAS RESCISÓRIAS','VERBAS RESCISORIAS']);
+      const tema=(_TEMAS_EXP_M.has(_temaRaw)&&procNum&&_procTemaMap[procNum])
+        ? _procTemaMap[procNum]
+        : _temaRaw;
       const estado=clu(g('Estado'))||'';
       const tStr=clu(g('Terceiro'))||'NÃO';
       const tipo=tStr==='SIM'?'TERCEIRO':'PROPRIO';
@@ -1494,7 +1518,6 @@ function parse(wb,fname){
       const aging=n2(g('Aging'));
       const dataAlt=pD(g('Data Alteração'));
       const dataDist=pD(g('Data Distribuição'));
-      const procNum=cl(g('Rótulos de Linha'))||'';
       const compMes=cl(g('Competência'))||'';
       mes.push({sit,op,nat,tema,estado,tipo,emp3,rAnt,valor,aging,dataAlt,dataDist,procNum,comp:compMes});
     });
